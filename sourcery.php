@@ -31,8 +31,8 @@ require_once __DIR__ . '/includes/Hook_Wrapper.php';
 //	$wpdb->query( 'SELECT 3;' );
 //} );
 
-
-$hook_inspector = new Hook_Inspector();
+global $wpdb;
+$hook_inspector = new Hook_Inspector( $wpdb );
 $hook_wrapper   = new Hook_Wrapper(
 	array( $hook_inspector, 'before_hook' ),
 	array( $hook_inspector, 'after_hook' )

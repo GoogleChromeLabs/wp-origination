@@ -54,7 +54,7 @@ class Hook_Inspection {
 	public $priority;
 
 	/**
-	 * Priority.
+	 * Args passed when the hook was done/applied.
 	 *
 	 * @var array
 	 */
