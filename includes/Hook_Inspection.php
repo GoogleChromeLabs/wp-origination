@@ -92,7 +92,6 @@ class Hook_Inspection {
 	 * Constructor.
 	 *
 	 * @todo Add finalize method to take the end_time arg.
-	 * @todo Add method to obtain duration.
 	 *
 	 * @param array $args Arguments which are assigned to properties.
 	 */
@@ -100,5 +99,18 @@ class Hook_Inspection {
 		foreach ( $args as $key => $value ) {
 			$this->$key = $value;
 		}
+	}
+
+	/**
+	 * Get the duration of the hook callback invocation.
+	 *
+	 * @throws \Exception If end_time was not set.
+	 * @return float Duration.
+	 */
+	public function duration() {
+		if ( ! isset( $this->end_time ) ) {
+			throw new \Exception( 'The end_time was not set.' );
+		}
+		return $this->end_time - $this->start_time;
 	}
 }

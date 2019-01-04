@@ -177,10 +177,14 @@ class Hook_Inspector {
 	/**
 	 * Identify the location for a given file.
 	 *
-	 * @todo This should return the actual plugin slug and metadata for the plugin, the WP_Theme object, etc.
-	 *
 	 * @param string $file File.
-	 * @return array|null
+	 * @return array|null {
+	 *     Location information.
+	 *
+	 *     @var string               $type The type of location, either core, plugin, mu-plugin, or theme.
+	 *     @var string               $name The name of the entity, such as 'twentyseventeen' or 'amp/amp.php'.
+	 *     @var \WP_Theme|array|null $data Additional data about the entity, such as the theme object or plugin data.
+	 * }
 	 */
 	public function identify_file_location( $file ) {
 		$file         = wp_normalize_path( $file );
@@ -198,7 +202,7 @@ class Hook_Inspector {
 			if ( preg_match( ':' . preg_quote( $themes_directory, ':' ) . $slug_pattern . ':s', $file, $matches ) ) {
 				return array(
 					'type' => 'theme',
-					'slug' => $matches['root_slug'],
+					'name' => $matches['root_slug'],
 					'data' => wp_get_theme( $matches['root_slug'] ),
 				);
 			}
@@ -241,7 +245,7 @@ class Hook_Inspector {
 
 			return array(
 				'type' => 'plugin',
-				'slug' => $slug,
+				'name' => $slug,
 				'data' => $data,
 			);
 		}
@@ -249,7 +253,7 @@ class Hook_Inspector {
 		if ( preg_match( ':' . preg_quote( $this->mu_plugins_directory, ':' ) . $slug_pattern . ':s', $file, $matches ) ) {
 			return array(
 				'type' => 'mu-plugin',
-				'slug' => $matches['root_slug'],
+				'name' => $matches['root_slug'],
 				'data' => get_plugin_data( $file ), // This is a best guess as $file may not actually be the plugin file.
 			);
 		}
