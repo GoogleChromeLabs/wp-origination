@@ -73,9 +73,9 @@ class Hook_Inspector {
 	/**
 	 * Hook_Inspector constructor.
 	 *
-	 * @param \wpdb|object $wpdb DB.
+	 * @param \wpdb $wpdb DB.
 	 */
-	function __construct( object $wpdb ) {
+	public function __construct( $wpdb ) {
 		$this->wpdb = $wpdb;
 
 		$this->plugins_directory    = trailingslashit( wp_normalize_path( WP_PLUGIN_DIR ) );
@@ -108,15 +108,17 @@ class Hook_Inspector {
 	 */
 	public function before_hook( $args ) {
 		global $wpdb;
-		$this->hook_stack[] = new Hook_Inspection( array_merge(
-			$args,
-			array(
-				'start_time'         => microtime( true ),
-				'before_num_queries' => $wpdb->num_queries,
-				// @todo Queued scripts.
-				// @todo Queued styles.
+		$this->hook_stack[] = new Hook_Inspection(
+			array_merge(
+				$args,
+				array(
+					'start_time'         => microtime( true ),
+					'before_num_queries' => $wpdb->num_queries,
+					// @todo Queued scripts.
+					// @todo Queued styles.
+				)
 			)
-		) );
+		);
 	}
 
 	/**

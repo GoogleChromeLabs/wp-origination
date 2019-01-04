@@ -91,6 +91,9 @@ class Hook_Inspection {
 	/**
 	 * Constructor.
 	 *
+	 * @todo Add finalize method to take the end_time arg.
+	 * @todo Add method to obtain duration.
+	 *
 	 * @param array $args Arguments which are assigned to properties.
 	 */
 	public function __construct( $args ) {

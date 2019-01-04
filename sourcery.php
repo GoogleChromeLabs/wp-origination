@@ -19,7 +19,6 @@ require_once __DIR__ . '/includes/Hook_Inspection.php';
 require_once __DIR__ . '/includes/Hook_Inspector.php';
 require_once __DIR__ . '/includes/Hook_Wrapper.php';
 
-
 global $wpdb;
 $hook_inspector = new Hook_Inspector( $wpdb );
 $hook_wrapper   = new Hook_Wrapper(

@@ -103,6 +103,7 @@ class Hook_Wrapper {
 
 					$hook_args = func_get_args();
 
+					// @todo Optionally capture debug backtrace?
 					$accepted_args = $callback['accepted_args'];
 					$context       = compact( 'hook_name', 'function', 'function_name', 'source_file', 'accepted_args', 'priority', 'hook_args' );
 					$before_return = null;
@@ -135,7 +136,7 @@ class Hook_Wrapper {
 	 *     @type string $file Path to where the callback was defined.
 	 * }
 	 */
-	static function get_source( $callback ) {
+	public static function get_source( $callback ) {
 		$reflection = null;
 		$class_name = null; // Because ReflectionMethod::getDeclaringClass() can return a parent class.
 		$file       = null;
@@ -197,7 +198,7 @@ class Hook_Wrapper {
 	 * @param \ReflectionFunction|\ReflectionMethod $reflection Reflection.
 	 * @return bool Whether there are parameters passed by reference.
 	 */
-	static function has_parameters_passed_by_reference( $reflection ) {
+	public static function has_parameters_passed_by_reference( $reflection ) {
 		foreach ( $reflection->getParameters() as $parameter ) {
 			if ( $parameter->isPassedByReference() ) {
 				return true;
