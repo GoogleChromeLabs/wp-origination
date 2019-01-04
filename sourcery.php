@@ -47,6 +47,7 @@ add_action( 'template_redirect', function() use ( $hook_inspector ) {
 					},
 					$processed_hook->query_indices ?: array()
 				),
+				'location' => $hook_inspector->identify_file_location( $processed_hook->source_file ),
 			)
 		) );
 	}

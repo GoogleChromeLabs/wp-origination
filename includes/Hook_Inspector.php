@@ -177,16 +177,20 @@ class Hook_Inspector {
 	/**
 	 * Identify the location for a given file.
 	 *
+	 * @todo This should return the actual plugin slug and metadata for the plugin, the WP_Theme object, etc.
+	 *
 	 * @param string $file File.
 	 * @return array|null
 	 */
 	public function identify_file_location( $file ) {
 		$file         = wp_normalize_path( $file );
-		$slug_pattern = '([^/]+)';
-		if ( preg_match( ':' . preg_quote( $this->plugins_directory, ':' ) . $slug_pattern . ':s', $file, $matches ) ) {
+		$slug_pattern = '(?P<root_slug>[^/]+)';
+
+		if ( preg_match( ':' . preg_quote( $this->core_directory, ':' ) . '(wp-admin|wp-includes)/:s', $file, $matches ) ) {
 			return array(
-				'type' => 'plugin',
+				'type' => 'core',
 				'name' => $matches[1],
+				'data' => null,
 			);
 		}
 
@@ -194,22 +198,59 @@ class Hook_Inspector {
 			if ( preg_match( ':' . preg_quote( $themes_directory, ':' ) . $slug_pattern . ':s', $file, $matches ) ) {
 				return array(
 					'type' => 'theme',
-					'name' => $matches[1],
+					'slug' => $matches['root_slug'],
+					'data' => wp_get_theme( $matches['root_slug'] ),
 				);
 			}
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+		if ( preg_match( ':' . preg_quote( $this->plugins_directory, ':' ) . $slug_pattern . '(?P<rel_path>/.+$)?:s', $file, $matches ) ) {
+			$plugin_dir = $this->plugins_directory . '/' . $matches['root_slug'] . '/';
+			$data       = get_plugin_data( $file );
+
+			// Fallback slug is the path segment under the plugins directory.
+			$slug = $matches['root_slug'];
+
+			// If the file is itself a plugin file, then the slug includes the rel_path under the root_slug.
+			if ( ! empty( $data['Name'] ) && ! empty( $matches['rel_path'] ) ) {
+				$slug .= $matches['rel_path'];
+			}
+
+			// If the file is not a plugin file, try looking for {slug}/{slug}.php.
+			if ( empty( $data['Name'] ) && file_exists( $plugin_dir . $matches['root_slug'] . '.php' ) ) {
+				$slug = $matches['root_slug'] . '/' . $matches['root_slug'] . '.php';
+				$data = get_plugin_data( $plugin_dir . $matches['root_slug'] . '.php' );
+			}
+
+			// Otherwise, grab the first plugin file located in the plugin directory.
+			if ( empty( $data['Name'] ) ) {
+				$plugins = get_plugins( '/' . $matches['root_slug'] );
+				if ( ! empty( $plugins ) ) {
+					$key  = key( $plugins );
+					$data = $plugins[ $key ];
+					$slug = $matches['root_slug'] . '/' . $key;
+				}
+			}
+
+			// Failed to locate the plugin.
+			if ( empty( $data['Name'] ) ) {
+				$data = null;
+			}
+
+			return array(
+				'type' => 'plugin',
+				'slug' => $slug,
+				'data' => $data,
+			);
 		}
 
 		if ( preg_match( ':' . preg_quote( $this->mu_plugins_directory, ':' ) . $slug_pattern . ':s', $file, $matches ) ) {
 			return array(
 				'type' => 'mu-plugin',
-				'name' => $matches[1],
-			);
-		}
-
-		if ( preg_match( ':' . preg_quote( $this->core_directory, ':' ) . '(wp-admin|wp-includes)/:s', $file, $matches ) ) {
-			return array(
-				'type' => 'core',
-				'name' => $matches[1],
+				'slug' => $matches['root_slug'],
+				'data' => get_plugin_data( $file ), // This is a best guess as $file may not actually be the plugin file.
 			);
 		}
 
