@@ -73,9 +73,10 @@ class Hook_Inspector {
 	/**
 	 * Hook_Inspector constructor.
 	 *
-	 * @param \wpdb $wpdb DB.
+	 * @global \wpdb $wpdb
 	 */
-	public function __construct( $wpdb ) {
+	public function __construct() {
+		global $wpdb;
 		$this->wpdb = $wpdb;
 
 		$this->plugins_directory    = trailingslashit( wp_normalize_path( WP_PLUGIN_DIR ) );
@@ -179,7 +180,7 @@ class Hook_Inspector {
 	 *
 	 * @param string $file File.
 	 * @return array|null {
-	 *     Location information.
+	 *     Location information, or null if no location could be identified.
 	 *
 	 *     @var string               $type The type of location, either core, plugin, mu-plugin, or theme.
 	 *     @var string               $name The name of the entity, such as 'twentyseventeen' or 'amp/amp.php'.
