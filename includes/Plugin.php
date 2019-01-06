@@ -125,8 +125,8 @@ class Plugin {
 							'hook_name',
 							'function_name',
 							'source_file',
-							'queued_scripts',
-							'queued_styles',
+							'enqueued_scripts',
+							'enqueued_styles',
 						)
 					),
 					compact( 'file_location', 'hook_duration' )

@@ -90,7 +90,7 @@ class Hook_Inspection {
 	protected $before_num_queries;
 
 	/**
-	 * Script handles that were queued prior to running the hook callback.
+	 * Script handles that were enqueued prior to running the hook callback.
 	 *
 	 * This is unset when the inspection is finalized.
 	 *
@@ -99,14 +99,14 @@ class Hook_Inspection {
 	protected $before_scripts_queue;
 
 	/**
-	 * Scripts queued during invocation of hook callback.
+	 * Scripts enqueued during invocation of hook callback.
 	 *
 	 * @var string[]
 	 */
-	public $queued_scripts;
+	public $enqueued_scripts;
 
 	/**
-	 * Style handles that were queued prior to running the hook callback.
+	 * Style handles that were enqueued prior to running the hook callback.
 	 *
 	 * This is unset when the inspection is finalized.
 	 *
@@ -115,11 +115,11 @@ class Hook_Inspection {
 	protected $before_styles_queue;
 
 	/**
-	 * Styles queued during invocation of hook callback.
+	 * Styles enqueued during invocation of hook callback.
 	 *
 	 * @var string[]
 	 */
-	public $queued_styles;
+	public $enqueued_styles;
 
 	/**
 	 * The indices of the queries in $wpdb->queries that this hook was responsible for.
@@ -142,8 +142,8 @@ class Hook_Inspection {
 		$this->start_time = microtime( true );
 
 		$this->before_num_queries   = $this->inspector->get_wpdb()->num_queries;
-		$this->before_scripts_queue = $this->inspector->get_queued_scripts();
-		$this->before_styles_queue  = $this->inspector->get_queued_styles();
+		$this->before_scripts_queue = $this->inspector->get_scripts_queue();
+		$this->before_styles_queue  = $this->inspector->get_styles_queue();
 	}
 
 	/**
@@ -183,8 +183,8 @@ class Hook_Inspection {
 		$this->query_indices = $this->inspector->identify_hook_queries( $this );
 
 		// Capture the scripts and styles that were enqueued by this hook.
-		$this->queued_scripts = $this->inspector->identify_queued_scripts( $this );
-		$this->queued_styles  = $this->inspector->identify_queued_styles( $this );
+		$this->enqueued_scripts = $this->inspector->identify_enqueued_scripts( $this );
+		$this->enqueued_styles  = $this->inspector->identify_enqueued_styles( $this );
 
 		// These are no longer needed after calling identify_queued_scripts and identify_queued_styles, and they just take up memory.
 		unset( $this->before_scripts_queue );
