@@ -132,14 +132,7 @@ class Plugin {
 				unset( $hook_result['file_location']['data'] );
 
 				if ( defined( 'SAVEQUERIES' ) && SAVEQUERIES && current_user_can( $this->options['show_queries_cap'] ) ) {
-					$hook_result['queries'] = array_map(
-						function ( $query_index ) {
-							global $wpdb;
-
-							return $wpdb->queries[ $query_index ];
-						},
-						$processed_hook->query_indices ?: array()
-					);
+					$hook_result['queries'] = $processed_hook->queries();
 				}
 
 				$all_results[] = $hook_result;

@@ -31,7 +31,7 @@ class Hook_Inspector {
 	 *
 	 * @var \wpdb
 	 */
-	public $wpdb;
+	protected $wpdb;
 
 	/**
 	 * Core directory.
@@ -95,6 +95,75 @@ class Hook_Inspector {
 	}
 
 	/**
+	 * Get the WordPress DB.
+	 *
+	 * @return \wpdb|object DB.
+	 */
+	public function get_wpdb() {
+		return $this->wpdb;
+	}
+
+	/**
+	 * Return the scripts registry.
+	 *
+	 * Note that this does not use the `wp_scripts()` function because that will cause `WP_Scripts` to potentially be
+	 * instantiated prematurely.
+	 *
+	 * @return \WP_Scripts|null Scripts registry if defined.
+	 * @global \WP_Scripts $wp_scripts
+	 */
+	public function get_scripts_registry() {
+		global $wp_scripts;
+		if ( isset( $wp_scripts ) && isset( $wp_scripts->registered ) ) {
+			return $wp_scripts;
+		}
+		return $wp_scripts;
+	}
+
+	/**
+	 * Get queued scripts.
+	 *
+	 * @return string[] Queued scripts.
+	 */
+	public function get_queued_scripts() {
+		$scripts = $this->get_scripts_registry();
+		if ( ! $scripts ) {
+			return array();
+		}
+		return $scripts->queue;
+	}
+
+	/**
+	 * Return the styles registry.
+	 *
+	 * Note that this does not use the `wp_styles()` function because that will cause `WP_Styles` to potentially be
+	 * instantiated prematurely.
+	 *
+	 * @return \WP_Styles|null Styles registry if defined.
+	 * @global \WP_Styles $wp_styles
+	 */
+	public function get_styles_registry() {
+		global $wp_styles;
+		if ( isset( $wp_styles ) && isset( $wp_styles->registered ) ) {
+			return $wp_styles;
+		}
+		return $wp_styles;
+	}
+
+	/**
+	 * Get queued styles.
+	 *
+	 * @return string[] Queued styles.
+	 */
+	public function get_queued_styles() {
+		$styles = $this->get_styles_registry();
+		if ( ! $styles ) {
+			return array();
+		}
+		return $styles->queue;
+	}
+
+	/**
 	 * Before hook.
 	 *
 	 * @param array $args {
@@ -108,18 +177,7 @@ class Hook_Inspector {
 	 * }
 	 */
 	public function before_hook( $args ) {
-		global $wpdb;
-		$this->hook_stack[] = new Hook_Inspection(
-			array_merge(
-				$args,
-				array(
-					'start_time'         => microtime( true ),
-					'before_num_queries' => $wpdb->num_queries,
-					// @todo Queued scripts.
-					// @todo Queued styles.
-				)
-			)
-		);
+		$this->hook_stack[] = new Hook_Inspection( $this, $args );
 	}
 
 	/**
@@ -133,7 +191,7 @@ class Hook_Inspector {
 			throw new \Exception( 'Stack was empty' );
 		}
 
-		$hook_inspection->end_time = microtime( true );
+		$hook_inspection->finalize();
 
 		$this->identify_hook_queries( $hook_inspection );
 
@@ -144,35 +202,34 @@ class Hook_Inspector {
 	 * Identify the queries that were made during the hook's invocation.
 	 *
 	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 * @return int[] Query indices associated with the hook.
 	 */
 	public function identify_hook_queries( Hook_Inspection $hook_inspection ) {
 
 		// Short-circuit if queries are not being saved (aka if SAVEQUERIES is not defined).
 		if ( empty( $this->wpdb->queries ) ) {
-			return;
+			return array();
 		}
+
+		$before_num_queries = $hook_inspection->get_before_num_queries();
 
 		// If no queries have been made during the hook invocation, short-circuit.
-		if ( $this->wpdb->num_queries === $hook_inspection->before_num_queries ) {
-			return;
+		if ( $this->wpdb->num_queries === $before_num_queries ) {
+			return array();
 		}
 
-		$search = 'Sourcery\Hook_Wrapper->Sourcery\{closure}, call_user_func_array, ';
-
-		$hook_inspection->query_indices = array();
-		foreach ( range( $hook_inspection->before_num_queries, $this->wpdb->num_queries - 1 ) as $query_index ) {
-
-			// Purge references to the hook wrapper from the query call stack.
-			foreach ( $this->wpdb->queries[ $query_index ] as &$query ) {
-				$query = str_replace( $search, '', $query );
-			}
+		$query_indices = array();
+		foreach ( range( $before_num_queries, $this->wpdb->num_queries - 1 ) as $query_index ) {
 
 			// Flag this query as being associated with this hook instance.
 			if ( ! isset( $this->sourced_query_indices[ $query_index ] ) ) {
-				$hook_inspection->query_indices[]            = $query_index;
+				$query_indices[] = $query_index;
+
 				$this->sourced_query_indices[ $query_index ] = true;
 			}
 		}
+
+		return $query_indices;
 	}
 
 	/**
