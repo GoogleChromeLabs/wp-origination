@@ -183,11 +183,8 @@ class Hook_Inspection {
 		$this->query_indices = $this->inspector->identify_hook_queries( $this );
 
 		// Capture the scripts and styles that were enqueued by this hook.
-//		$this->queued_scripts = $this->inspector->identify_queued_scripts( $this );
-//		$this->queued_styles  = $this->inspector->identify_queued_styles( $this );
-
-		$this->queued_scripts = array_diff( $this->inspector->get_queued_scripts(), $this->before_scripts_queue );
-		$this->queued_styles  = array_diff( $this->inspector->get_queued_styles(), $this->before_styles_queue );
+		$this->queued_scripts = $this->inspector->identify_queued_scripts( $this );
+		$this->queued_styles  = $this->inspector->identify_queued_styles( $this );
 
 		// These are no longer needed after calling identify_queued_scripts and identify_queued_styles, and they just take up memory.
 		unset( $this->before_scripts_queue );

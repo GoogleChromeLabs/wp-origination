@@ -66,9 +66,27 @@ class Hook_Inspector {
 	 *
 	 * Array keys are the query indices and the values are all true.
 	 *
-	 * @var int[]
+	 * @var bool[]
 	 */
 	protected $sourced_query_indices = array();
+
+	/**
+	 * Lookup of which enqueued scripts have already been assigned to hooks.
+	 *
+	 * Array keys are the query indices and the values are all true.
+	 *
+	 * @var bool[]
+	 */
+	protected $sourced_script_enqueues = array();
+
+	/**
+	 * Lookup of which enqueued styles have already been assigned to hooks.
+	 *
+	 * Array keys are the query indices and the values are all true.
+	 *
+	 * @var bool[]
+	 */
+	protected $sourced_style_enqueues = array();
 
 	/**
 	 * Hook_Inspector constructor.
@@ -230,6 +248,52 @@ class Hook_Inspector {
 		}
 
 		return $query_indices;
+	}
+
+	/**
+	 * Identify the scripts that were queued during the hook's invocation.
+	 *
+	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 * @return string[] Script handles.
+	 */
+	public function identify_queued_scripts( Hook_Inspection $hook_inspection ) {
+		$before_script_handles = $hook_inspection->get_before_scripts_queue();
+		$after_script_handles  = $this->get_queued_scripts();
+
+		$queued_handles = array();
+		foreach ( array_diff( $after_script_handles, $before_script_handles ) as $queued_script ) {
+
+			// Flag this script handle as being associated with this hook callback invocation.
+			if ( ! isset( $this->sourced_script_enqueues[ $queued_script ] ) ) {
+				$queued_handles[] = $queued_script;
+
+				$this->sourced_script_enqueues[ $queued_script ] = true;
+			}
+		}
+		return $queued_handles;
+	}
+
+	/**
+	 * Identify the styles that were queued during the hook's invocation.
+	 *
+	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 * @return string[] Style handles.
+	 */
+	public function identify_queued_styles( Hook_Inspection $hook_inspection ) {
+		$before_style_handles = $hook_inspection->get_before_styles_queue();
+		$after_style_handles  = $this->get_queued_styles();
+
+		$queued_handles = array();
+		foreach ( array_diff( $after_style_handles, $before_style_handles ) as $queued_style ) {
+
+			// Flag this style handle as being associated with this hook callback invocation.
+			if ( ! isset( $this->sourced_style_enqueues[ $queued_style ] ) ) {
+				$queued_handles[] = $queued_style;
+
+				$this->sourced_style_enqueues[ $queued_style ] = true;
+			}
+		}
+		return $queued_handles;
 	}
 
 	/**
