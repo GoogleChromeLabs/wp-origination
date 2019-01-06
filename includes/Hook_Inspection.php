@@ -236,4 +236,19 @@ class Hook_Inspection {
 
 		return $queries;
 	}
+
+	/**
+	 * Get the location of the file.
+	 *
+	 * @return array|null {
+	 *     Location information, or null if no location could be identified.
+	 *
+	 *     @var string               $type The type of location, either core, plugin, mu-plugin, or theme.
+	 *     @var string               $name The name of the entity, such as 'twentyseventeen' or 'amp/amp.php'.
+	 *     @var \WP_Theme|array|null $data Additional data about the entity, such as the theme object or plugin data.
+	 * }
+	 */
+	public function file_location() {
+		return $this->inspector->identify_file_location( $this->source_file );
+	}
 }

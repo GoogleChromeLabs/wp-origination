@@ -89,6 +89,14 @@ class Hook_Inspector {
 	protected $sourced_style_enqueues = array();
 
 	/**
+	 * Cached file locations.
+	 *
+	 * @see Hook_Inspector::identify_file_location()
+	 * @var array[]
+	 */
+	protected $cached_file_locations = array();
+
+	/**
 	 * Hook_Inspector constructor.
 	 *
 	 * @global \wpdb $wpdb
@@ -309,24 +317,31 @@ class Hook_Inspector {
 	 * }
 	 */
 	public function identify_file_location( $file ) {
+
+		if ( isset( $this->cached_file_locations[ $file ] ) ) {
+			return $this->cached_file_locations[ $file ];
+		}
+
 		$file         = wp_normalize_path( $file );
 		$slug_pattern = '(?P<root_slug>[^/]+)';
 
 		if ( preg_match( ':' . preg_quote( $this->core_directory, ':' ) . '(wp-admin|wp-includes)/:s', $file, $matches ) ) {
-			return array(
+			$this->cached_file_locations[ $file ] = array(
 				'type' => 'core',
 				'name' => $matches[1],
 				'data' => null,
 			);
+			return $this->cached_file_locations[ $file ];
 		}
 
 		foreach ( $this->themes_directories as $themes_directory ) {
 			if ( preg_match( ':' . preg_quote( $themes_directory, ':' ) . $slug_pattern . ':s', $file, $matches ) ) {
-				return array(
+				$this->cached_file_locations[ $file ] = array(
 					'type' => 'theme',
 					'name' => $matches['root_slug'],
 					'data' => wp_get_theme( $matches['root_slug'] ),
 				);
+				return $this->cached_file_locations[ $file ];
 			}
 		}
 
@@ -365,19 +380,21 @@ class Hook_Inspector {
 				$data = null;
 			}
 
-			return array(
+			$this->cached_file_locations[ $file ] = array(
 				'type' => 'plugin',
 				'name' => $slug,
 				'data' => $data,
 			);
+			return $this->cached_file_locations[ $file ];
 		}
 
 		if ( preg_match( ':' . preg_quote( $this->mu_plugins_directory, ':' ) . $slug_pattern . ':s', $file, $matches ) ) {
-			return array(
+			$this->cached_file_locations[ $file ] = array(
 				'type' => 'mu-plugin',
 				'name' => $matches['root_slug'],
 				'data' => get_plugin_data( $file ), // This is a best guess as $file may not actually be the plugin file.
 			);
+			return $this->cached_file_locations[ $file ];
 		}
 
 		return null;

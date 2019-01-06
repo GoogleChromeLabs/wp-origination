@@ -88,7 +88,6 @@ class Plugin {
 	public function output_profiling_info() {
 		$entity_timings = array();
 		$hook_timings   = array();
-		$file_locations = array();
 		$hooks_duration = 0.0;
 		$all_results    = array();
 		$do_all_results = current_user_can( $this->options['show_all_data_cap'] );
@@ -104,10 +103,7 @@ class Plugin {
 			}
 			$hook_timings[ $processed_hook->hook_name ] += $hook_duration;
 
-			if ( ! isset( $file_locations[ $processed_hook->source_file ] ) ) {
-				$file_locations[ $processed_hook->source_file ] = $this->hook_inspector->identify_file_location( $processed_hook->source_file );
-			}
-			$file_location = $file_locations[ $processed_hook->source_file ];
+			$file_location = $processed_hook->file_location();
 			if ( $file_location ) {
 				$entity_key      = sprintf( '%s:%s', $file_location['type'], $file_location['name'] );
 				$hooks_duration += $hook_duration;
