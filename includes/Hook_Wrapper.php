@@ -96,8 +96,9 @@ class Hook_Wrapper {
 
 				$function_name = $source['function'];
 				$source_file   = $source['file'];
+				$reflection    = $source['reflection'];
 
-				$callback['function'] = function() use ( &$callback, $hook_name, $function, $function_name, $source_file ) {
+				$callback['function'] = function() use ( &$callback, $hook_name, $function, $reflection, $function_name, $source_file ) {
 					// Restore the original callback function after this wrapped callback function is invoked.
 					$callback['function'] = $function;
 
@@ -105,7 +106,7 @@ class Hook_Wrapper {
 
 					// @todo Optionally capture debug backtrace?
 					$accepted_args = $callback['accepted_args'];
-					$context       = compact( 'hook_name', 'function', 'function_name', 'source_file', 'accepted_args', 'priority', 'hook_args' );
+					$context       = compact( 'hook_name', 'function', 'function_name', 'reflection', 'source_file', 'accepted_args', 'priority', 'hook_args' );
 					$before_return = null;
 					if ( $this->before_callback ) {
 						$before_return = call_user_func( $this->before_callback, $context );
@@ -131,9 +132,9 @@ class Hook_Wrapper {
 	 * @return array|null {
 	 *     The source data.
 	 *
-	 *     @type string $function Normalized function name.
+	 *     @type string                                $function   Normalized function name.
 	 *     @type \ReflectionMethod|\ReflectionFunction $reflection Reflection object.
-	 *     @type string $file Path to where the callback was defined.
+	 *     @type string                                $file       Path to where the callback was defined.
 	 * }
 	 */
 	public static function get_source( $callback ) {

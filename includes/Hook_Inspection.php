@@ -41,6 +41,13 @@ class Hook_Inspection {
 	public $function_name;
 
 	/**
+	 * Reflection object for the function.
+	 *
+	 * @var \ReflectionMethod|\ReflectionFunction
+	 */
+	public $reflection;
+
+	/**
 	 * File in which the function was defined.
 	 *
 	 * @var string
