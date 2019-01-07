@@ -20,6 +20,13 @@ class Hook_Inspector {
 	public $hook_stack = array();
 
 	/**
+	 * Stack for whether output buffering is being performed for the current hook.
+	 *
+	 * @var bool[]
+	 */
+	protected $buffer_stack = array();
+
+	/**
 	 * Processed hooks.
 	 *
 	 * @var Hook_Inspection[]
@@ -190,6 +197,46 @@ class Hook_Inspector {
 	}
 
 	/**
+	 * Determine whether buffering should be used to check the output of the hook invocation.
+	 *
+	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 * @return bool Whether to buffer output for the hook.
+	 */
+	public function should_buffer_hook_output( Hook_Inspection $hook_inspection ) {
+		// Only do output buffering during template rendering, not before (template_redirect) or after (shutdown).
+		if ( ! did_action( 'template_redirect' ) || doing_action( 'template_redirect' ) || doing_action( 'shutdown' ) ) {
+			return false;
+		}
+
+		// Only offer to buffer output for actions. Filters should not be doing any output, so they are irrelevant.
+		if ( ! did_action( $hook_inspection->hook_name ) ) {
+			return false;
+		}
+
+		/*
+		 * Check if any functions in call stack are output buffering display handlers.
+		 * This is to guard against a fatal error: "ob_start(): Cannot use output buffering in output buffering display handlers".
+		 */
+		$called_functions = array();
+		if ( defined( 'DEBUG_BACKTRACE_IGNORE_ARGS' ) ) {
+			$arg = DEBUG_BACKTRACE_IGNORE_ARGS; // phpcs:ignore PHPCompatibility.PHP.NewConstants.debug_backtrace_ignore_argsFound
+		} else {
+			$arg = false;
+		}
+		$backtrace = debug_backtrace( $arg ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace, PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue.NeedsInspection -- Only way to find out if we are in a buffering display handler.
+		foreach ( $backtrace as $call_stack ) {
+			if ( '{closure}' === $call_stack['function'] ) {
+				$called_functions[] = 'Closure::__invoke';
+			} elseif ( isset( $call_stack['class'] ) ) {
+				$called_functions[] = sprintf( '%s::%s', $call_stack['class'], $call_stack['function'] );
+			} else {
+				$called_functions[] = $call_stack['function'];
+			}
+		}
+		return 0 === count( array_intersect( ob_list_handlers(), $called_functions ) );
+	}
+
+	/**
 	 * Before hook.
 	 *
 	 * @param array $args {
@@ -203,7 +250,21 @@ class Hook_Inspector {
 	 * }
 	 */
 	public function before_hook( $args ) {
-		$this->hook_stack[] = new Hook_Inspection( $this, $args );
+		$hook_inspection = new Hook_Inspection( $this, $args );
+
+		$this->hook_stack[] = $hook_inspection;
+
+		// @todo This is liable to cause big problems if a hook intends to do output buffering from one action to another.
+		$output_buffer = $this->should_buffer_hook_output( $hook_inspection );
+		if ( $output_buffer ) {
+			$output_buffer = ob_start(
+				function( $buffer ) use ( $hook_inspection ) {
+					return $this->wrap_hook_output_with_source_comments( $buffer, $hook_inspection );
+				}
+			);
+		}
+
+		$this->buffer_stack[] = $output_buffer;
 	}
 
 	/**
@@ -216,12 +277,33 @@ class Hook_Inspector {
 		if ( ! $hook_inspection ) {
 			throw new \Exception( 'Stack was empty' );
 		}
+		$output_buffered = array_pop( $this->buffer_stack );
+		if ( $output_buffered ) {
+			ob_end_flush();
+		}
 
 		$hook_inspection->finalize();
 
 		$this->identify_hook_queries( $hook_inspection );
 
 		$this->processed_hooks[] = $hook_inspection;
+	}
+
+	/**
+	 * Wrap hook output with source comments.
+	 *
+	 * @param string          $output          Buffered output.
+	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 * @return string Buffered output.
+	 */
+	public function wrap_hook_output_with_source_comments( $output, Hook_Inspection $hook_inspection ) {
+		// Wrap output that contains HTML tags (as opposed to actions that trigger in HTML attributes).
+		if ( ! empty( $output ) && preg_match( '/<.+?>/s', $output ) ) {
+			$before = sprintf( '<!--hook:%s(%s)-->', $hook_inspection->hook_name, $hook_inspection->function_name );
+			$after  = sprintf( '<!--/hook:%s(%s)-->', $hook_inspection->hook_name, $hook_inspection->function_name );
+			$output = $before . $output . $after;
+		}
+		return $output;
 	}
 
 	/**
