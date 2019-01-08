@@ -9,8 +9,24 @@ namespace Sourcery;
 
 /**
  * Class Hook_Inspection.
+ *
+ * @todo Rename to Hook_Invocation?
  */
 class Hook_Inspection {
+
+	/**
+	 * Number of instances.
+	 *
+	 * @var int
+	 */
+	protected static $instance_count = 0;
+
+	/**
+	 * ID.
+	 *
+	 * @var int
+	 */
+	public $id;
 
 	/**
 	 * Inspector.
@@ -145,12 +161,22 @@ class Hook_Inspection {
 		foreach ( $args as $key => $value ) {
 			$this->$key = $value;
 		}
+		$this->id         = ++static::$instance_count;
 		$this->inspector  = $inspector;
 		$this->start_time = microtime( true );
 
 		$this->before_num_queries   = $this->inspector->get_wpdb()->num_queries;
 		$this->before_scripts_queue = $this->inspector->get_scripts_queue();
 		$this->before_styles_queue  = $this->inspector->get_styles_queue();
+	}
+
+	/**
+	 * Returns whether it is an action hook.
+	 *
+	 * @return bool Whether an action hook.
+	 */
+	public function is_action() {
+		return $this->inspector->is_action( $this );
 	}
 
 	/**
