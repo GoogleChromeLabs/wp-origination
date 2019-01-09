@@ -126,7 +126,7 @@ class Hook_Inspector {
 
 		$theme_roots = array_unique(
 			array_merge(
-				get_theme_roots(),
+				(array) get_theme_roots(),
 				array( get_theme_root() ) // Because this one has a filter that applies.
 			)
 		);
