@@ -2,10 +2,10 @@
 /**
  * Hook_Inspector Class.
  *
- * @package Sourcery
+ * @package Google\WP_Sourcery
  */
 
-namespace Sourcery;
+namespace Google\WP_Sourcery;
 
 /**
  * Class Hook_Inspector.

@@ -2,10 +2,10 @@
 /**
  * Class Plugin.
  *
- * @package Sourcery
+ * @package Google\WP_Sourcery
  */
 
-namespace Sourcery;
+namespace Google\WP_Sourcery;
 
 /**
  * Class Plugin
