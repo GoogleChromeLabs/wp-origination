@@ -76,20 +76,15 @@ class Plugin {
 		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
 
 		$this->hook_wrapper->add_all_hook();
-		add_action( 'shutdown', array( $this, 'output_profiling_info' ) );
+
+		add_action( 'shutdown', array( $this, 'send_server_timing_headers' ) );
 	}
 
 	/**
-	 * Output profiling info.
-	 *
-	 * If headers have not been sent (i.e. if output buffering), then the core/theme/plugin timings are sent via Server-Timing headers as well.
+	 * Send Server-Timing headers.
 	 */
-	public function output_profiling_info() {
+	public function send_server_timing_headers() {
 		$entity_timings = array();
-		$hook_timings   = array();
-		$hooks_duration = 0.0;
-		$all_results    = array();
-		$do_all_results = current_user_can( $this->options['show_all_data_cap'] );
 
 		foreach ( $this->hook_inspector->processed_hooks as $processed_hook ) {
 			try {
@@ -97,42 +92,14 @@ class Plugin {
 			} catch ( \Exception $e ) {
 				$hook_duration = -1;
 			}
-			if ( ! isset( $hook_timings[ $processed_hook->hook_name ] ) ) {
-				$hook_timings[ $processed_hook->hook_name ] = 0.0;
-			}
-			$hook_timings[ $processed_hook->hook_name ] += $hook_duration;
 
 			$file_location = $processed_hook->file_location();
 			if ( $file_location ) {
-				$entity_key      = sprintf( '%s:%s', $file_location['type'], $file_location['name'] );
-				$hooks_duration += $hook_duration;
+				$entity_key = sprintf( '%s:%s', $file_location['type'], $file_location['name'] );
 				if ( ! isset( $entity_timings[ $entity_key ] ) ) {
 					$entity_timings[ $entity_key ] = 0.0;
 				}
 				$entity_timings[ $entity_key ] += $hook_duration;
-			}
-
-			if ( $do_all_results ) {
-				$hook_result = array_merge(
-					wp_array_slice_assoc(
-						(array) $processed_hook,
-						array(
-							'hook_name',
-							'function_name',
-							'source_file',
-							'enqueued_scripts',
-							'enqueued_styles',
-						)
-					),
-					compact( 'file_location', 'hook_duration' )
-				);
-				unset( $hook_result['file_location']['data'] );
-
-				if ( defined( 'SAVEQUERIES' ) && SAVEQUERIES && current_user_can( $this->options['show_queries_cap'] ) ) {
-					$hook_result['queries'] = $processed_hook->queries();
-				}
-
-				$all_results[] = $hook_result;
 			}
 		}
 
@@ -140,38 +107,11 @@ class Plugin {
 			return round( $timing, 4 );
 		};
 
-		arsort( $entity_timings );
-		arsort( $hook_timings );
-
-		echo '<!--';
-		echo "\nTime spent in core, theme, and plugins (in descending order):\n";
 		foreach ( array_map( $round_to_fourth_precision, $entity_timings ) as $entity => $timing ) {
-			printf( " * %.4f: %s\n", floatval( $timing ), esc_html( $entity ) );
-
-			if ( ! headers_sent() ) {
-				$value  = strtok( $entity, ':' );
-				$value .= sprintf( ';desc="%s"', $entity );
-				$value .= sprintf( ';dur=%f', $timing * 1000 );
-				header( sprintf( 'Server-Timing: %s', $value ), false );
-			}
+			$value  = strtok( $entity, ':' );
+			$value .= sprintf( ';desc="%s"', $entity );
+			$value .= sprintf( ';dur=%f', $timing * 1000 );
+			header( sprintf( 'Server-Timing: %s', $value ), false );
 		}
-
-		echo "\nTime spent running hooks (in descending order):\n";
-		foreach ( array_map( $round_to_fourth_precision, $hook_timings ) as $hook => $timing ) {
-			printf( " * %.4f: %s\n", floatval( $timing ), esc_html( $hook ) );
-		}
-
-		printf( "\nSummed hook durations: %.4f\n", floatval( $hooks_duration ) );
-
-		if ( $do_all_results ) {
-			echo "\n\nAll results:\n";
-			echo preg_replace( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				'/--+/',
-				'',
-				wp_json_encode( $all_results, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES )
-			);
-			echo "\n";
-		}
-		echo '-->';
 	}
 }
