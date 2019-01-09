@@ -20,9 +20,29 @@ This plugin takes the ideas from the AMP plugin and generalizes them for use by 
 
 Bonus: This plugin also outputs `Server-Timing` headers to tally how much time was spent on core, themes, and plugins.
 
-= Examples =
+In order to invoke the plugin's behavior, first enable `WP_DEBUG` mode in the `wp-config.php`; also enable `SAVEQUERIES` if you want to include the SQL queries performed (which will be displayed if you are an admin).
 
-Determine annotation stack for a given DOM node. Select a node in DevTools and then paste the following JS code into the console:
+Then access a site frontend with `?sourcery` in the URL. For example, `https://example.com/2019/08/07/foo/?sourcery`. This will then cause the plugin to annotate the page output with Gutenberg-inspired HTML comments to annotate WordPress's execution. You'll see comments like the following (here with some added formatting):
+
+<pre><code>&lt;!-- sourcery:hook
+{
+    "callback": "rel_canonical",
+    "duration": 0.0026450157165527344,
+    "id": 242,
+    "name": "wp_head",
+    "priority": 10,
+    "source": {
+        "file": "/app/public/core-dev/src/wp-includes/link-template.php",
+        "name": "wp-includes",
+        "type": "core"
+    }
+}
+--&gt;
+&lt;link rel="canonical" href="https://example.com/2019/08/07/foo/" /&gt;
+&lt;!-- /sourcery:hook {"id":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} --&gt;
+</code></pre>
+
+With such annotation comments in place, to determine annotation stack for a given DOM node you then select a node in DevTools and then paste the following JS code into the console:
 
 <pre lang="js">
 (() => {
