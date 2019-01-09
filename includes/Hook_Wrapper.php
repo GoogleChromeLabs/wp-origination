@@ -98,7 +98,7 @@ class Hook_Wrapper {
 				$source_file   = $source['file'];
 				$reflection    = $source['reflection'];
 
-				$callback['function'] = function() use ( &$callback, $hook_name, $function, $reflection, $function_name, $source_file ) {
+				$callback['function'] = function() use ( &$callback, $hook_name, $priority, $function, $reflection, $function_name, $source_file ) {
 					// Restore the original callback function after this wrapped callback function is invoked.
 					$callback['function'] = $function;
 
