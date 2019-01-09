@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<ruleset name="Sourcery WordPress Plugin">
+	<description>Ruleset for WordPress plugin.</description>
+
+	<file>./sourcery.php</file>
+	<file>./includes</file>
+
+	<exclude-pattern type="relative">^/vendor/*</exclude-pattern>
+
+	<arg name="colors"/>
+	<arg value="vs"/>
+
+	<rule ref="WordPress">
+		<exclude name="WordPress.VIP.RestrictedFunctions"/>
+		<exclude name="WordPress.Files.FileName"/>
+	</rule>
+
+    <rule ref="PHPCompatibilityWP">
+		<include-pattern>*\.php$</include-pattern>
+	</rule>
+	<config name="testVersion" value="5.6-"/>
+
+	<!-- Selected WordPress Coding Standards tweaks -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="string" value="sourcery"/>
+		</properties>
+	</rule>
+</ruleset>
