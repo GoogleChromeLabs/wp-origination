@@ -380,7 +380,7 @@ class Hook_Inspector {
 				$args,
 				array(
 					'duration' => $hook_inspection->duration(),
-					'caller'   => array(
+					'source'   => array(
 						'file' => $hook_inspection->source_file,
 					),
 				)
@@ -403,8 +403,8 @@ class Hook_Inspector {
 
 			$file_location = $hook_inspection->file_location();
 			if ( $file_location ) {
-				$args['caller']['type'] = $file_location['type'];
-				$args['caller']['name'] = $file_location['name'];
+				$args['source']['type'] = $file_location['type'];
+				$args['source']['name'] = $file_location['name'];
 			}
 		}
 

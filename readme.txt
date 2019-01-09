@@ -20,6 +20,59 @@ This plugin takes the ideas from the AMP plugin and generalizes them for use by 
 
 Bonus: This plugin also outputs `Server-Timing` headers to tally how much time was spent on core, themes, and plugins.
 
+= Examples =
+
+Determine annotation stack for a given DOM node:
+
+<pre lang="js">
+(() => {
+    const openCommentPrefix = ' sourcery:hook ';
+    const closeCommentPrefix = ' /sourcery:hook ';
+    const expression = `preceding::comment()[ starts-with( ., "${openCommentPrefix}" ) or starts-with( ., "${closeCommentPrefix}" ) ]`;
+    const result = document.evaluate( expression, node, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
+    const annotationStack = [];
+    for ( let i = 0; i < result.snapshotLength; i++ ) {
+        const commentText = result.snapshotItem( i ).nodeValue;
+        const isOpen = commentText.startsWith( openCommentPrefix );
+        const data = JSON.parse( commentText.substr( isOpen ? openCommentPrefix.length : closeCommentPrefix.length ) );
+        if ( commentText.startsWith( openCommentPrefix ) ) {
+            annotationStack.push( data );
+        } else {
+            const closed = annotationStack.pop();
+            if ( data.id !== closed.id ) {
+                throw new Error( 'Unexpected closing annotation comment: ' + commentText );
+            }
+        }
+    }
+    return annotationStack;
+})( $0 );
+</pre>
+
+Determine the amount of time spent by core, theme, and plugins:
+
+<pre lang="js">
+(() => {
+    const durations = {};
+    const openCommentPrefix = ' sourcery:hook ';
+    const expression = `comment()[ starts-with( ., "${openCommentPrefix}" ) ]`;
+    const result = document.evaluate( expression, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
+
+    for ( let i = 0; i < result.snapshotLength; i++ ) {
+        const commentText = result.snapshotItem( i ).nodeValue;
+        const data = JSON.parse( commentText.substr( openCommentPrefix.length ) );
+
+        const key = data.caller.type + ':' + data.caller.name;
+        if ( ! ( key in durations ) ) {
+            durations[ key ] = 0.0;
+        }
+        durations[ key ] += data.duration;
+
+    }
+    return durations;
+})();
+</pre>
+
+
 == Screenshots ==
 
 1. ...
