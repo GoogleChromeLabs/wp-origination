@@ -12,6 +12,15 @@ namespace Sourcery;
  */
 class Hook_Inspector {
 
+	const ANNOTATION_TAG = 'sourcery:hook';
+
+	/**
+	 * Callback for whether queries can be displayed.
+	 *
+	 * @var callback
+	 */
+	public $can_show_queries_callback = '__return_true';
+
 	/**
 	 * Hook stack.
 	 *
@@ -99,10 +108,16 @@ class Hook_Inspector {
 	/**
 	 * Hook_Inspector constructor.
 	 *
+	 * @param array $options Options.
 	 * @global \wpdb $wpdb
 	 */
-	public function __construct() {
+	public function __construct( $options ) {
 		global $wpdb;
+
+		foreach ( $options as $key => $value ) {
+			$this->$key = $value;
+		}
+
 		$this->wpdb = $wpdb;
 
 		$this->plugins_directory    = trailingslashit( wp_normalize_path( WP_PLUGIN_DIR ) );
@@ -200,23 +215,14 @@ class Hook_Inspector {
 	}
 
 	/**
-	 * Determine whether a source comment should be printed.
+	 * Get hook placeholder annotation pattern.
 	 *
-	 * @param Hook_Inspection $hook_inspection Hook inspection.
-	 * @return bool Whether to add the hook source comment.
+	 * Pattern assumes that regex delimiter will be '#'.
+	 *
+	 * @return string Pattern.
 	 */
-	public function should_print_hook_source_comment( Hook_Inspection $hook_inspection ) {
-		// Only do output buffering during template rendering, not before (template_redirect) or after (shutdown).
-		if ( ! did_action( 'template_redirect' ) || doing_action( 'template_redirect' ) || doing_action( 'shutdown' ) ) {
-			return false;
-		}
-
-		// Only offer to buffer output for actions. Filters should not be doing any output, so they are irrelevant.
-		if ( ! $this->is_action( $hook_inspection ) ) {
-			return false;
-		}
-
-		return true;
+	public function get_hook_placeholder_annotation_pattern() {
+		return '<!-- (?P<closing>/)?' . static::ANNOTATION_TAG . ' (?P<id>\d+) -->';
 	}
 
 	/**
@@ -237,8 +243,8 @@ class Hook_Inspector {
 
 		$this->hook_stack[] = $hook_inspection;
 
-		if ( $this->should_print_hook_source_comment( $hook_inspection ) ) {
-			$this->print_before_action_hook( $hook_inspection );
+		if ( $this->is_action( $hook_inspection ) ) {
+			$this->print_before_hook_annotation( $hook_inspection );
 		}
 	}
 
@@ -257,29 +263,163 @@ class Hook_Inspector {
 
 		$this->identify_hook_queries( $hook_inspection );
 
-		if ( $this->should_print_hook_source_comment( $hook_inspection ) ) {
-			$this->print_after_action_hook( $hook_inspection );
+		if ( $this->is_action( $hook_inspection ) ) {
+			$this->print_after_hook_annotation( $hook_inspection );
 		}
 
 		$this->processed_hooks[ $hook_inspection->id ] = $hook_inspection;
 	}
 
 	/**
-	 * Print comment before an action hook's invoked callback.
+	 * Print hook annotation placeholder before an action hook's invoked callback.
 	 *
-	 * @param Hook_Inspection $hook_inspection
+	 * @param Hook_Inspection $hook_inspection Hook inspection.
 	 */
-	public function print_before_action_hook( Hook_Inspection $hook_inspection ) {
-		printf( '<!--hook:%s(%s)-->', $hook_inspection->hook_name, $hook_inspection->function_name );
+	public function print_before_hook_annotation( Hook_Inspection $hook_inspection ) {
+		printf( '<!-- %s %d -->', static::ANNOTATION_TAG, $hook_inspection->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
-	 * Print comment after an action hook's invoked callback.
+	 * Print hook annotation placeholder after an action hook's invoked callback.
 	 *
-	 * @param Hook_Inspection $hook_inspection
+	 * @param Hook_Inspection $hook_inspection Hook inspection.
 	 */
-	public function print_after_action_hook( Hook_Inspection $hook_inspection ) {
-		printf( '<!--/hook:%s(%s)-->', $hook_inspection->hook_name, $hook_inspection->function_name );
+	public function print_after_hook_annotation( Hook_Inspection $hook_inspection ) {
+		printf( '<!-- /%s %d -->', static::ANNOTATION_TAG, $hook_inspection->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+
+	/**
+	 * Finalize annotations.
+	 *
+	 * Given this HTML in the buffer:
+	 *
+	 *     <html data-first="B<A" <!-- hook 128 --> data-hello=world <!-- /hook 128--> data-second="A>B">.
+	 *
+	 * The returned string should be:
+	 *
+	 *     <html data-first="B<A"  data-hello=world  data-second="A>B">.
+	 *
+	 * @param string $buffer Buffer.
+	 * @return string Processed buffer.
+	 */
+	public function finalize_hook_annotations( $buffer ) {
+		$hook_placeholder_annotation_pattern = static::get_hook_placeholder_annotation_pattern();
+
+		// Match all start tags that have attributes.
+		$pattern = join(
+			'',
+			array(
+				'#<',
+				'(?P<name>[a-zA-Z0-9_\-]+)',
+				'(?P<attrs>\s',
+				'(?:' . $hook_placeholder_annotation_pattern . '|[^<>"\']+|"[^"]*+"|\'[^\']*+\')*+', // Attribute tokens, plus hook annotations.
+				')>#s',
+			)
+		);
+
+		$buffer = preg_replace_callback(
+			$pattern,
+			array( $this, 'purge_hook_annotations_in_start_tag' ),
+			$buffer
+		);
+
+		$buffer = preg_replace_callback(
+			'#' . $hook_placeholder_annotation_pattern . '#',
+			array( $this, 'hydrate_hook_annotation' ),
+			$buffer
+		);
+
+		return $buffer;
+	}
+
+	/**
+	 * Purge hook annotations in start tag.
+	 *
+	 * @param array $start_tag_matches Start tag matches.
+	 * @return string Start tag.
+	 */
+	public function purge_hook_annotations_in_start_tag( $start_tag_matches ) {
+		$attributes = preg_replace_callback(
+			'#' . static::get_hook_placeholder_annotation_pattern() . '#',
+			function( $hook_matches ) {
+				$id = intval( $hook_matches['id'] );
+				if ( isset( $this->processed_hooks[ $id ] ) ) {
+					$this->processed_hooks[ $id ]->intra_tag = true;
+				}
+				return ''; // Purge since an HTML comment cannot occur in a start tag.
+			},
+			$start_tag_matches['attrs']
+		);
+
+		return '<' . $start_tag_matches['name'] . $attributes . '>';
+	}
+
+	/**
+	 * Hydrate hook annotation comments with their invocation details.
+	 *
+	 * @param array $matches Matches.
+	 * @return string Hydrated hook annotation.
+	 */
+	public function hydrate_hook_annotation( $matches ) {
+		$id = intval( $matches['id'] );
+		if ( ! isset( $this->processed_hooks[ $id ] ) ) {
+			return '';
+		}
+		$hook_inspection = $this->processed_hooks[ $id ];
+
+		$is_closing = ! empty( $matches['closing'] );
+
+		$args = array(
+			'id'       => $hook_inspection->id,
+			'name'     => $hook_inspection->hook_name,
+			'priority' => $hook_inspection->priority,
+			'callback' => $hook_inspection->function_name,
+		);
+		if ( ! $is_closing ) {
+			$args = array_merge(
+				$args,
+				array(
+					'duration' => $hook_inspection->duration(),
+					'caller'   => array(
+						'file' => $hook_inspection->source_file,
+					),
+				)
+			);
+
+			// Include queries if allowed.
+			if ( ! empty( $this->can_show_queries_callback ) && call_user_func( $this->can_show_queries_callback ) ) {
+				$queries = $hook_inspection->queries();
+				if ( ! empty( $queries ) ) {
+					$args['queries'] = $queries;
+				}
+			}
+
+			if ( ! empty( $hook_inspection->enqueued_scripts ) ) {
+				$args['enqueued_scripts'] = $hook_inspection->enqueued_scripts;
+			}
+			if ( ! empty( $hook_inspection->enqueued_styles ) ) {
+				$args['enqueued_styles'] = $hook_inspection->enqueued_styles;
+			}
+
+			$file_location = $hook_inspection->file_location();
+			if ( $file_location ) {
+				$args['caller']['type'] = $file_location['type'];
+				$args['caller']['name'] = $file_location['name'];
+			}
+		}
+
+		// Escape double-hyphens in comment content.
+		$json = str_replace(
+			'--',
+			'\u2D\u2D',
+			wp_json_encode( $args, JSON_UNESCAPED_SLASHES )
+		);
+
+		return sprintf(
+			'<!-- %s' . static::ANNOTATION_TAG . ' %s -->',
+			$is_closing ? '/' : '',
+			$json
+		);
 	}
 
 	/**

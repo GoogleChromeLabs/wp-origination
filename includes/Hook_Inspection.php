@@ -106,6 +106,14 @@ class Hook_Inspection {
 	public $end_time;
 
 	/**
+	 * Whether the hook invocation happened inside of a start tag (e.g. in its attributes).
+	 *
+	 * @see Hook_Inspector::purge_hook_annotations_in_start_tag()
+	 * @var bool
+	 */
+	public $intra_tag = false;
+
+	/**
 	 * Number of queries before function called.
 	 *
 	 * @var int
@@ -227,12 +235,11 @@ class Hook_Inspection {
 	/**
 	 * Get the duration of the hook callback invocation.
 	 *
-	 * @throws \Exception If end_time was not set.
 	 * @return float Duration.
 	 */
 	public function duration() {
 		if ( ! isset( $this->end_time ) ) {
-			throw new \Exception( 'Not finalized.' );
+			return -1;
 		}
 		return $this->end_time - $this->start_time;
 	}

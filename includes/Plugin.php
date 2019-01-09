@@ -53,7 +53,13 @@ class Plugin {
 	 */
 	public function init() {
 
-		$this->hook_inspector = new Hook_Inspector();
+		$this->hook_inspector = new Hook_Inspector(
+			array(
+				'can_show_queries_callback' => function() {
+					return current_user_can( $this->options['show_queries_cap'] );
+				},
+			)
+		);
 		$this->hook_wrapper   = new Hook_Wrapper(
 			array( $this->hook_inspector, 'before_hook' ),
 			array( $this->hook_inspector, 'after_hook' )

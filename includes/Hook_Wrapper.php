@@ -115,7 +115,7 @@ class Hook_Wrapper {
 					if ( $this->after_callback ) {
 						call_user_func(
 							$this->after_callback,
-							array_merge( $context, compact( 'before_return' ) )
+							array_merge( $context, compact( 'return', 'before_return' ) )
 						);
 					}
 
