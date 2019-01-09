@@ -21,6 +21,9 @@ module.exports = function( grunt ) {
 				stdout: true,
 				stderr: true
 			},
+			readme: {
+				command: 'php ./vendor/xwp/wp-dev-lib/generate-markdown-readme' // Generate the readme.md.
+			},
 			create_build_zip: {
 				command: 'if [ ! -e build ]; then echo "Run grunt build first."; exit 1; fi; if [ -e sourcery.zip ]; then rm sourcery.zip; fi; cd build; zip -r ../sourcery.zip .; cd ..; echo; echo "ZIP of build: $(pwd)/sourcery.zip"'
 			}
@@ -47,6 +50,10 @@ module.exports = function( grunt ) {
 	// Register tasks.
 	grunt.registerTask( 'default', [
 		'build'
+	] );
+
+	grunt.registerTask( 'generate-readme-md', [
+		'shell:readme'
 	] );
 
 	grunt.registerTask( 'build', function() {
@@ -104,6 +111,8 @@ module.exports = function( grunt ) {
 					}
 				}
 			} );
+
+			grunt.task.run( 'generate-readme-md' );
 			grunt.task.run( 'copy' );
 
 			done();
