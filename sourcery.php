@@ -23,12 +23,10 @@ require_once __DIR__ . '/includes/Hook_Wrapper.php';
 global $sourcery_plugin;
 $sourcery_plugin = new Plugin(
 	array(
-		'profile_hooks'   => isset( $_GET['sourcery_profile_hooks'] ),
-		'output_buffer'   => isset( $_GET['sourcery_output_buffer'] ),
 		// @todo 'annotate_output' => isset( $_GET['sourcery_annotate_output'] ),
 	)
 );
 
-if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+if ( defined( 'WP_DEBUG' ) && WP_DEBUG && isset( $_GET['sourcery'] ) ) {
 	$sourcery_plugin->init();
 }

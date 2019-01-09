@@ -18,8 +18,6 @@ class Plugin {
 	 * @var array
 	 */
 	public $options = array(
-		'output_buffer'     => false,
-		'profile_hooks'     => false,
 		'show_queries_cap'  => 'manage_options',
 		'show_all_data_cap' => 'manage_options',
 	);
@@ -55,29 +53,24 @@ class Plugin {
 	 */
 	public function init() {
 
-		if ( $this->options['output_buffer'] ) {
-			// Output buffer so that Server-Timing headers can be sent, and prevent plugins from flushing it.
-			ob_start(
-				function ( $buffer ) {
-					return $buffer;
-				},
-				null,
-				0
-			);
+		$this->hook_inspector = new Hook_Inspector();
+		$this->hook_wrapper   = new Hook_Wrapper(
+			array( $this->hook_inspector, 'before_hook' ),
+			array( $this->hook_inspector, 'after_hook' )
+		);
 
-			// Prevent PHP Notice: ob_end_flush(): failed to send buffer.
-			remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
-		}
+		// Output buffer so that Server-Timing headers can be sent, and prevent plugins from flushing it.
+		ob_start(
+			array( $this->hook_inspector, 'finalize_hook_annotations' ),
+			null,
+			0
+		);
 
-		if ( $this->options['profile_hooks'] ) {
-			$this->hook_inspector = new Hook_Inspector();
-			$this->hook_wrapper   = new Hook_Wrapper(
-				array( $this->hook_inspector, 'before_hook' ),
-				array( $this->hook_inspector, 'after_hook' )
-			);
-			$this->hook_wrapper->add_all_hook();
-			add_action( 'shutdown', array( $this, 'output_profiling_info' ) );
-		}
+		// Prevent PHP Notice: ob_end_flush(): failed to send buffer.
+		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
+
+		$this->hook_wrapper->add_all_hook();
+		add_action( 'shutdown', array( $this, 'output_profiling_info' ) );
 	}
 
 	/**
