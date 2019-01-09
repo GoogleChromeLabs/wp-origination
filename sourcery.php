@@ -12,7 +12,7 @@
  * Plugin Name: Sourcery
  * Plugin URI:  https://github.com/westonruter/wp-sourcery
  * Description: Determine the source of where things come from in WordPress whether slow code, inefficient queries, or bad markup.
- * Version:     0.1.0
+ * Version:     0.1.0-alpha
  * Author:      Weston Ruter
  * Author URI:  https://weston.ruter.net/
  * License:     GNU General Public License v2 (or later)

@@ -1,0 +1,20 @@
+{
+ "name": "wp-sourcery",
+ "title": "WP Sourcery",
+ "homepage": "https://github.com/westonruter/wp-sourcery",
+ "repository": {
+  "type": "git",
+  "url": "https://github.com/westonruter/wp-sourcery.git"
+ },
+ "license": "GPL-2.0-or-later",
+ "private": true,
+ "devDependencies": {
+  "grunt": "^1.0.2",
+  "grunt-contrib-clean": "^1.1.0",
+  "grunt-contrib-copy": "^1.0.0",
+  "grunt-shell": "^2.1.0"
+ },
+ "scripts": {
+  "build": "grunt build && grunt create-build-zip"
+ }
+}
