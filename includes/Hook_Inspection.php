@@ -10,7 +10,7 @@ namespace Google\WP_Sourcery;
 /**
  * Class Hook_Inspection.
  *
- * @todo Rename to Hook_Invocation?
+ * @todo Rename to Hook_Invocation? Or rather Invocation_Inspection? Subclass for hooks, shortcodes, widgets, embeds, and blocks.
  */
 class Hook_Inspection {
 
@@ -38,6 +38,7 @@ class Hook_Inspection {
 	/**
 	 * Hook name.
 	 *
+	 * @todo This should be generalized for shortcode tag, block name, etc.
 	 * @var string
 	 */
 	public $hook_name;
@@ -80,6 +81,7 @@ class Hook_Inspection {
 	/**
 	 * Priority.
 	 *
+	 * @todo This is only relevant to hooks.
 	 * @var int
 	 */
 	public $priority;
@@ -87,6 +89,7 @@ class Hook_Inspection {
 	/**
 	 * Args passed when the hook was done/applied.
 	 *
+	 * @todo Consider not capturing this since can will incur a lot of memory.
 	 * @var array
 	 */
 	public $hook_args;
@@ -132,6 +135,7 @@ class Hook_Inspection {
 	/**
 	 * Scripts enqueued during invocation of hook callback.
 	 *
+	 * @todo Put into a multi-dimensional enqueued_dependencies array?
 	 * @var string[]
 	 */
 	public $enqueued_scripts;
@@ -148,6 +152,7 @@ class Hook_Inspection {
 	/**
 	 * Styles enqueued during invocation of hook callback.
 	 *
+	 * @todo Before finalized, this could return the current array_diff( wp_styles()->queue, $before_styles_queue ) or call identify_enqueued_styles? Would not be final, however.
 	 * @var string[]
 	 */
 	public $enqueued_styles;
@@ -173,14 +178,17 @@ class Hook_Inspection {
 		$this->inspector  = $inspector;
 		$this->start_time = microtime( true );
 
-		$this->before_num_queries   = $this->inspector->get_wpdb()->num_queries;
-		$this->before_scripts_queue = $this->inspector->get_scripts_queue();
-		$this->before_styles_queue  = $this->inspector->get_styles_queue();
+		$this->before_num_queries = $this->inspector->get_wpdb()->num_queries;
+
+		// @todo Better to have some multi-dimensional array structure here?
+		$this->before_scripts_queue = $this->inspector->get_dependency_queue( 'wp_scripts' );
+		$this->before_styles_queue  = $this->inspector->get_dependency_queue( 'wp_styles' );
 	}
 
 	/**
 	 * Returns whether it is an action hook.
 	 *
+	 * @todo Only relevant if the type is hook. Should perhaps be moved to a Hook_Invocation subclass.
 	 * @return bool Whether an action hook.
 	 */
 	public function is_action() {
@@ -199,6 +207,7 @@ class Hook_Inspection {
 	/**
 	 * Get the script handles enqueued before the hook callback was invoked.
 	 *
+	 * @todo Combine into get_before_dependencies_queue?
 	 * @return string[] Script handles.
 	 */
 	public function get_before_scripts_queue() {

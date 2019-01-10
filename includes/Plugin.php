@@ -152,6 +152,41 @@ class Plugin {
 		// Prevent PHP Notice: ob_end_flush(): failed to send buffer.
 		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
 
+		add_filter(
+			'script_loader_tag',
+			function( $tag, $handle = null ) {
+				if ( ! $handle ) {
+					return $tag;
+				}
+
+				$function_names = wp_list_pluck(
+					$this->hook_inspector->get_dependency_enqueueing_invocations( 'wp_scripts', $handle ),
+					'function_name'
+				);
+
+				return "<!-- SCRIPT:$handle:(" . implode( ',', $function_names ) . ") -->$tag<!-- /SCRIPT:$handle -->";
+			},
+			10,
+			2
+		);
+		add_filter(
+			'style_loader_tag',
+			function( $tag, $handle = null ) {
+				if ( ! $handle ) {
+					return $tag;
+				}
+
+				$function_names = wp_list_pluck(
+					$this->hook_inspector->get_dependency_enqueueing_invocations( 'wp_styles', $handle ),
+					'function_name'
+				);
+
+				return "<!-- STYLE:$handle:(" . implode( ',', $function_names ) . ") -->$tag<!-- /STYLE:$handle -->";
+			},
+			10,
+			2
+		);
+
 		$this->hook_wrapper->add_all_hook();
 
 		add_action( 'shutdown', array( $this, 'send_server_timing_headers' ) );
