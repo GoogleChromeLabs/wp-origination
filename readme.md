@@ -48,7 +48,7 @@ Then access a site frontend with `?sourcery` in the URL. For example, `https://e
 With such annotation comments in place, to determine annotation stack for a given DOM node you then select a node in DevTools and then paste the following JS code into the console:
 
 ```js
-(() => {
+(( node ) => {
     const openCommentPrefix = ' sourcery:hook ';
     const closeCommentPrefix = ' /sourcery:hook ';
     const expression = `preceding::comment()[ starts-with( ., "${openCommentPrefix}" ) or starts-with( ., "${closeCommentPrefix}" ) ]`;
@@ -84,7 +84,7 @@ While this is also sent via `Server-Timing` headers, you can determine the amoun
         const commentText = result.snapshotItem( i ).nodeValue;
         const data = JSON.parse( commentText.substr( openCommentPrefix.length ) );
 
-        const key = data.caller.type + ':' + data.caller.name;
+        const key = data.source.type + ':' + data.source.name;
         if ( ! ( key in durations ) ) {
             durations[ key ] = 0.0;
         }
