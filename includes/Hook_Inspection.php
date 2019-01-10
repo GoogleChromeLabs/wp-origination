@@ -289,6 +289,6 @@ class Hook_Inspection {
 	 * }
 	 */
 	public function file_location() {
-		return $this->inspector->identify_file_location( $this->source_file );
+		return $this->inspector->plugin->file_locator->identify( $this->source_file );
 	}
 }

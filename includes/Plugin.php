@@ -38,6 +38,13 @@ class Plugin {
 	public $show_queries_cap = 'manage_options';
 
 	/**
+	 * Instance of File_Locator.
+	 *
+	 * @var File_Locator
+	 */
+	public $file_locator;
+
+	/**
 	 * Instance of Hook_Inspector.
 	 *
 	 * @var Hook_Inspector
@@ -120,7 +127,10 @@ class Plugin {
 			return;
 		}
 
+		$this->file_locator = new File_Locator();
+
 		$this->hook_inspector = new Hook_Inspector(
+			$this,
 			array(
 				'can_show_queries_callback' => function() {
 					return current_user_can( $this->show_queries_cap );
