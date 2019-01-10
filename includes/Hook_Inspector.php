@@ -547,10 +547,16 @@ class Hook_Inspector {
 
 		if ( preg_match( ':' . preg_quote( $this->plugins_directory, ':' ) . $slug_pattern . '(?P<rel_path>/.+$)?:s', $file, $matches ) ) {
 			$plugin_dir = $this->plugins_directory . '/' . $matches['root_slug'] . '/';
-			$data       = get_plugin_data( $file );
 
 			// Fallback slug is the path segment under the plugins directory.
 			$slug = $matches['root_slug'];
+
+			$data = null;
+
+			// Try getting the plugin data from the file itself if it is in a plugin directory.
+			if ( empty( $matches['rel_path'] ) || 0 === substr_count( trim( $matches['rel_path'], '/' ), '/' ) ) {
+				$data = get_plugin_data( $file );
+			}
 
 			// If the file is itself a plugin file, then the slug includes the rel_path under the root_slug.
 			if ( ! empty( $data['Name'] ) && ! empty( $matches['rel_path'] ) ) {
