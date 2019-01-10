@@ -42,7 +42,7 @@ Then access a site frontend with `?sourcery` in the URL. For example, `https://e
 &lt;!-- /sourcery:hook {"id":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} --&gt;
 </code></pre>
 
-With such annotation comments in place, to determine annotation stack for a given DOM node you then select a node in DevTools and then paste the following JS code into the console:
+With such annotation comments in place, to determine annotation stack for a given DOM node you then select a node in DevTools and then paste the following JS code into the console (see second secreenshot):
 
 <pre lang="js">
 (( node ) => {
@@ -95,7 +95,8 @@ While this is also sent via `Server-Timing` headers, you can determine the amoun
 
 == Screenshots ==
 
-1. ...
+1. Server-Timing headers are sent when sourcery is running.
+2. Determine where markup in the page comes from.
 
 == Changelog ==
 

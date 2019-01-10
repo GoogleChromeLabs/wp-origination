@@ -1,0 +1,3 @@
+ASSETS_DIR=wp-assets
+PROJECT_SLUG=sourcery
+SKIP_ECHO_PATHS_SCOPE=1
