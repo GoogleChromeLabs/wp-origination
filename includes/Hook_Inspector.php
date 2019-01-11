@@ -16,7 +16,7 @@ use \WP_Dependencies, \WP_Styles, \WP_Scripts, \wpdb;
  */
 class Hook_Inspector {
 
-	const ANNOTATION_TAG = 'sourcery:hook';
+	const ANNOTATION_TAG = 'sourcery';
 
 	/**
 	 * Plugin instance.
@@ -153,6 +153,7 @@ class Hook_Inspector {
 	public function get_dependency_enqueueing_invocations( $type, $handle ) {
 		$enqueueing_invocations = array();
 		foreach ( $this->processed_hooks as $invocation ) {
+			// @todo This should be be improved, perhaps a method that we can pass $type.
 			if ( 'wp_scripts' === $type ) {
 				$enqueued_handles = $invocation->enqueued_scripts;
 			} elseif ( 'wp_styles' === $type ) {
@@ -173,6 +174,7 @@ class Hook_Inspector {
 				}
 			}
 			if ( $is_enqueued ) {
+				// @todo In reality we can just break here because we will only detect the first invocation that enqueues a dependency.
 				$enqueueing_invocations[] = $invocation;
 			}
 		}
@@ -375,17 +377,18 @@ class Hook_Inspector {
 		}
 		$hook_inspection = $this->processed_hooks[ $id ];
 
-		$is_closing = ! empty( $matches['closing'] );
+		$closing = ! empty( $matches['closing'] );
 
-		$args = array(
+		$data = array(
 			'id'       => $hook_inspection->id,
+			'type'     => $hook_inspection->is_action() ? 'action' : 'filter',
 			'name'     => $hook_inspection->hook_name,
 			'priority' => $hook_inspection->priority,
 			'callback' => $hook_inspection->function_name,
 		);
-		if ( ! $is_closing ) {
-			$args = array_merge(
-				$args,
+		if ( ! $closing ) {
+			$data = array_merge(
+				$data,
 				array(
 					'duration' => $hook_inspection->duration(),
 					'source'   => array(
@@ -398,34 +401,46 @@ class Hook_Inspector {
 			if ( ! empty( $this->can_show_queries_callback ) && call_user_func( $this->can_show_queries_callback ) ) {
 				$queries = $hook_inspection->queries();
 				if ( ! empty( $queries ) ) {
-					$args['queries'] = $queries;
+					$data['queries'] = $queries;
 				}
 			}
 
 			if ( ! empty( $hook_inspection->enqueued_scripts ) ) {
-				$args['enqueued_scripts'] = $hook_inspection->enqueued_scripts;
+				$data['enqueued_scripts'] = $hook_inspection->enqueued_scripts;
 			}
 			if ( ! empty( $hook_inspection->enqueued_styles ) ) {
-				$args['enqueued_styles'] = $hook_inspection->enqueued_styles;
+				$data['enqueued_styles'] = $hook_inspection->enqueued_styles;
 			}
 
 			$file_location = $hook_inspection->file_location();
 			if ( $file_location ) {
-				$args['source']['type'] = $file_location['type'];
-				$args['source']['name'] = $file_location['name'];
+				$data['source']['type'] = $file_location['type'];
+				$data['source']['name'] = $file_location['name'];
 			}
 		}
+
+		return $this->get_annotation_comment( $data, $closing );
+	}
+
+	/**
+	 * Get annotation comment.
+	 *
+	 * @param array $data    Data.
+	 * @param bool  $closing Whether the comment is closing.
+	 * @return string HTML comment.
+	 */
+	public function get_annotation_comment( array $data, $closing = false ) {
 
 		// Escape double-hyphens in comment content.
 		$json = str_replace(
 			'--',
 			'\u2D\u2D',
-			wp_json_encode( $args, JSON_UNESCAPED_SLASHES )
+			wp_json_encode( $data, JSON_UNESCAPED_SLASHES )
 		);
 
 		return sprintf(
 			'<!-- %s' . static::ANNOTATION_TAG . ' %s -->',
-			$is_closing ? '/' : '',
+			$closing ? '/' : '',
 			$json
 		);
 	}

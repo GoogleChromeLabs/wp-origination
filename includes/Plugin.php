@@ -159,14 +159,26 @@ class Plugin {
 					return $tag;
 				}
 
-				$function_names = wp_list_pluck(
-					$this->hook_inspector->get_dependency_enqueueing_invocations( 'wp_scripts', $handle ),
-					'function_name'
+				$invocations = $this->hook_inspector->get_dependency_enqueueing_invocations( 'wp_scripts', $handle );
+				if ( empty( $invocations ) ) {
+					return $tag;
+				}
+
+				$data = array(
+					'type'        => 'enqueued_script',
+					'invocations' => wp_list_pluck( $invocations, 'id' ),
 				);
 
-				return "<!-- SCRIPT:$handle:(" . implode( ',', $function_names ) . ") -->$tag<!-- /SCRIPT:$handle -->";
+				return implode(
+					'',
+					array(
+						$this->hook_inspector->get_annotation_comment( $data, false ),
+						$tag,
+						$this->hook_inspector->get_annotation_comment( $data, true ),
+					)
+				);
 			},
-			10,
+			10, // @todo Consider a higher priority.
 			2
 		);
 		add_filter(
@@ -176,12 +188,24 @@ class Plugin {
 					return $tag;
 				}
 
-				$function_names = wp_list_pluck(
-					$this->hook_inspector->get_dependency_enqueueing_invocations( 'wp_styles', $handle ),
-					'function_name'
+				$invocations = $this->hook_inspector->get_dependency_enqueueing_invocations( 'wp_styles', $handle );
+				if ( empty( $invocations ) ) {
+					return $tag;
+				}
+
+				$data = array(
+					'type'        => 'enqueued_style',
+					'invocations' => wp_list_pluck( $invocations, 'id' ),
 				);
 
-				return "<!-- STYLE:$handle:(" . implode( ',', $function_names ) . ") -->$tag<!-- /STYLE:$handle -->";
+				return implode(
+					'',
+					array(
+						$this->hook_inspector->get_annotation_comment( $data, false ),
+						$tag,
+						$this->hook_inspector->get_annotation_comment( $data, true ),
+					)
+				);
 			},
 			10,
 			2

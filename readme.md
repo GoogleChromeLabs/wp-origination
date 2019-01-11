@@ -27,7 +27,7 @@ In order to invoke the plugin's behavior, first enable `WP_DEBUG` mode in the `w
 
 Then access a site frontend with `?sourcery` in the URL. For example, `https://example.com/2019/08/07/foo/?sourcery`. This will then cause the plugin to annotate the page output with Gutenberg-inspired HTML comments to annotate WordPress's execution. You'll see comments like the following (here with some added formatting):
 
-<pre><code>&lt;!-- sourcery:hook
+<pre><code>&lt;!-- sourcery
 {
     "callback": "rel_canonical",
     "duration": 0.0026450157165527344,
@@ -42,28 +42,63 @@ Then access a site frontend with `?sourcery` in the URL. For example, `https://e
 }
 --&gt;
 &lt;link rel="canonical" href="https://example.com/2019/08/07/foo/" /&gt;
-&lt;!-- /sourcery:hook {"id":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} --&gt;
+&lt;!-- /sourcery {"id":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} --&gt;
 </code></pre>
 
 With such annotation comments in place, to determine annotation stack for a given DOM node you then select a node in DevTools and then paste the following JS code into the console (see second secreenshot):
 
 ```js
 (( node ) => {
-    const openCommentPrefix = ' sourcery:hook ';
-    const closeCommentPrefix = ' /sourcery:hook ';
-    const expression = `preceding::comment()[ starts-with( ., "${openCommentPrefix}" ) or starts-with( ., "${closeCommentPrefix}" ) ]`;
-    const result = document.evaluate( expression, node, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
+    const openCommentPrefix = ' sourcery ';
+    const closeCommentPrefix = ' /sourcery ';
+
+    const invocations = {};
+    const expression = `
+        preceding::comment()[
+            starts-with( ., "${openCommentPrefix}" )
+            or
+            ( starts-with( ., "[" ) and contains( ., "<!--${openCommentPrefix}" ) )
+            or
+            starts-with( ., "${closeCommentPrefix}" )
+        ]`;
+    const xPathResult = document.evaluate( expression, node, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
     const annotationStack = [];
-    for ( let i = 0; i < result.snapshotLength; i++ ) {
-        const commentText = result.snapshotItem( i ).nodeValue;
+    for ( let i = 0; i < xPathResult.snapshotLength; i++ ) {
+        let commentText = xPathResult.snapshotItem( i ).nodeValue;
+
+        // Account for IE conditional comments which result in comment nodes that look like:
+        // [if lt IE 9]><!-- sourcery {...
+        const conditionalCommentOffset = commentText.indexOf( `<!--${openCommentPrefix}` );
+        if ( conditionalCommentOffset !== -1 ) {
+            commentText = commentText.substr( conditionalCommentOffset + 4 );
+        }
+
         const isOpen = commentText.startsWith( openCommentPrefix );
         const data = JSON.parse( commentText.substr( isOpen ? openCommentPrefix.length : closeCommentPrefix.length ) );
-        if ( commentText.startsWith( openCommentPrefix ) ) {
-            annotationStack.push( data );
+        if ( isOpen ) {
+            if ( data.id ) {
+                invocations[ data.id ] = data;
+            }
+            if ( data.invocations ) {
+                for ( const id of data.invocations ) {
+                    annotationStack.push( invocations[ id ] );
+                }
+            } else {
+                annotationStack.push( data );
+            }
         } else {
-            const closed = annotationStack.pop();
-            if ( data.id !== closed.id ) {
-                throw new Error( 'Unexpected closing annotation comment: ' + commentText );
+            if ( data.invocations ) {
+                for ( const id of [...data.invocations].reverse() ) {
+                    const popped = annotationStack.pop();
+                    if ( id !== popped.id ) {
+                        throw new Error( 'Unexpected closing annotation comment for ref: ' + commentText );
+                    }
+                }
+            } else {
+                const popped = annotationStack.pop();
+                if ( data.id !== popped.id ) {
+                    throw new Error( 'Unexpected closing annotation comment: ' + commentText );
+                }
             }
         }
     }
@@ -76,7 +111,7 @@ While this is also sent via `Server-Timing` headers, you can determine the amoun
 ```js
 (() => {
     const durations = {};
-    const openCommentPrefix = ' sourcery:hook ';
+    const openCommentPrefix = ' sourcery ';
     const expression = `comment()[ starts-with( ., "${openCommentPrefix}" ) ]`;
     const result = document.evaluate( expression, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
 
