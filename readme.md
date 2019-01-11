@@ -132,13 +132,17 @@ While this is also sent via `Server-Timing` headers, you can determine the amoun
 
 ## Screenshots ##
 
-### Server-Timing headers are sent when sourcery is running.
+### Server-Timing headers are sent when running.
 
-![Server-Timing headers are sent when sourcery is running.](wp-assets/screenshot-1.png)
+![Server-Timing headers are sent when running.](wp-assets/screenshot-1.png)
 
 ### Determine where markup in the page comes from.
 
 ![Determine where markup in the page comes from.](wp-assets/screenshot-2.png)
+
+### Identifying everything that depends on jQuery.
+
+![Identifying everything that depends on jQuery.](wp-assets/screenshot-3.png)
 
 ## Changelog ##
 

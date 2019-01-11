@@ -130,8 +130,9 @@ While this is also sent via `Server-Timing` headers, you can determine the amoun
 
 == Screenshots ==
 
-1. Server-Timing headers are sent when sourcery is running.
+1. Server-Timing headers are sent when running.
 2. Determine where markup in the page comes from.
+3. Identifying everything that depends on jQuery.
 
 == Changelog ==
 
