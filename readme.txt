@@ -42,64 +42,15 @@ Then access a site frontend with `?sourcery` in the URL. For example, `https://e
 &lt;!-- /sourcery {"id":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} --&gt;
 </code></pre>
 
-With such annotation comments in place, to determine annotation stack for a given DOM node you then select a node in DevTools and then paste the following JS code into the console (see second secreenshot):
+With such annotation comments in place, to determine annotation stack for a given DOM node import [identify-node-sources.js](https://github.com/westonruter/wp-sourcery/blob/master/js/identify-node-sources.js) you then select a node in DevTools and then paste the following JS code into the console (see second screenshot):
 
 <pre lang="js">
 (( node ) => {
-    const openCommentPrefix = ' sourcery ';
-    const closeCommentPrefix = ' /sourcery ';
-
-    const invocations = {};
-    const expression = `
-        preceding::comment()[
-            starts-with( ., "${openCommentPrefix}" )
-            or
-            ( starts-with( ., "[" ) and contains( ., "<!--${openCommentPrefix}" ) )
-            or
-            starts-with( ., "${closeCommentPrefix}" )
-        ]`;
-    const xPathResult = document.evaluate( expression, node, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
-    const annotationStack = [];
-    for ( let i = 0; i < xPathResult.snapshotLength; i++ ) {
-        let commentText = xPathResult.snapshotItem( i ).nodeValue;
-
-        // Account for IE conditional comments which result in comment nodes that look like:
-        // [if lt IE 9]><!-- sourcery {...
-        const conditionalCommentOffset = commentText.indexOf( `<!--${openCommentPrefix}` );
-        if ( conditionalCommentOffset !== -1 ) {
-            commentText = commentText.substr( conditionalCommentOffset + 4 );
+    import( '/content/plugins/sourcery/js/identify-node-sources.js' ).then(
+        ( module ) => {
+            console.info( module.default( node ) );
         }
-
-        const isOpen = commentText.startsWith( openCommentPrefix );
-        const data = JSON.parse( commentText.substr( isOpen ? openCommentPrefix.length : closeCommentPrefix.length ) );
-        if ( isOpen ) {
-            if ( data.id ) {
-                invocations[ data.id ] = data;
-            }
-            if ( data.invocations ) {
-                for ( const id of data.invocations ) {
-                    annotationStack.push( invocations[ id ] );
-                }
-            } else {
-                annotationStack.push( data );
-            }
-        } else {
-            if ( data.invocations ) {
-                for ( const id of [...data.invocations].reverse() ) {
-                    const popped = annotationStack.pop();
-                    if ( id !== popped.id ) {
-                        throw new Error( 'Unexpected closing annotation comment for ref: ' + commentText );
-                    }
-                }
-            } else {
-                const popped = annotationStack.pop();
-                if ( data.id !== popped.id ) {
-                    throw new Error( 'Unexpected closing annotation comment: ' + commentText );
-                }
-            }
-        }
-    }
-    return annotationStack;
+    );
 })( $0 );
 </pre>
 
