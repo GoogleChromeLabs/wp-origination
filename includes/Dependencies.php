@@ -91,11 +91,12 @@ class Dependencies {
 	 *
 	 * @param string $type   Type (e.g. 'wp_scripts', 'wp_styles').
 	 * @param string $handle Dependency handle.
-	 * @return Hook_Inspection[] Invocations.
+	 *
+	 * @return Invocation[] Invocations.
 	 */
 	public function get_dependency_enqueueing_invocations( $type, $handle ) {
 		$enqueueing_invocations = array();
-		foreach ( $this->invocation_watcher->processed_hooks as $invocation ) {
+		foreach ( $this->invocation_watcher->finalized_invocations as $invocation ) {
 			// @todo This should be be improved, perhaps a method that we can pass $type.
 			if ( 'wp_scripts' === $type ) {
 				$enqueued_handles = $invocation->enqueued_scripts;
@@ -160,11 +161,12 @@ class Dependencies {
 	/**
 	 * Identify the scripts that were enqueued during the hook's invocation.
 	 *
-	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 * @param Invocation $invocation Invocation.
+	 *
 	 * @return string[] Script handles.
 	 */
-	public function identify_enqueued_scripts( Hook_Inspection $hook_inspection ) {
-		$before_script_handles = $hook_inspection->get_before_scripts_queue();
+	public function identify_enqueued_scripts( Invocation $invocation ) {
+		$before_script_handles = $invocation->get_before_scripts_queue();
 		$after_script_handles  = $this->get_dependency_queue( 'wp_scripts' );
 
 		$enqueued_handles = array();
@@ -184,11 +186,13 @@ class Dependencies {
 	 * Identify the styles that were enqueued during the hook's invocation.
 	 *
 	 * @todo This needs to apply to widgets, shortcodes, and blocks as well.
-	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 *
+	 * @param Invocation $invocation Invocation.
+	 *
 	 * @return string[] Style handles.
 	 */
-	public function identify_enqueued_styles( Hook_Inspection $hook_inspection ) {
-		$before_style_handles = $hook_inspection->get_before_styles_queue();
+	public function identify_enqueued_styles( Invocation $invocation ) {
+		$before_style_handles = $invocation->get_before_styles_queue();
 		$after_style_handles  = $this->get_dependency_queue( 'wp_styles' );
 
 		$enqueued_handles = array();

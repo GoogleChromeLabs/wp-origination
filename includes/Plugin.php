@@ -235,7 +235,7 @@ class Plugin {
 	public function send_server_timing_headers() {
 		$entity_timings = array();
 
-		foreach ( $this->invocation_watcher->processed_hooks as $processed_hook ) {
+		foreach ( $this->invocation_watcher->finalized_invocations as $processed_hook ) {
 			try {
 				$hook_duration = $processed_hook->duration();
 			} catch ( \Exception $e ) {

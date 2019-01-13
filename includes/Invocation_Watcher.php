@@ -36,16 +36,16 @@ class Invocation_Watcher {
 	/**
 	 * Hook stack.
 	 *
-	 * @var Hook_Inspection[]
+	 * @var Invocation[]
 	 */
-	public $hook_stack = array();
+	public $invocation_stack = array();
 
 	/**
 	 * Processed hooks.
 	 *
-	 * @var Hook_Inspection[]
+	 * @var Invocation[]
 	 */
-	public $processed_hooks = array();
+	public $finalized_invocations = array();
 
 	/**
 	 * Database abstraction for WordPress.
@@ -94,11 +94,12 @@ class Invocation_Watcher {
 	/**
 	 * Determine whether a given hook is an action.
 	 *
-	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 * @param Invocation $invocation Invocation.
+	 *
 	 * @return bool Whether hook is an action.
 	 */
-	public function is_action( Hook_Inspection $hook_inspection ) {
-		return did_action( $hook_inspection->hook_name ) > 0;
+	public function is_action( Invocation $invocation ) {
+		return did_action( $invocation->hook_name ) > 0;
 	}
 
 	/**
@@ -126,12 +127,12 @@ class Invocation_Watcher {
 	 * }
 	 */
 	public function before_hook( $args ) {
-		$hook_inspection = new Hook_Inspection( $this, $args );
+		$invocation = new Invocation( $this, $args );
 
-		$this->hook_stack[] = $hook_inspection;
+		$this->invocation_stack[] = $invocation;
 
-		if ( $this->is_action( $hook_inspection ) ) {
-			$this->print_before_hook_annotation( $hook_inspection );
+		if ( $this->is_action( $invocation ) ) {
+			$this->print_before_hook_annotation( $invocation );
 		}
 	}
 
@@ -141,38 +142,38 @@ class Invocation_Watcher {
 	 * @throws \Exception If the stack was empty, which should not happen.
 	 */
 	public function after_hook() {
-		$hook_inspection = array_pop( $this->hook_stack );
-		if ( ! $hook_inspection ) {
+		$invocation = array_pop( $this->invocation_stack );
+		if ( ! $invocation ) {
 			throw new \Exception( 'Stack was empty' );
 		}
 
-		$hook_inspection->finalize();
+		$invocation->finalize();
 
-		$this->identify_hook_queries( $hook_inspection );
+		$this->identify_hook_queries( $invocation );
 
-		if ( $this->is_action( $hook_inspection ) ) {
-			$this->print_after_hook_annotation( $hook_inspection );
+		if ( $this->is_action( $invocation ) ) {
+			$this->print_after_hook_annotation( $invocation );
 		}
 
-		$this->processed_hooks[ $hook_inspection->id ] = $hook_inspection;
+		$this->finalized_invocations[ $invocation->id ] = $invocation;
 	}
 
 	/**
 	 * Print hook annotation placeholder before an action hook's invoked callback.
 	 *
-	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 * @param Invocation $invocation Invocation.
 	 */
-	public function print_before_hook_annotation( Hook_Inspection $hook_inspection ) {
-		printf( '<!-- %s %d -->', static::ANNOTATION_TAG, $hook_inspection->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	public function print_before_hook_annotation( Invocation $invocation ) {
+		printf( '<!-- %s %d -->', static::ANNOTATION_TAG, $invocation->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
 	 * Print hook annotation placeholder after an action hook's invoked callback.
 	 *
-	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 * @param Invocation $invocation Invocation.
 	 */
-	public function print_after_hook_annotation( Hook_Inspection $hook_inspection ) {
-		printf( '<!-- /%s %d -->', static::ANNOTATION_TAG, $hook_inspection->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	public function print_after_hook_annotation( Invocation $invocation ) {
+		printf( '<!-- /%s %d -->', static::ANNOTATION_TAG, $invocation->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
@@ -230,8 +231,8 @@ class Invocation_Watcher {
 			'#' . static::get_hook_placeholder_annotation_pattern() . '#',
 			function( $hook_matches ) {
 				$id = intval( $hook_matches['id'] );
-				if ( isset( $this->processed_hooks[ $id ] ) ) {
-					$this->processed_hooks[ $id ]->intra_tag = true;
+				if ( isset( $this->finalized_invocations[ $id ] ) ) {
+					$this->finalized_invocations[ $id ]->intra_tag = true;
 				}
 				return ''; // Purge since an HTML comment cannot occur in a start tag.
 			},
@@ -249,47 +250,47 @@ class Invocation_Watcher {
 	 */
 	public function hydrate_hook_annotation( $matches ) {
 		$id = intval( $matches['id'] );
-		if ( ! isset( $this->processed_hooks[ $id ] ) ) {
+		if ( ! isset( $this->finalized_invocations[ $id ] ) ) {
 			return '';
 		}
-		$hook_inspection = $this->processed_hooks[ $id ];
+		$invocation = $this->finalized_invocations[ $id ];
 
 		$closing = ! empty( $matches['closing'] );
 
 		$data = array(
-			'id'       => $hook_inspection->id,
-			'type'     => $hook_inspection->is_action() ? 'action' : 'filter',
-			'name'     => $hook_inspection->hook_name,
-			'priority' => $hook_inspection->priority,
-			'callback' => $hook_inspection->function_name,
+			'id'       => $invocation->id,
+			'type'     => $invocation->is_action() ? 'action' : 'filter',
+			'name'     => $invocation->hook_name,
+			'priority' => $invocation->priority,
+			'callback' => $invocation->function_name,
 		);
 		if ( ! $closing ) {
 			$data = array_merge(
 				$data,
 				array(
-					'duration' => $hook_inspection->duration(),
+					'duration' => $invocation->duration(),
 					'source'   => array(
-						'file' => $hook_inspection->source_file,
+						'file' => $invocation->source_file,
 					),
 				)
 			);
 
 			// Include queries if allowed.
 			if ( ! empty( $this->can_show_queries_callback ) && call_user_func( $this->can_show_queries_callback ) ) {
-				$queries = $hook_inspection->queries();
+				$queries = $invocation->queries();
 				if ( ! empty( $queries ) ) {
 					$data['queries'] = $queries;
 				}
 			}
 
-			if ( ! empty( $hook_inspection->enqueued_scripts ) ) {
-				$data['enqueued_scripts'] = $hook_inspection->enqueued_scripts;
+			if ( ! empty( $invocation->enqueued_scripts ) ) {
+				$data['enqueued_scripts'] = $invocation->enqueued_scripts;
 			}
-			if ( ! empty( $hook_inspection->enqueued_styles ) ) {
-				$data['enqueued_styles'] = $hook_inspection->enqueued_styles;
+			if ( ! empty( $invocation->enqueued_styles ) ) {
+				$data['enqueued_styles'] = $invocation->enqueued_styles;
 			}
 
-			$file_location = $hook_inspection->file_location();
+			$file_location = $invocation->file_location();
 			if ( $file_location ) {
 				$data['source']['type'] = $file_location['type'];
 				$data['source']['name'] = $file_location['name'];
@@ -323,19 +324,20 @@ class Invocation_Watcher {
 	}
 
 	/**
-	 * Identify the queries that were made during the hook's invocation.
+	 * Identify the queries that were made during the invocation.
 	 *
-	 * @param Hook_Inspection $hook_inspection Hook inspection.
+	 * @param Invocation $invocation Invocation.
+	 *
 	 * @return int[] Query indices associated with the hook.
 	 */
-	public function identify_hook_queries( Hook_Inspection $hook_inspection ) {
+	public function identify_hook_queries( Invocation $invocation ) {
 
 		// Short-circuit if queries are not being saved (aka if SAVEQUERIES is not defined).
 		if ( empty( $this->wpdb->queries ) ) {
 			return array();
 		}
 
-		$before_num_queries = $hook_inspection->get_before_num_queries();
+		$before_num_queries = $invocation->get_before_num_queries();
 
 		// If no queries have been made during the hook invocation, short-circuit.
 		if ( $this->wpdb->num_queries === $before_num_queries ) {

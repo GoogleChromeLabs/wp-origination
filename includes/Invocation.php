@@ -1,6 +1,6 @@
 <?php
 /**
- * Hook_Inspection Class.
+ * Invocation Class.
  *
  * @package   Google\WP_Sourcery
  * @link      https://github.com/westonruter/wp-sourcery
@@ -11,11 +11,11 @@
 namespace Google\WP_Sourcery;
 
 /**
- * Class Hook_Inspection.
+ * Class Invocation.
  *
- * @todo Rename to Hook_Invocation? Or rather Invocation_Inspection? Subclass for hooks, shortcodes, widgets, embeds, and blocks.
+ * @todo Subclass for hooks, shortcodes, widgets, embeds, and blocks.
  */
-class Hook_Inspection {
+class Invocation {
 
 	/**
 	 * Number of instances.
@@ -129,7 +129,7 @@ class Hook_Inspection {
 	/**
 	 * Script handles that were enqueued prior to running the hook callback.
 	 *
-	 * This is unset when the inspection is finalized.
+	 * This is unset when the invocation is finalized.
 	 *
 	 * @var string[]
 	 */
@@ -146,7 +146,7 @@ class Hook_Inspection {
 	/**
 	 * Style handles that were enqueued prior to running the hook callback.
 	 *
-	 * This is unset when the inspection is finalized.
+	 * This is unset when the invocation is finalized.
 	 *
 	 * @var string[]
 	 */
@@ -227,7 +227,7 @@ class Hook_Inspection {
 	}
 
 	/**
-	 * Finalize the inspection.
+	 * Finalize the invocation.
 	 */
 	public function finalize() {
 		$this->end_time = microtime( true );
