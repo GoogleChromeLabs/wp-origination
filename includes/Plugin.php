@@ -60,6 +60,13 @@ class Plugin {
 	public $dependencies;
 
 	/**
+	 * Instance of Database.
+	 *
+	 * @var Database
+	 */
+	public $database;
+
+	/**
 	 * Instance of Hook_Wrapper.
 	 *
 	 * @var Hook_Wrapper
@@ -137,6 +144,7 @@ class Plugin {
 
 		$this->file_locator = new File_Locator();
 
+		// @todo Let Database and Dependencies instances be added as direct dependencies of this class as well.
 		$this->invocation_watcher = new Invocation_Watcher(
 			$this,
 			array(
@@ -145,6 +153,8 @@ class Plugin {
 				},
 			)
 		);
+
+		$this->database = new Database( $this->invocation_watcher );
 
 		$this->dependencies = new Dependencies( $this->invocation_watcher );
 

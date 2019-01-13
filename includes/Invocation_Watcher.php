@@ -10,8 +10,6 @@
 
 namespace Google\WP_Sourcery;
 
-use \wpdb;
-
 /**
  * Class Invocation_Watcher.
  */
@@ -48,47 +46,17 @@ class Invocation_Watcher {
 	public $finalized_invocations = array();
 
 	/**
-	 * Database abstraction for WordPress.
-	 *
-	 * @var \wpdb
-	 */
-	protected $wpdb;
-
-	/**
-	 * Lookup of which queries have already been assigned to hooks.
-	 *
-	 * Array keys are the query indices and the values are all true.
-	 *
-	 * @var bool[]
-	 */
-	protected $sourced_query_indices = array();
-
-	/**
 	 * Invocation_Watcher constructor.
 	 *
 	 * @param Plugin $plugin  Plugin instance.
 	 * @param array  $options Options.
-	 * @global \wpdb $wpdb
 	 */
 	public function __construct( Plugin $plugin, $options ) {
-		global $wpdb;
-
 		foreach ( $options as $key => $value ) {
 			$this->$key = $value;
 		}
 
 		$this->plugin = $plugin;
-		$this->wpdb   = $wpdb;
-	}
-
-	/**
-	 * Get the WordPress DB.
-	 *
-	 * @todo Move this to the Plugin?
-	 * @return wpdb|object DB.
-	 */
-	public function get_wpdb() {
-		return $this->wpdb;
 	}
 
 	/**
@@ -149,7 +117,7 @@ class Invocation_Watcher {
 
 		$invocation->finalize();
 
-		$this->identify_hook_queries( $invocation );
+		$this->plugin->database->identify_invocation_queries( $invocation );
 
 		if ( $this->is_action( $invocation ) ) {
 			$this->print_after_hook_annotation( $invocation );
@@ -321,41 +289,6 @@ class Invocation_Watcher {
 			$closing ? '/' : '',
 			$json
 		);
-	}
-
-	/**
-	 * Identify the queries that were made during the invocation.
-	 *
-	 * @param Invocation $invocation Invocation.
-	 *
-	 * @return int[] Query indices associated with the hook.
-	 */
-	public function identify_hook_queries( Invocation $invocation ) {
-
-		// Short-circuit if queries are not being saved (aka if SAVEQUERIES is not defined).
-		if ( empty( $this->wpdb->queries ) ) {
-			return array();
-		}
-
-		$before_num_queries = $invocation->get_before_num_queries();
-
-		// If no queries have been made during the hook invocation, short-circuit.
-		if ( $this->wpdb->num_queries === $before_num_queries ) {
-			return array();
-		}
-
-		$query_indices = array();
-		foreach ( range( $before_num_queries, $this->wpdb->num_queries - 1 ) as $query_index ) {
-
-			// Flag this query as being associated with this hook instance.
-			if ( ! isset( $this->sourced_query_indices[ $query_index ] ) ) {
-				$query_indices[] = $query_index;
-
-				$this->sourced_query_indices[ $query_index ] = true;
-			}
-		}
-
-		return $query_indices;
 	}
 }
 

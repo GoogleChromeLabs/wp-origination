@@ -181,7 +181,7 @@ class Invocation {
 		$this->invocation_watcher = $watcher;
 		$this->start_time         = microtime( true );
 
-		$this->before_num_queries = $this->invocation_watcher->get_wpdb()->num_queries;
+		$this->before_num_queries = $this->invocation_watcher->plugin->database->get_wpdb()->num_queries;
 
 		// @todo Better to have some multi-dimensional array structure here?
 		$this->before_scripts_queue = $this->invocation_watcher->plugin->dependencies->get_dependency_queue( 'wp_scripts' );
@@ -233,7 +233,7 @@ class Invocation {
 		$this->end_time = microtime( true );
 
 		// Flag the queries that were used during this hook.
-		$this->query_indices = $this->invocation_watcher->identify_hook_queries( $this );
+		$this->query_indices = $this->invocation_watcher->plugin->database->identify_invocation_queries( $this );
 
 		// Capture the scripts and styles that were enqueued by this hook.
 		$this->enqueued_scripts = $this->invocation_watcher->plugin->dependencies->identify_enqueued_scripts( $this );
@@ -262,7 +262,7 @@ class Invocation {
 	 * @return array|null Queries or null if no queries are being saved (SAVEQUERIES).
 	 */
 	public function queries() {
-		$wpdb = $this->invocation_watcher->get_wpdb();
+		$wpdb = $this->invocation_watcher->plugin->database->get_wpdb();
 		if ( empty( $wpdb->queries ) || ! isset( $this->query_indices ) ) {
 			return null;
 		}
