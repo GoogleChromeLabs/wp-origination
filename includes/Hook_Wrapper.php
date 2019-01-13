@@ -2,7 +2,10 @@
 /**
  * Class Hook_Wrapper.
  *
- * @package Google\WP_Sourcery
+ * @package   Google\WP_Sourcery
+ * @link      https://github.com/westonruter/wp-sourcery
+ * @license   GPL-2.0-or-later
+ * @copyright 2019 Google Inc.
  */
 
 namespace Google\WP_Sourcery;

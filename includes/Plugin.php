@@ -2,9 +2,10 @@
 /**
  * Class Google\WP_Sourcery\Plugin
  *
- * @package Google\WP_Feature_Policy
- * @license GNU General Public License, version 2
- * @link    https://wordpress.org/plugins/feature-policy/
+ * @package   Google\WP_Sourcery
+ * @link      https://github.com/westonruter/wp-sourcery
+ * @license   GPL-2.0-or-later
+ * @copyright 2019 Google Inc.
  */
 
 namespace Google\WP_Sourcery;

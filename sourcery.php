@@ -4,9 +4,9 @@
  *
  * @package   Google\WP_Sourcery
  * @author    Weston Ruter
- * @copyright 2019 Google
- * @license   GNU General Public License, version 2 (or later)
- * @link      https://wordpress.org/plugins/sourcery/
+ * @link      https://github.com/westonruter/wp-sourcery
+ * @license   GPL-2.0-or-later
+ * @copyright 2019 Google Inc.
  *
  * @wordpress-plugin
  * Plugin Name: Sourcery
