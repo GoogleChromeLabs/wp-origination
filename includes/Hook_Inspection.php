@@ -32,11 +32,11 @@ class Hook_Inspection {
 	public $id;
 
 	/**
-	 * Inspector.
+	 * Invocation Watcher.
 	 *
-	 * @var Hook_Inspector
+	 * @var Invocation_Watcher
 	 */
-	public $inspector;
+	public $invocation_watcher;
 
 	/**
 	 * Hook name.
@@ -114,7 +114,7 @@ class Hook_Inspection {
 	/**
 	 * Whether the hook invocation happened inside of a start tag (e.g. in its attributes).
 	 *
-	 * @see Hook_Inspector::purge_hook_annotations_in_start_tag()
+	 * @see Invocation_Watcher::purge_hook_annotations_in_start_tag()
 	 * @var bool
 	 */
 	public $intra_tag = false;
@@ -170,22 +170,22 @@ class Hook_Inspection {
 	/**
 	 * Constructor.
 	 *
-	 * @param Hook_Inspector $inspector  Inspector.
-	 * @param array          $args       Arguments which are assigned to properties.
+	 * @param Invocation_Watcher $watcher Watcher.
+	 * @param array              $args    Arguments which are assigned to properties.
 	 */
-	public function __construct( Hook_Inspector $inspector, $args ) {
+	public function __construct( Invocation_Watcher $watcher, $args ) {
 		foreach ( $args as $key => $value ) {
 			$this->$key = $value;
 		}
-		$this->id         = ++static::$instance_count;
-		$this->inspector  = $inspector;
-		$this->start_time = microtime( true );
+		$this->id                 = ++static::$instance_count;
+		$this->invocation_watcher = $watcher;
+		$this->start_time         = microtime( true );
 
-		$this->before_num_queries = $this->inspector->get_wpdb()->num_queries;
+		$this->before_num_queries = $this->invocation_watcher->get_wpdb()->num_queries;
 
 		// @todo Better to have some multi-dimensional array structure here?
-		$this->before_scripts_queue = $this->inspector->get_dependency_queue( 'wp_scripts' );
-		$this->before_styles_queue  = $this->inspector->get_dependency_queue( 'wp_styles' );
+		$this->before_scripts_queue = $this->invocation_watcher->plugin->dependencies->get_dependency_queue( 'wp_scripts' );
+		$this->before_styles_queue  = $this->invocation_watcher->plugin->dependencies->get_dependency_queue( 'wp_styles' );
 	}
 
 	/**
@@ -195,7 +195,7 @@ class Hook_Inspection {
 	 * @return bool Whether an action hook.
 	 */
 	public function is_action() {
-		return $this->inspector->is_action( $this );
+		return $this->invocation_watcher->is_action( $this );
 	}
 
 	/**
@@ -233,11 +233,11 @@ class Hook_Inspection {
 		$this->end_time = microtime( true );
 
 		// Flag the queries that were used during this hook.
-		$this->query_indices = $this->inspector->identify_hook_queries( $this );
+		$this->query_indices = $this->invocation_watcher->identify_hook_queries( $this );
 
 		// Capture the scripts and styles that were enqueued by this hook.
-		$this->enqueued_scripts = $this->inspector->identify_enqueued_scripts( $this );
-		$this->enqueued_styles  = $this->inspector->identify_enqueued_styles( $this );
+		$this->enqueued_scripts = $this->invocation_watcher->plugin->dependencies->identify_enqueued_scripts( $this );
+		$this->enqueued_styles  = $this->invocation_watcher->plugin->dependencies->identify_enqueued_styles( $this );
 
 		// These are no longer needed after calling identify_queued_scripts and identify_queued_styles, and they just take up memory.
 		unset( $this->before_scripts_queue );
@@ -262,7 +262,7 @@ class Hook_Inspection {
 	 * @return array|null Queries or null if no queries are being saved (SAVEQUERIES).
 	 */
 	public function queries() {
-		$wpdb = $this->inspector->get_wpdb();
+		$wpdb = $this->invocation_watcher->get_wpdb();
 		if ( empty( $wpdb->queries ) || ! isset( $this->query_indices ) ) {
 			return null;
 		}
@@ -301,6 +301,6 @@ class Hook_Inspection {
 	 * }
 	 */
 	public function file_location() {
-		return $this->inspector->plugin->file_locator->identify( $this->source_file );
+		return $this->invocation_watcher->plugin->file_locator->identify( $this->source_file );
 	}
 }

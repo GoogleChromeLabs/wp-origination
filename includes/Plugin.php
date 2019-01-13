@@ -46,14 +46,21 @@ class Plugin {
 	public $file_locator;
 
 	/**
-	 * Instance of Hook_Inspector.
+	 * Instance of Invocation_Watcher.
 	 *
-	 * @var Hook_Inspector
+	 * @var Invocation_Watcher
 	 */
-	public $hook_inspector;
+	public $invocation_watcher;
 
 	/**
-	 * Instance of Hook_Inspector.
+	 * Instance of Dependencies.
+	 *
+	 * @var Dependencies
+	 */
+	public $dependencies;
+
+	/**
+	 * Instance of Hook_Wrapper.
 	 *
 	 * @var Hook_Wrapper
 	 */
@@ -130,7 +137,7 @@ class Plugin {
 
 		$this->file_locator = new File_Locator();
 
-		$this->hook_inspector = new Hook_Inspector(
+		$this->invocation_watcher = new Invocation_Watcher(
 			$this,
 			array(
 				'can_show_queries_callback' => function() {
@@ -138,14 +145,17 @@ class Plugin {
 				},
 			)
 		);
-		$this->hook_wrapper   = new Hook_Wrapper(
-			array( $this->hook_inspector, 'before_hook' ),
-			array( $this->hook_inspector, 'after_hook' )
+
+		$this->dependencies = new Dependencies( $this->invocation_watcher );
+
+		$this->hook_wrapper = new Hook_Wrapper(
+			array( $this->invocation_watcher, 'before_hook' ),
+			array( $this->invocation_watcher, 'after_hook' )
 		);
 
 		// Output buffer so that Server-Timing headers can be sent, and prevent plugins from flushing it.
 		ob_start(
-			array( $this->hook_inspector, 'finalize_hook_annotations' ),
+			array( $this->invocation_watcher, 'finalize_hook_annotations' ),
 			null,
 			0
 		);
@@ -160,7 +170,7 @@ class Plugin {
 					return $tag;
 				}
 
-				$invocations = $this->hook_inspector->get_dependency_enqueueing_invocations( 'wp_scripts', $handle );
+				$invocations = $this->dependencies->get_dependency_enqueueing_invocations( 'wp_scripts', $handle );
 				if ( empty( $invocations ) ) {
 					return $tag;
 				}
@@ -173,9 +183,9 @@ class Plugin {
 				return implode(
 					'',
 					array(
-						$this->hook_inspector->get_annotation_comment( $data, false ),
+						$this->invocation_watcher->get_annotation_comment( $data, false ),
 						$tag,
-						$this->hook_inspector->get_annotation_comment( $data, true ),
+						$this->invocation_watcher->get_annotation_comment( $data, true ),
 					)
 				);
 			},
@@ -189,7 +199,7 @@ class Plugin {
 					return $tag;
 				}
 
-				$invocations = $this->hook_inspector->get_dependency_enqueueing_invocations( 'wp_styles', $handle );
+				$invocations = $this->dependencies->get_dependency_enqueueing_invocations( 'wp_styles', $handle );
 				if ( empty( $invocations ) ) {
 					return $tag;
 				}
@@ -202,9 +212,9 @@ class Plugin {
 				return implode(
 					'',
 					array(
-						$this->hook_inspector->get_annotation_comment( $data, false ),
+						$this->invocation_watcher->get_annotation_comment( $data, false ),
 						$tag,
-						$this->hook_inspector->get_annotation_comment( $data, true ),
+						$this->invocation_watcher->get_annotation_comment( $data, true ),
 					)
 				);
 			},
@@ -225,7 +235,7 @@ class Plugin {
 	public function send_server_timing_headers() {
 		$entity_timings = array();
 
-		foreach ( $this->hook_inspector->processed_hooks as $processed_hook ) {
+		foreach ( $this->invocation_watcher->processed_hooks as $processed_hook ) {
 			try {
 				$hook_duration = $processed_hook->duration();
 			} catch ( \Exception $e ) {
