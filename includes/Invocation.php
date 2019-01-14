@@ -144,7 +144,9 @@ class Invocation {
 	 */
 	public function __construct( Invocation_Watcher $watcher, $args ) {
 		foreach ( $args as $key => $value ) {
-			$this->$key = $value;
+			if ( property_exists( $this, $key ) ) {
+				$this->$key = $value;
+			}
 		}
 		$this->id                 = ++static::$instance_count;
 		$this->invocation_watcher = $watcher;

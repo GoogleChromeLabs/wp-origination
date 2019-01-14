@@ -23,26 +23,11 @@ class Hook_Invocation extends Invocation {
 	public $name;
 
 	/**
-	 * Accepted argument count.
-	 *
-	 * @var int
-	 */
-	public $accepted_args;
-
-	/**
 	 * Priority.
 	 *
 	 * @var int
 	 */
 	public $priority;
-
-	/**
-	 * Args passed when the hook was done/applied.
-	 *
-	 * @todo Consider not capturing this since can will incur a lot of memory.
-	 * @var array
-	 */
-	public $hook_args;
 
 	/**
 	 * Returns whether it is an action hook.
