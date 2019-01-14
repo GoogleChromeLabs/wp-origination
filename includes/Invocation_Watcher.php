@@ -60,14 +60,12 @@ class Invocation_Watcher {
 	}
 
 	/**
-	 * Determine whether a given hook is an action.
+	 * Determine whether queries can be shown.
 	 *
-	 * @param Invocation $invocation Invocation.
-	 *
-	 * @return bool Whether hook is an action.
+	 * @return bool Whether to show queries.
 	 */
-	public function is_action( Invocation $invocation ) {
-		return did_action( $invocation->hook_name ) > 0;
+	public function can_show_queries() {
+		return ! empty( $this->can_show_queries_callback ) && call_user_func( $this->can_show_queries_callback );
 	}
 
 	/**
@@ -95,11 +93,11 @@ class Invocation_Watcher {
 	 * }
 	 */
 	public function before_hook( $args ) {
-		$invocation = new Invocation( $this, $args );
+		$invocation = new Hook_Invocation( $this, $args );
 
 		$this->invocation_stack[] = $invocation;
 
-		if ( $this->is_action( $invocation ) ) {
+		if ( $invocation->is_action() ) {
 			$this->print_before_hook_annotation( $invocation );
 		}
 	}
@@ -114,12 +112,15 @@ class Invocation_Watcher {
 		if ( ! $invocation ) {
 			throw new \Exception( 'Stack was empty' );
 		}
+		if ( ! ( $invocation instanceof Hook_Invocation ) ) {
+			throw new \Exception( 'Expected popped invocation to be Hook_Invocation' );
+		}
 
 		$invocation->finalize();
 
 		$this->plugin->database->identify_invocation_queries( $invocation );
 
-		if ( $this->is_action( $invocation ) ) {
+		if ( $invocation->is_action() ) {
 			$this->print_after_hook_annotation( $invocation );
 		}
 
@@ -222,47 +223,14 @@ class Invocation_Watcher {
 			return '';
 		}
 		$invocation = $this->finalized_invocations[ $id ];
+		$closing    = ! empty( $matches['closing'] );
 
-		$closing = ! empty( $matches['closing'] );
-
-		$data = array(
-			'id'       => $invocation->id,
-			'type'     => $invocation->is_action() ? 'action' : 'filter',
-			'name'     => $invocation->hook_name,
-			'priority' => $invocation->priority,
-			'callback' => $invocation->function_name,
-		);
-		if ( ! $closing ) {
-			$data = array_merge(
-				$data,
-				array(
-					'duration' => $invocation->duration(),
-					'source'   => array(
-						'file' => $invocation->source_file,
-					),
-				)
+		if ( $closing ) {
+			$data = array(
+				'id' => $invocation->id,
 			);
-
-			// Include queries if allowed.
-			if ( ! empty( $this->can_show_queries_callback ) && call_user_func( $this->can_show_queries_callback ) ) {
-				$queries = $invocation->queries();
-				if ( ! empty( $queries ) ) {
-					$data['queries'] = $queries;
-				}
-			}
-
-			if ( ! empty( $invocation->enqueued_scripts ) ) {
-				$data['enqueued_scripts'] = $invocation->enqueued_scripts;
-			}
-			if ( ! empty( $invocation->enqueued_styles ) ) {
-				$data['enqueued_styles'] = $invocation->enqueued_styles;
-			}
-
-			$file_location = $invocation->file_location();
-			if ( $file_location ) {
-				$data['source']['type'] = $file_location['type'];
-				$data['source']['name'] = $file_location['name'];
-			}
+		} else {
+			$data = $invocation->data();
 		}
 
 		return $this->get_annotation_comment( $data, $closing );

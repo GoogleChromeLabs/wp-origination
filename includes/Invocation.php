@@ -39,14 +39,6 @@ class Invocation {
 	public $invocation_watcher;
 
 	/**
-	 * Hook name.
-	 *
-	 * @todo This should be generalized for shortcode tag, block name, etc.
-	 * @var string
-	 */
-	public $hook_name;
-
-	/**
 	 * Callback function.
 	 *
 	 * @var callable
@@ -75,29 +67,6 @@ class Invocation {
 	public $source_file;
 
 	/**
-	 * Accepted argument count.
-	 *
-	 * @var int
-	 */
-	public $accepted_args;
-
-	/**
-	 * Priority.
-	 *
-	 * @todo This is only relevant to hooks.
-	 * @var int
-	 */
-	public $priority;
-
-	/**
-	 * Args passed when the hook was done/applied.
-	 *
-	 * @todo Consider not capturing this since can will incur a lot of memory.
-	 * @var array
-	 */
-	public $hook_args;
-
-	/**
 	 * Start time.
 	 *
 	 * @var float
@@ -112,7 +81,7 @@ class Invocation {
 	public $end_time;
 
 	/**
-	 * Whether the hook invocation happened inside of a start tag (e.g. in its attributes).
+	 * Whether the invocation happened inside of a start tag (e.g. in its attributes).
 	 *
 	 * @see Invocation_Watcher::purge_hook_annotations_in_start_tag()
 	 * @var bool
@@ -186,16 +155,6 @@ class Invocation {
 		// @todo Better to have some multi-dimensional array structure here?
 		$this->before_scripts_queue = $this->invocation_watcher->plugin->dependencies->get_dependency_queue( 'wp_scripts' );
 		$this->before_styles_queue  = $this->invocation_watcher->plugin->dependencies->get_dependency_queue( 'wp_styles' );
-	}
-
-	/**
-	 * Returns whether it is an action hook.
-	 *
-	 * @todo Only relevant if the type is hook. Should perhaps be moved to a Hook_Invocation subclass.
-	 * @return bool Whether an action hook.
-	 */
-	public function is_action() {
-		return $this->invocation_watcher->is_action( $this );
 	}
 
 	/**
@@ -302,5 +261,43 @@ class Invocation {
 	 */
 	public function file_location() {
 		return $this->invocation_watcher->plugin->file_locator->identify( $this->source_file );
+	}
+
+	/**
+	 * Get data for exporting.
+	 *
+	 * @return array Data.
+	 */
+	public function data() {
+		$data = array(
+			'id'       => $this->id,
+			'function' => $this->function_name,
+			'duration' => $this->duration(),
+			'source'   => array(
+				'file' => $this->source_file,
+			),
+		);
+
+		if ( $this->invocation_watcher->can_show_queries() ) {
+			$queries = $this->queries();
+			if ( ! empty( $queries ) ) {
+				$data['queries'] = $queries;
+			}
+		}
+
+		if ( ! empty( $this->enqueued_scripts ) ) {
+			$data['enqueued_scripts'] = $this->enqueued_scripts;
+		}
+		if ( ! empty( $this->enqueued_styles ) ) {
+			$data['enqueued_styles'] = $this->enqueued_styles;
+		}
+
+		$file_location = $this->file_location();
+		if ( $file_location ) {
+			$data['source']['type'] = $file_location['type'];
+			$data['source']['name'] = $file_location['name'];
+		}
+
+		return $data;
 	}
 }

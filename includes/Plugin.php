@@ -173,6 +173,7 @@ class Plugin {
 		// Prevent PHP Notice: ob_end_flush(): failed to send buffer.
 		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
 
+		// @todo Move these to Invocation_Watcher.
 		add_filter(
 			'script_loader_tag',
 			function( $tag, $handle = null ) {

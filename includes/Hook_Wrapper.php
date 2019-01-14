@@ -62,19 +62,19 @@ class Hook_Wrapper {
 	 *
 	 * @global \WP_Hook[] $wp_filter
 	 *
-	 * @param string $hook_name Hook name for action or filter.
+	 * @param string $name Hook name for action or filter.
 	 *
 	 * @return void
 	 */
-	public function wrap_hook_callbacks( $hook_name ) {
+	public function wrap_hook_callbacks( $name ) {
 		global $wp_filter;
 
 		// Short-circuit the 'all' hook if there aren't any callbacks added.
-		if ( ! isset( $wp_filter[ $hook_name ] ) ) {
+		if ( ! isset( $wp_filter[ $name ] ) ) {
 			return;
 		}
 
-		foreach ( $wp_filter[ $hook_name ]->callbacks as $priority => &$callbacks ) {
+		foreach ( $wp_filter[ $name ]->callbacks as $priority => &$callbacks ) {
 			foreach ( $callbacks as &$callback ) {
 				$function = $callback['function'];
 
@@ -101,7 +101,7 @@ class Hook_Wrapper {
 				$source_file   = $source['file'];
 				$reflection    = $source['reflection'];
 
-				$callback['function'] = function() use ( &$callback, $hook_name, $priority, $function, $reflection, $function_name, $source_file ) {
+				$callback['function'] = function() use ( &$callback, $name, $priority, $function, $reflection, $function_name, $source_file ) {
 					// Restore the original callback function after this wrapped callback function is invoked.
 					$callback['function'] = $function;
 
@@ -109,7 +109,7 @@ class Hook_Wrapper {
 
 					// @todo Optionally capture debug backtrace?
 					$accepted_args = $callback['accepted_args'];
-					$context       = compact( 'hook_name', 'function', 'function_name', 'reflection', 'source_file', 'accepted_args', 'priority', 'hook_args' );
+					$context       = compact( 'name', 'function', 'function_name', 'reflection', 'source_file', 'accepted_args', 'priority', 'hook_args' );
 					$before_return = null;
 					if ( $this->before_callback ) {
 						$before_return = call_user_func( $this->before_callback, $context );
