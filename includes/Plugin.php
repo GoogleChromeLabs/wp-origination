@@ -53,6 +53,13 @@ class Plugin {
 	public $invocation_watcher;
 
 	/**
+	 * Instance of Server_Timing_Headers.
+	 *
+	 * @var Server_Timing_Headers
+	 */
+	public $server_timing_headers;
+
+	/**
 	 * Instance of Dependencies.
 	 *
 	 * @var Dependencies
@@ -213,44 +220,8 @@ class Plugin {
 			2
 		);
 
-		add_action( 'shutdown', array( $this, 'send_server_timing_headers' ) );
-	}
-
-	/**
-	 * Send Server-Timing headers.
-	 *
-	 * @todo Move this to another class.
-	 */
-	public function send_server_timing_headers() {
-		$entity_timings = array();
-
-		foreach ( $this->invocation_watcher->finalized_invocations as $processed_hook ) {
-			try {
-				$hook_duration = $processed_hook->duration();
-			} catch ( \Exception $e ) {
-				$hook_duration = -1;
-			}
-
-			$file_location = $processed_hook->file_location();
-			if ( $file_location ) {
-				$entity_key = sprintf( '%s:%s', $file_location['type'], $file_location['name'] );
-				if ( ! isset( $entity_timings[ $entity_key ] ) ) {
-					$entity_timings[ $entity_key ] = 0.0;
-				}
-				$entity_timings[ $entity_key ] += $hook_duration;
-			}
-		}
-
-		$round_to_fourth_precision = function( $timing ) {
-			return round( $timing, 4 );
-		};
-
-		foreach ( array_map( $round_to_fourth_precision, $entity_timings ) as $entity => $timing ) {
-			$value  = strtok( $entity, ':' );
-			$value .= sprintf( ';desc="%s"', $entity );
-			$value .= sprintf( ';dur=%f', $timing * 1000 );
-			header( sprintf( 'Server-Timing: %s', $value ), false );
-		}
+		$this->server_timing_headers = new Server_Timing_Headers( $this->invocation_watcher );
+		add_action( 'shutdown', array( $this->server_timing_headers, 'send' ) );
 	}
 
 	/**
