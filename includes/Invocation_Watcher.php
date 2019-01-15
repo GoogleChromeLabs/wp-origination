@@ -25,6 +25,13 @@ class Invocation_Watcher {
 	public $plugin;
 
 	/**
+	 * Instance of Hook_Wrapper.
+	 *
+	 * @var Hook_Wrapper
+	 */
+	public $hook_wrapper;
+
+	/**
 	 * Callback for whether queries can be displayed.
 	 *
 	 * @var callback
@@ -57,6 +64,28 @@ class Invocation_Watcher {
 		}
 
 		$this->plugin = $plugin;
+
+		$this->hook_wrapper = new Hook_Wrapper(
+			array( $this, 'before_hook' ),
+			array( $this, 'after_hook' )
+		);
+	}
+
+	/**
+	 * Start watching.
+	 */
+	public function start() {
+		$this->hook_wrapper->add_all_hook();
+
+		// Output buffer so that Server-Timing headers can be sent, and prevent plugins from flushing it.
+		ob_start(
+			array( $this, 'finalize_hook_annotations' ),
+			null,
+			0
+		);
+
+		// Prevent PHP Notice: ob_end_flush(): failed to send buffer.
+		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
 	}
 
 	/**

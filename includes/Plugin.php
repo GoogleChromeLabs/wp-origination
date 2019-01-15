@@ -67,13 +67,6 @@ class Plugin {
 	public $database;
 
 	/**
-	 * Instance of Hook_Wrapper.
-	 *
-	 * @var Hook_Wrapper
-	 */
-	public $hook_wrapper;
-
-	/**
 	 * Plugin constructor.
 	 *
 	 * @since 0.1.0
@@ -158,20 +151,7 @@ class Plugin {
 
 		$this->dependencies = new Dependencies( $this->invocation_watcher );
 
-		$this->hook_wrapper = new Hook_Wrapper(
-			array( $this->invocation_watcher, 'before_hook' ),
-			array( $this->invocation_watcher, 'after_hook' )
-		);
-
-		// Output buffer so that Server-Timing headers can be sent, and prevent plugins from flushing it.
-		ob_start(
-			array( $this->invocation_watcher, 'finalize_hook_annotations' ),
-			null,
-			0
-		);
-
-		// Prevent PHP Notice: ob_end_flush(): failed to send buffer.
-		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
+		$this->invocation_watcher->start();
 
 		// @todo Move these to Invocation_Watcher.
 		add_filter(
@@ -232,8 +212,6 @@ class Plugin {
 			10,
 			2
 		);
-
-		$this->hook_wrapper->add_all_hook();
 
 		add_action( 'shutdown', array( $this, 'send_server_timing_headers' ) );
 	}
