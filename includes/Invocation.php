@@ -160,6 +160,15 @@ class Invocation {
 	}
 
 	/**
+	 * Whether this invocation is expected to produce output.
+	 *
+	 * @return bool Whether output is expected.
+	 */
+	public function can_output() {
+		return true;
+	}
+
+	/**
 	 * Get the query count before the hook was invoked.
 	 *
 	 * @return int Query count.

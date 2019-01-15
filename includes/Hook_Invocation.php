@@ -39,6 +39,15 @@ class Hook_Invocation extends Invocation {
 	}
 
 	/**
+	 * Whether this invocation is expected to produce output (an action) vs a filter.
+	 *
+	 * @return bool Whether output is expected.
+	 */
+	public function can_output() {
+		return $this->is_action();
+	}
+
+	/**
 	 * Get data for exporting.
 	 *
 	 * @return array Data.

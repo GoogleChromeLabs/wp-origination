@@ -211,9 +211,9 @@ class Plugin {
 				return implode(
 					'',
 					array(
-						$this->invocation_watcher->get_annotation_comment( $data, false ),
+						$this->invocation_watcher->output_annotator->get_annotation_comment( $data, false ),
 						$tag,
-						$this->invocation_watcher->get_annotation_comment( $data, true ),
+						$this->invocation_watcher->output_annotator->get_annotation_comment( $data, true ),
 					)
 				);
 			},
@@ -240,9 +240,9 @@ class Plugin {
 				return implode(
 					'',
 					array(
-						$this->invocation_watcher->get_annotation_comment( $data, false ),
+						$this->invocation_watcher->output_annotator->get_annotation_comment( $data, false ),
 						$tag,
-						$this->invocation_watcher->get_annotation_comment( $data, true ),
+						$this->invocation_watcher->output_annotator->get_annotation_comment( $data, true ),
 					)
 				);
 			},
