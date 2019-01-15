@@ -74,6 +74,36 @@ class Plugin {
 	public $database;
 
 	/**
+	 * Retrieves the main instance of the plugin.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Plugin Plugin main instance.
+	 */
+	public static function instance() {
+		return static::$instance;
+	}
+
+	/**
+	 * Loads the plugin main instance and initializes it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $main_file Absolute path to the plugin main file.
+	 * @return bool True if the plugin main instance could be loaded, false otherwise.
+	 */
+	public static function load( $main_file ) {
+		if ( null !== static::$instance ) {
+			return false;
+		}
+
+		static::$instance = new static( $main_file );
+		static::$instance->init();
+
+		return true;
+	}
+
+	/**
 	 * Plugin constructor.
 	 *
 	 * @since 0.1.0
@@ -222,35 +252,5 @@ class Plugin {
 
 		$this->server_timing_headers = new Server_Timing_Headers( $this->invocation_watcher );
 		add_action( 'shutdown', array( $this->server_timing_headers, 'send' ) );
-	}
-
-	/**
-	 * Retrieves the main instance of the plugin.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return Plugin Plugin main instance.
-	 */
-	public static function instance() {
-		return static::$instance;
-	}
-
-	/**
-	 * Loads the plugin main instance and initializes it.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $main_file Absolute path to the plugin main file.
-	 * @return bool True if the plugin main instance could be loaded, false otherwise.
-	 */
-	public static function load( $main_file ) {
-		if ( null !== static::$instance ) {
-			return false;
-		}
-
-		static::$instance = new static( $main_file );
-		static::$instance->init();
-
-		return true;
 	}
 }
