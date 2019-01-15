@@ -190,66 +190,6 @@ class Plugin {
 
 		$this->invocation_watcher->start();
 
-		// @todo Move these to Invocation_Watcher.
-		add_filter(
-			'script_loader_tag',
-			function( $tag, $handle = null ) {
-				if ( ! $handle ) {
-					return $tag;
-				}
-
-				$invocations = $this->dependencies->get_dependency_enqueueing_invocations( 'wp_scripts', $handle );
-				if ( empty( $invocations ) ) {
-					return $tag;
-				}
-
-				$data = array(
-					'type'        => 'enqueued_script',
-					'invocations' => wp_list_pluck( $invocations, 'id' ),
-				);
-
-				return implode(
-					'',
-					array(
-						$this->invocation_watcher->output_annotator->get_annotation_comment( $data, false ),
-						$tag,
-						$this->invocation_watcher->output_annotator->get_annotation_comment( $data, true ),
-					)
-				);
-			},
-			10, // @todo Consider a higher priority.
-			2
-		);
-		add_filter(
-			'style_loader_tag',
-			function( $tag, $handle = null ) {
-				if ( ! $handle ) {
-					return $tag;
-				}
-
-				$invocations = $this->dependencies->get_dependency_enqueueing_invocations( 'wp_styles', $handle );
-				if ( empty( $invocations ) ) {
-					return $tag;
-				}
-
-				$data = array(
-					'type'        => 'enqueued_style',
-					'invocations' => wp_list_pluck( $invocations, 'id' ),
-				);
-
-				return implode(
-					'',
-					array(
-						$this->invocation_watcher->output_annotator->get_annotation_comment( $data, false ),
-						$tag,
-						$this->invocation_watcher->output_annotator->get_annotation_comment( $data, true ),
-					)
-				);
-			},
-			10,
-			2
-		);
-
 		$this->server_timing_headers = new Server_Timing_Headers( $this->invocation_watcher );
 		add_action( 'shutdown', array( $this->server_timing_headers, 'send' ) );
 	}

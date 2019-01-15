@@ -63,6 +63,9 @@ class Output_Annotator {
 
 		// Prevent PHP Notice: ob_end_flush(): failed to send buffer.
 		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
+
+		add_filter( 'script_loader_tag', array( $this, 'add_enqueued_script_annotation' ), PHP_INT_MAX, 2 );
+		add_filter( 'style_loader_tag', array( $this, 'add_enqueued_style_annotation' ), PHP_INT_MAX, 2 );
 	}
 
 	/**
@@ -81,6 +84,62 @@ class Output_Annotator {
 	 */
 	public function print_after_annotation( Invocation $invocation ) {
 		printf( '<!-- /%s %d -->', static::ANNOTATION_TAG, $invocation->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+
+	/**
+	 * Add annotation for an enqueued dependency that was printed.
+	 *
+	 * @param string $tag      HTML tag.
+	 * @param string $handle   Handle.
+	 * @param string $type     Type, such as 'enqueued_script' or 'enqueued_style'.
+	 * @param string $registry Registry name, such as 'wp_scripts' or 'wp_styles'.
+	 * @return string HTML tag with annotation.
+	 */
+	public function add_enqueued_dependency_annotation( $tag, $handle, $type, $registry ) {
+		if ( ! $handle ) {
+			return $tag;
+		}
+
+		$invocations = $this->invocation_watcher->plugin->dependencies->get_dependency_enqueueing_invocations( $registry, $handle );
+		if ( empty( $invocations ) ) {
+			return $tag;
+		}
+
+		$data = array(
+			'type'        => $type,
+			'invocations' => wp_list_pluck( $invocations, 'id' ),
+		);
+
+		return implode(
+			'',
+			array(
+				$this->invocation_watcher->output_annotator->get_annotation_comment( $data, false ),
+				$tag,
+				$this->invocation_watcher->output_annotator->get_annotation_comment( $data, true ),
+			)
+		);
+	}
+
+	/**
+	 * Add annotation for an enqueued script that was printed.
+	 *
+	 * @param string $tag    Script tag.
+	 * @param string $handle Handle.
+	 * @return string Script tag.
+	 */
+	public function add_enqueued_script_annotation( $tag, $handle = null ) {
+		return $this->add_enqueued_dependency_annotation( $tag, $handle, 'enqueued_script', 'wp_scripts' );
+	}
+
+	/**
+	 * Add annotation for an enqueued style that was printed.
+	 *
+	 * @param string $tag    Style tag.
+	 * @param string $handle Handle.
+	 * @return string Style tag.
+	 */
+	public function add_enqueued_style_annotation( $tag, $handle = null ) {
+		return $this->add_enqueued_dependency_annotation( $tag, $handle, 'enqueued_style', 'wp_styles' );
 	}
 
 	/**
