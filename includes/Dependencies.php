@@ -31,7 +31,7 @@ class Dependencies {
 	 *
 	 * @var bool[]
 	 */
-	protected $sourced_script_enqueues = array();
+	protected $sourced_script_enqueues = [];
 
 	/**
 	 * Lookup of which enqueued styles have already been assigned to hooks.
@@ -40,7 +40,7 @@ class Dependencies {
 	 *
 	 * @var bool[]
 	 */
-	protected $sourced_style_enqueues = array();
+	protected $sourced_style_enqueues = [];
 
 	/**
 	 * Dependencies constructor.
@@ -83,7 +83,7 @@ class Dependencies {
 		if ( $dependencies && isset( $dependencies->queue ) ) {
 			return $dependencies->queue;
 		}
-		return array();
+		return [];
 	}
 
 	/**
@@ -95,7 +95,7 @@ class Dependencies {
 	 * @return Invocation[] Invocations.
 	 */
 	public function get_dependency_enqueueing_invocations( $type, $handle ) {
-		$enqueueing_invocations = array();
+		$enqueueing_invocations = [];
 		foreach ( $this->invocation_watcher->finalized_invocations as $invocation ) {
 			// @todo This should be be improved, perhaps a method that we can pass $type.
 			if ( 'wp_scripts' === $type ) {
@@ -103,7 +103,7 @@ class Dependencies {
 			} elseif ( 'wp_styles' === $type ) {
 				$enqueued_handles = $invocation->enqueued_styles;
 			} else {
-				$enqueued_handles = array();
+				$enqueued_handles = [];
 			}
 
 			$is_enqueued = false;
@@ -137,12 +137,12 @@ class Dependencies {
 	 */
 	public function get_dependencies( WP_Dependencies $dependencies, $handle, $max_depth = 50 ) {
 		if ( $max_depth < 0 || ! isset( $dependencies->registered[ $handle ] ) ) {
-			return array();
+			return [];
 		}
 
 		$dependency_handles = $dependencies->registered[ $handle ]->deps;
 		if ( empty( $dependency_handles ) ) {
-			return array();
+			return [];
 		}
 
 		$max_depth--;
@@ -169,7 +169,7 @@ class Dependencies {
 		$before_script_handles = $invocation->get_before_scripts_queue();
 		$after_script_handles  = $this->get_dependency_queue( 'wp_scripts' );
 
-		$enqueued_handles = array();
+		$enqueued_handles = [];
 		foreach ( array_diff( $after_script_handles, $before_script_handles ) as $enqueued_script ) {
 
 			// Flag this script handle as being associated with this hook callback invocation.
@@ -195,7 +195,7 @@ class Dependencies {
 		$before_style_handles = $invocation->get_before_styles_queue();
 		$after_style_handles  = $this->get_dependency_queue( 'wp_styles' );
 
-		$enqueued_handles = array();
+		$enqueued_handles = [];
 		foreach ( array_diff( $after_style_handles, $before_style_handles ) as $enqueued_style ) {
 
 			// Flag this style handle as being associated with this hook callback invocation.

@@ -48,14 +48,14 @@ class Invocation_Watcher {
 	 *
 	 * @var Invocation[]
 	 */
-	public $invocation_stack = array();
+	public $invocation_stack = [];
 
 	/**
 	 * Processed hooks.
 	 *
 	 * @var Invocation[]
 	 */
-	public $finalized_invocations = array();
+	public $finalized_invocations = [];
 
 	/**
 	 * Invocation_Watcher constructor.
@@ -71,8 +71,8 @@ class Invocation_Watcher {
 		$this->plugin = $plugin;
 
 		$this->hook_wrapper = new Hook_Wrapper(
-			array( $this, 'before_hook' ),
-			array( $this, 'after_hook' )
+			[ $this, 'before_hook' ],
+			[ $this, 'after_hook' ]
 		);
 
 		$this->output_annotator = new Output_Annotator( $this );

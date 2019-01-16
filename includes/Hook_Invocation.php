@@ -59,11 +59,11 @@ class Hook_Invocation extends Invocation {
 
 		return array_merge(
 			compact( 'id' ),
-			array(
+			[
 				'type'     => $this->is_action() ? 'action' : 'filter',
 				'name'     => $this->name,
 				'priority' => $this->priority,
-			),
+			],
 			$data
 		);
 	}

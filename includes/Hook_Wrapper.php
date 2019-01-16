@@ -44,14 +44,14 @@ class Hook_Wrapper {
 	 * Add all hook to wrap hook callbacks.
 	 */
 	public function add_all_hook() {
-		add_action( 'all', array( $this, 'wrap_hook_callbacks' ) );
+		add_action( 'all', [ $this, 'wrap_hook_callbacks' ] );
 	}
 
 	/**
 	 * Remove all hook to wrap hook callbacks.
 	 */
 	public function remove_all_hook() {
-		remove_action( 'all', array( $this, 'wrap_hook_callbacks' ) );
+		remove_action( 'all', [ $this, 'wrap_hook_callbacks' ] );
 	}
 
 	/**

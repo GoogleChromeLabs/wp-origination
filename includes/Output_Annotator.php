@@ -56,7 +56,7 @@ class Output_Annotator {
 
 		// Output buffer so that Server-Timing headers can be sent, and prevent plugins from flushing it.
 		ob_start(
-			array( $this, 'finish' ),
+			[ $this, 'finish' ],
 			null,
 			0
 		);
@@ -64,8 +64,8 @@ class Output_Annotator {
 		// Prevent PHP Notice: ob_end_flush(): failed to send buffer.
 		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
 
-		add_filter( 'script_loader_tag', array( $this, 'add_enqueued_script_annotation' ), PHP_INT_MAX, 2 );
-		add_filter( 'style_loader_tag', array( $this, 'add_enqueued_style_annotation' ), PHP_INT_MAX, 2 );
+		add_filter( 'script_loader_tag', [ $this, 'add_enqueued_script_annotation' ], PHP_INT_MAX, 2 );
+		add_filter( 'style_loader_tag', [ $this, 'add_enqueued_style_annotation' ], PHP_INT_MAX, 2 );
 	}
 
 	/**
@@ -105,18 +105,18 @@ class Output_Annotator {
 			return $tag;
 		}
 
-		$data = array(
+		$data = [
 			'type'        => $type,
 			'invocations' => wp_list_pluck( $invocations, 'id' ),
-		);
+		];
 
 		return implode(
 			'',
-			array(
+			[
 				$this->invocation_watcher->output_annotator->get_annotation_comment( $data, false ),
 				$tag,
 				$this->invocation_watcher->output_annotator->get_annotation_comment( $data, true ),
-			)
+			]
 		);
 	}
 
@@ -179,9 +179,9 @@ class Output_Annotator {
 		$closing    = ! empty( $matches['closing'] );
 
 		if ( $closing ) {
-			$data = array(
+			$data = [
 				'id' => $invocation->id,
-			);
+			];
 		} else {
 			$data = $invocation->data();
 		}
@@ -232,24 +232,24 @@ class Output_Annotator {
 		// Match all start tags that have attributes.
 		$pattern = join(
 			'',
-			array(
+			[
 				'#<',
 				'(?P<name>[a-zA-Z0-9_\-]+)',
 				'(?P<attrs>\s',
 				'(?:' . $placeholder_annotation_pattern . '|[^<>"\']+|"[^"]*+"|\'[^\']*+\')*+', // Attribute tokens, plus annotations.
 				')>#s',
-			)
+			]
 		);
 
 		$buffer = preg_replace_callback(
 			$pattern,
-			array( $this, 'purge_annotations_in_start_tag' ),
+			[ $this, 'purge_annotations_in_start_tag' ],
 			$buffer
 		);
 
 		$buffer = preg_replace_callback(
 			'#' . $placeholder_annotation_pattern . '#',
-			array( $this, 'hydrate_placeholder_annotation' ),
+			[ $this, 'hydrate_placeholder_annotation' ],
 			$buffer
 		);
 

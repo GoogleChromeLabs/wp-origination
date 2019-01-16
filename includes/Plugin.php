@@ -177,11 +177,11 @@ class Plugin {
 		// @todo Let Database and Dependencies instances be added as direct dependencies of this class as well.
 		$this->invocation_watcher = new Invocation_Watcher(
 			$this,
-			array(
+			[
 				'can_show_queries_callback' => function() {
 					return current_user_can( $this->show_queries_cap );
 				},
-			)
+			]
 		);
 
 		$this->database = new Database( $this->invocation_watcher );
@@ -191,6 +191,6 @@ class Plugin {
 		$this->invocation_watcher->start();
 
 		$this->server_timing_headers = new Server_Timing_Headers( $this->invocation_watcher );
-		add_action( 'shutdown', array( $this->server_timing_headers, 'send' ) );
+		add_action( 'shutdown', [ $this->server_timing_headers, 'send' ] );
 	}
 }

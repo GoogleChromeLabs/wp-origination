@@ -246,12 +246,12 @@ class Invocation {
 				// Purge references to the hook wrapper from the query call stack.
 				$backtrace = explode( ', ', str_replace( $search, '', $query[2] ) );
 
-				return array(
+				return [
 					'sql'       => $query[0],
 					'duration'  => floatval( $query[1] ),
 					'backtrace' => $backtrace,
 					'timestamp' => floatval( $query[2] ),
-				);
+				];
 			},
 			$this->query_indices
 		);
@@ -280,14 +280,14 @@ class Invocation {
 	 * @return array Data.
 	 */
 	public function data() {
-		$data = array(
+		$data = [
 			'id'       => $this->id,
 			'function' => $this->function_name,
 			'duration' => $this->duration(),
-			'source'   => array(
+			'source'   => [
 				'file' => $this->source_file,
-			),
-		);
+			],
+		];
 
 		if ( $this->invocation_watcher->can_show_queries() ) {
 			$queries = $this->queries();

@@ -38,7 +38,7 @@ class Database {
 	 *
 	 * @var bool[]
 	 */
-	protected $sourced_query_indices = array();
+	protected $sourced_query_indices = [];
 
 	/**
 	 * Database constructor.
@@ -72,17 +72,17 @@ class Database {
 
 		// Short-circuit if queries are not being saved (aka if SAVEQUERIES is not defined).
 		if ( empty( $this->wpdb->queries ) ) {
-			return array();
+			return [];
 		}
 
 		$before_num_queries = $invocation->get_before_num_queries();
 
 		// If no queries have been made during the hook invocation, short-circuit.
 		if ( $this->wpdb->num_queries === $before_num_queries ) {
-			return array();
+			return [];
 		}
 
-		$query_indices = array();
+		$query_indices = [];
 		foreach ( range( $before_num_queries, $this->wpdb->num_queries - 1 ) as $query_index ) {
 
 			// Flag this query as being associated with this hook instance.

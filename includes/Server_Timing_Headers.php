@@ -35,7 +35,7 @@ class Server_Timing_Headers {
 	 * Send the headers for the processed invocations on the invocation watcher.
 	 */
 	public function send() {
-		$entity_timings = array();
+		$entity_timings = [];
 
 		foreach ( $this->invocation_watcher->finalized_invocations as $processed_hook ) {
 			try {

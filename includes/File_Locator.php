@@ -41,7 +41,7 @@ class File_Locator {
 	 *
 	 * @var string[]
 	 */
-	public $themes_directories = array();
+	public $themes_directories = [];
 
 	/**
 	 * Cached file locations.
@@ -49,7 +49,7 @@ class File_Locator {
 	 * @see File_Locator::identify_file_location()
 	 * @var array[]
 	 */
-	protected $cached_file_locations = array();
+	protected $cached_file_locations = [];
 
 	/**
 	 * File_Locator constructor.
@@ -62,7 +62,7 @@ class File_Locator {
 		$theme_roots = array_unique(
 			array_merge(
 				(array) get_theme_roots(),
-				array( get_theme_root() ) // Because this one has a filter that applies.
+				[ get_theme_root() ] // Because this one has a filter that applies.
 			)
 		);
 		foreach ( $theme_roots as $theme_root ) {
@@ -92,21 +92,21 @@ class File_Locator {
 		$slug_pattern = '(?P<root_slug>[^/]+)';
 
 		if ( preg_match( ':' . preg_quote( $this->core_directory, ':' ) . '(wp-admin|wp-includes)/:s', $file, $matches ) ) {
-			$this->cached_file_locations[ $file ] = array(
+			$this->cached_file_locations[ $file ] = [
 				'type' => 'core',
 				'name' => $matches[1],
 				'data' => null,
-			);
+			];
 			return $this->cached_file_locations[ $file ];
 		}
 
 		foreach ( $this->themes_directories as $themes_directory ) {
 			if ( preg_match( ':' . preg_quote( $themes_directory, ':' ) . $slug_pattern . ':s', $file, $matches ) ) {
-				$this->cached_file_locations[ $file ] = array(
+				$this->cached_file_locations[ $file ] = [
 					'type' => 'theme',
 					'name' => $matches['root_slug'],
 					'data' => wp_get_theme( $matches['root_slug'] ),
-				);
+				];
 				return $this->cached_file_locations[ $file ];
 			}
 		}
@@ -152,20 +152,20 @@ class File_Locator {
 				$data = null;
 			}
 
-			$this->cached_file_locations[ $file ] = array(
+			$this->cached_file_locations[ $file ] = [
 				'type' => 'plugin',
 				'name' => $slug,
 				'data' => $data,
-			);
+			];
 			return $this->cached_file_locations[ $file ];
 		}
 
 		if ( preg_match( ':' . preg_quote( $this->mu_plugins_directory, ':' ) . $slug_pattern . ':s', $file, $matches ) ) {
-			$this->cached_file_locations[ $file ] = array(
+			$this->cached_file_locations[ $file ] = [
 				'type' => 'mu-plugin',
 				'name' => $matches['root_slug'],
 				'data' => get_plugin_data( $file ), // This is a best guess as $file may not actually be the plugin file.
-			);
+			];
 			return $this->cached_file_locations[ $file ];
 		}
 
