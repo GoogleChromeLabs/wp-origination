@@ -30,11 +30,27 @@ class Output_Annotator {
 	public $invocation_watcher;
 
 	/**
+	 * Instance of Dependencies.
+	 *
+	 * @var Dependencies
+	 */
+	public $dependencies;
+
+	/**
 	 * Output_Annotator constructor.
+	 *
+	 * @param Dependencies $dependencies Dependencies.
+	 */
+	public function __construct( Dependencies $dependencies ) {
+		$this->dependencies = $dependencies;
+	}
+
+	/**
+	 * Set invocation watcher.
 	 *
 	 * @param Invocation_Watcher $invocation_watcher Invocation watcher.
 	 */
-	public function __construct( Invocation_Watcher $invocation_watcher ) {
+	public function set_invocation_watcher( Invocation_Watcher $invocation_watcher ) {
 		$this->invocation_watcher = $invocation_watcher;
 	}
 
@@ -100,7 +116,7 @@ class Output_Annotator {
 			return $tag;
 		}
 
-		$invocations = $this->invocation_watcher->plugin->dependencies->get_dependency_enqueueing_invocations( $registry, $handle );
+		$invocations = $this->dependencies->get_dependency_enqueueing_invocations( $this->invocation_watcher, $registry, $handle );
 		if ( empty( $invocations ) ) {
 			return $tag;
 		}
@@ -113,9 +129,9 @@ class Output_Annotator {
 		return implode(
 			'',
 			[
-				$this->invocation_watcher->output_annotator->get_annotation_comment( $data, false ),
+				$this->get_annotation_comment( $data, false ),
 				$tag,
-				$this->invocation_watcher->output_annotator->get_annotation_comment( $data, true ),
+				$this->get_annotation_comment( $data, true ),
 			]
 		);
 	}

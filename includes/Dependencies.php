@@ -18,13 +18,6 @@ use \WP_Dependencies, \WP_Scripts, \WP_Styles;
 class Dependencies {
 
 	/**
-	 * Invocation watcher.
-	 *
-	 * @var Invocation_Watcher
-	 */
-	public $invocation_watcher;
-
-	/**
 	 * Lookup of which enqueued scripts have already been assigned to hooks.
 	 *
 	 * Array keys are the query indices and the values are all true.
@@ -41,15 +34,6 @@ class Dependencies {
 	 * @var bool[]
 	 */
 	protected $sourced_style_enqueues = [];
-
-	/**
-	 * Dependencies constructor.
-	 *
-	 * @param Invocation_Watcher $invocation_watcher Invocation watcher.
-	 */
-	public function __construct( Invocation_Watcher $invocation_watcher ) {
-		$this->invocation_watcher = $invocation_watcher;
-	}
 
 	/**
 	 * Get dependency registry.
@@ -89,14 +73,14 @@ class Dependencies {
 	/**
 	 * Get the invocations that result in a dependency being enqueued (either directly or via another dependency).
 	 *
-	 * @param string $type   Type (e.g. 'wp_scripts', 'wp_styles').
-	 * @param string $handle Dependency handle.
-	 *
+	 * @param Invocation_Watcher $invocation_watcher Invocation watcher.
+	 * @param string             $type   Type (e.g. 'wp_scripts', 'wp_styles').
+	 * @param string             $handle Dependency handle.
 	 * @return Invocation[] Invocations.
 	 */
-	public function get_dependency_enqueueing_invocations( $type, $handle ) {
+	public function get_dependency_enqueueing_invocations( Invocation_Watcher $invocation_watcher, $type, $handle ) {
 		$enqueueing_invocations = [];
-		foreach ( $this->invocation_watcher->finalized_invocations as $invocation ) {
+		foreach ( $invocation_watcher->finalized_invocations as $invocation ) {
 			// @todo This should be be improved, perhaps a method that we can pass $type.
 			if ( 'wp_scripts' === $type ) {
 				$enqueued_handles = $invocation->enqueued_scripts;

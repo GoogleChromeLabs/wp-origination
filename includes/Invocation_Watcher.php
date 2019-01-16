@@ -16,11 +16,11 @@ namespace Google\WP_Sourcery;
 class Invocation_Watcher {
 
 	/**
-	 * Plugin instance.
+	 * Instance of Database.
 	 *
-	 * @var Plugin
+	 * @var Database
 	 */
-	public $plugin;
+	public $database;
 
 	/**
 	 * Instance of Hook_Wrapper.
@@ -35,6 +35,20 @@ class Invocation_Watcher {
 	 * @var Output_Annotator
 	 */
 	public $output_annotator;
+
+	/**
+	 * Instance of File_Locator.
+	 *
+	 * @var File_Locator
+	 */
+	public $file_locator;
+
+	/**
+	 * Instance of Dependencies.
+	 *
+	 * @var Dependencies
+	 */
+	public $dependencies;
 
 	/**
 	 * Callback for whether queries can be displayed.
@@ -60,22 +74,27 @@ class Invocation_Watcher {
 	/**
 	 * Invocation_Watcher constructor.
 	 *
-	 * @param Plugin $plugin  Plugin instance.
-	 * @param array  $options Options.
+	 * @param File_Locator     $file_locator     File locator.
+	 * @param Output_Annotator $output_annotator Output annotator.
+	 * @param Dependencies     $dependencies     Dependencies.
+	 * @param Database         $database         Database.
+	 * @param array            $options          Options.
 	 */
-	public function __construct( Plugin $plugin, $options ) {
+	public function __construct( File_Locator $file_locator, Output_Annotator $output_annotator, Dependencies $dependencies, Database $database, $options ) {
 		foreach ( $options as $key => $value ) {
 			$this->$key = $value;
 		}
 
-		$this->plugin = $plugin;
+		$this->file_locator     = $file_locator;
+		$this->output_annotator = $output_annotator;
+		$this->dependencies     = $dependencies;
+		$this->database         = $database;
 
 		$this->hook_wrapper = new Hook_Wrapper(
 			[ $this, 'before_hook' ],
 			[ $this, 'after_hook' ]
 		);
 
-		$this->output_annotator = new Output_Annotator( $this );
 	}
 
 	/**
@@ -109,7 +128,7 @@ class Invocation_Watcher {
 	 * }
 	 */
 	public function before_hook( $args ) {
-		$invocation = new Hook_Invocation( $this, $args );
+		$invocation = new Hook_Invocation( $this, $this->database, $this->file_locator, $this->dependencies, $args );
 
 		$this->invocation_stack[] = $invocation;
 
@@ -132,7 +151,7 @@ class Invocation_Watcher {
 		$invocation->finalize();
 
 		// @todo This is not correct. An invocation should only store the start query index and end query index. Actual queries performed by invocation can then be determined by examining children.
-		$this->plugin->database->identify_invocation_queries( $invocation );
+		$this->database->identify_invocation_queries( $invocation );
 
 		if ( $invocation->can_output() ) {
 			$this->output_annotator->print_after_annotation( $invocation );

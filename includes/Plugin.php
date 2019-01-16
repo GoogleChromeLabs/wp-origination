@@ -39,13 +39,6 @@ class Plugin {
 	public $show_queries_cap = 'manage_options';
 
 	/**
-	 * Instance of File_Locator.
-	 *
-	 * @var File_Locator
-	 */
-	public $file_locator;
-
-	/**
 	 * Instance of Invocation_Watcher.
 	 *
 	 * @var Invocation_Watcher
@@ -72,6 +65,20 @@ class Plugin {
 	 * @var Database
 	 */
 	public $database;
+
+	/**
+	 * Instance of File_Locator.
+	 *
+	 * @var File_Locator
+	 */
+	public $file_locator;
+
+	/**
+	 * Instance of Output_Annotator.
+	 *
+	 * @var Output_Annotator
+	 */
+	public $output_annotator;
 
 	/**
 	 * Retrieves the main instance of the plugin.
@@ -166,17 +173,29 @@ class Plugin {
 
 	/**
 	 * Init.
+	 *
+	 * @global \wpdb $wpdb
 	 */
 	public function init() {
+		global $wpdb;
 		if ( ! $this->should_run() ) {
 			return;
 		}
 
 		$this->file_locator = new File_Locator();
 
+		$this->dependencies = new Dependencies();
+
+		$this->output_annotator = new Output_Annotator( $this->dependencies );
+
+		$this->database = new Database( $wpdb );
+
 		// @todo Let Database and Dependencies instances be added as direct dependencies of this class as well.
 		$this->invocation_watcher = new Invocation_Watcher(
-			$this,
+			$this->file_locator,
+			$this->output_annotator,
+			$this->dependencies,
+			$this->database,
 			[
 				'can_show_queries_callback' => function() {
 					return current_user_can( $this->show_queries_cap );
@@ -184,9 +203,8 @@ class Plugin {
 			]
 		);
 
-		$this->database = new Database( $this->invocation_watcher );
-
-		$this->dependencies = new Dependencies( $this->invocation_watcher );
+		$this->output_annotator->set_invocation_watcher( $this->invocation_watcher );
+		$this->database->set_invocation_watcher( $this->invocation_watcher );
 
 		$this->invocation_watcher->start();
 

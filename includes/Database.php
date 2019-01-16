@@ -41,15 +41,21 @@ class Database {
 	protected $sourced_query_indices = [];
 
 	/**
-	 * Database constructor.
+	 * Set invocation watcher.
 	 *
 	 * @param Invocation_Watcher $invocation_watcher Invocation watcher.
-	 * @global \wpdb $wpdb
 	 */
-	public function __construct( Invocation_Watcher $invocation_watcher ) {
-		global $wpdb;
+	public function set_invocation_watcher( Invocation_Watcher $invocation_watcher ) {
 		$this->invocation_watcher = $invocation_watcher;
-		$this->wpdb               = $wpdb;
+	}
+
+	/**
+	 * Database constructor.
+	 *
+	 * @param wpdb $wpdb WordPress Database.
+	 */
+	public function __construct( $wpdb ) {
+		$this->wpdb = $wpdb;
 	}
 
 	/**

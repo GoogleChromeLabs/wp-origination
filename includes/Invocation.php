@@ -39,6 +39,27 @@ class Invocation {
 	public $invocation_watcher;
 
 	/**
+	 * Instance of File_Locator.
+	 *
+	 * @var File_Locator
+	 */
+	public $file_locator;
+
+	/**
+	 * Instance of Database.
+	 *
+	 * @var Database
+	 */
+	public $database;
+
+	/**
+	 * Instance of Dependencies.
+	 *
+	 * @var Dependencies
+	 */
+	public $dependencies;
+
+	/**
 	 * Callback function.
 	 *
 	 * @var callable
@@ -139,10 +160,13 @@ class Invocation {
 	/**
 	 * Constructor.
 	 *
-	 * @param Invocation_Watcher $watcher Watcher.
+	 * @param Invocation_Watcher $watcher      Watcher.
+	 * @param Database           $database     Database.
+	 * @param File_Locator       $file_locator File locator.
+	 * @param Dependencies       $dependencies Dependencies.
 	 * @param array              $args    Arguments which are assigned to properties.
 	 */
-	public function __construct( Invocation_Watcher $watcher, $args ) {
+	public function __construct( Invocation_Watcher $watcher, Database $database, File_Locator $file_locator, Dependencies $dependencies, $args ) {
 		foreach ( $args as $key => $value ) {
 			if ( property_exists( $this, $key ) ) {
 				$this->$key = $value;
@@ -150,13 +174,16 @@ class Invocation {
 		}
 		$this->id                 = ++static::$instance_count;
 		$this->invocation_watcher = $watcher;
+		$this->database           = $database;
+		$this->file_locator       = $file_locator;
+		$this->dependencies       = $dependencies;
 		$this->start_time         = microtime( true );
 
-		$this->before_num_queries = $this->invocation_watcher->plugin->database->get_wpdb()->num_queries;
+		$this->before_num_queries = $this->database->get_wpdb()->num_queries;
 
 		// @todo Better to have some multi-dimensional array structure here?
-		$this->before_scripts_queue = $this->invocation_watcher->plugin->dependencies->get_dependency_queue( 'wp_scripts' );
-		$this->before_styles_queue  = $this->invocation_watcher->plugin->dependencies->get_dependency_queue( 'wp_styles' );
+		$this->before_scripts_queue = $this->dependencies->get_dependency_queue( 'wp_scripts' );
+		$this->before_styles_queue  = $this->dependencies->get_dependency_queue( 'wp_styles' );
 	}
 
 	/**
@@ -203,11 +230,11 @@ class Invocation {
 		$this->end_time = microtime( true );
 
 		// Flag the queries that were used during this hook.
-		$this->query_indices = $this->invocation_watcher->plugin->database->identify_invocation_queries( $this );
+		$this->query_indices = $this->database->identify_invocation_queries( $this );
 
 		// Capture the scripts and styles that were enqueued by this hook.
-		$this->enqueued_scripts = $this->invocation_watcher->plugin->dependencies->identify_enqueued_scripts( $this );
-		$this->enqueued_styles  = $this->invocation_watcher->plugin->dependencies->identify_enqueued_styles( $this );
+		$this->enqueued_scripts = $this->dependencies->identify_enqueued_scripts( $this );
+		$this->enqueued_styles  = $this->dependencies->identify_enqueued_styles( $this );
 
 		// These are no longer needed after calling identify_queued_scripts and identify_queued_styles, and they just take up memory.
 		unset( $this->before_scripts_queue );
@@ -232,7 +259,7 @@ class Invocation {
 	 * @return array|null Queries or null if no queries are being saved (SAVEQUERIES).
 	 */
 	public function queries() {
-		$wpdb = $this->invocation_watcher->plugin->database->get_wpdb();
+		$wpdb = $this->database->get_wpdb();
 		if ( empty( $wpdb->queries ) || ! isset( $this->query_indices ) ) {
 			return null;
 		}
@@ -271,7 +298,7 @@ class Invocation {
 	 * }
 	 */
 	public function file_location() {
-		return $this->invocation_watcher->plugin->file_locator->identify( $this->source_file );
+		return $this->file_locator->identify( $this->source_file );
 	}
 
 	/**
