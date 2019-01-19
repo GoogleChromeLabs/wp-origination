@@ -114,12 +114,21 @@ class Hook_Wrapper {
 					if ( $this->before_callback ) {
 						$before_return = call_user_func( $this->before_callback, $context );
 					}
-					$return = call_user_func_array( $function, $hook_args );
+					$exception = null;
+					try {
+						$return = call_user_func_array( $function, $hook_args );
+					} catch ( \Exception $e ) {
+						$exception = $e;
+						$return    = null;
+					}
 					if ( $this->after_callback ) {
 						call_user_func(
 							$this->after_callback,
 							array_merge( $context, compact( 'return', 'before_return' ) )
 						);
+					}
+					if ( $exception ) {
+						throw $exception;
 					}
 
 					return $return;
