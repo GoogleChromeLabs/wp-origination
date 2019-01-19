@@ -80,7 +80,7 @@ class Dependencies {
 	 */
 	public function get_dependency_enqueueing_invocations( Invocation_Watcher $invocation_watcher, $type, $handle ) {
 		$enqueueing_invocations = [];
-		foreach ( $invocation_watcher->finalized_invocations as $invocation ) {
+		foreach ( $invocation_watcher->invocations as $invocation ) {
 			// @todo This should be be improved, perhaps a method that we can pass $type.
 			if ( 'wp_scripts' === $type ) {
 				$enqueued_handles = $invocation->enqueued_scripts;

@@ -65,11 +65,11 @@ class Invocation_Watcher {
 	public $invocation_stack = [];
 
 	/**
-	 * Processed hooks.
+	 * All invocations by ID and ordered by occurrence.
 	 *
 	 * @var Invocation[]
 	 */
-	public $finalized_invocations = [];
+	public $invocations = [];
 
 	/**
 	 * Invocation_Watcher constructor.
@@ -139,8 +139,10 @@ class Invocation_Watcher {
 
 		$this->invocation_stack[] = $invocation;
 
+		$this->invocations[ $invocation->id ] = $invocation;
+
 		if ( $invocation->can_output() ) {
-			$this->output_annotator->print_before_annotation( $invocation );
+			echo $this->output_annotator->get_before_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 	}
 
@@ -161,10 +163,8 @@ class Invocation_Watcher {
 		$this->database->identify_invocation_queries( $invocation );
 
 		if ( $invocation->can_output() ) {
-			$this->output_annotator->print_after_annotation( $invocation );
+			echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
-
-		$this->finalized_invocations[ $invocation->id ] = $invocation;
 	}
 }
 

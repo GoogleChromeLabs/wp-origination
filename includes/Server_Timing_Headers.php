@@ -37,7 +37,7 @@ class Server_Timing_Headers {
 	public function send() {
 		$entity_timings = [];
 
-		foreach ( $this->invocation_watcher->finalized_invocations as $processed_hook ) {
+		foreach ( $this->invocation_watcher->invocations as $processed_hook ) {
 			try {
 				$hook_duration = $processed_hook->duration();
 			} catch ( \Exception $e ) {

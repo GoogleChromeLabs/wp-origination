@@ -88,18 +88,20 @@ class Output_Annotator {
 	 * Print annotation placeholder before an printing invoked callback.
 	 *
 	 * @param Invocation $invocation Invocation.
+	 * @return string Before placeholder annotation HTML comment.
 	 */
-	public function print_before_annotation( Invocation $invocation ) {
-		printf( '<!-- %s %d -->', static::ANNOTATION_TAG, $invocation->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	public function get_before_annotation( Invocation $invocation ) {
+		return sprintf( '<!-- %s %d -->', static::ANNOTATION_TAG, $invocation->id );
 	}
 
 	/**
 	 * Print annotation placeholder after an printing invoked callback.
 	 *
 	 * @param Invocation $invocation Invocation.
+	 * @return string After placeholder annotation HTML comment.
 	 */
-	public function print_after_annotation( Invocation $invocation ) {
-		printf( '<!-- /%s %d -->', static::ANNOTATION_TAG, $invocation->id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	public function get_after_annotation( Invocation $invocation ) {
+		return sprintf( '<!-- /%s %d -->', static::ANNOTATION_TAG, $invocation->id );
 	}
 
 	/**
@@ -170,7 +172,7 @@ class Output_Annotator {
 			function( $annotation_matches ) {
 				$id = intval( $annotation_matches['id'] );
 				if ( isset( $this->finalized_invocations[ $id ] ) ) {
-					$this->invocation_watcher->finalized_invocations[ $id ]->intra_tag = true;
+					$this->invocation_watcher->invocations[ $id ]->intra_tag = true;
 				}
 				return ''; // Purge since an HTML comment cannot occur in a start tag.
 			},
@@ -188,10 +190,10 @@ class Output_Annotator {
 	 */
 	public function hydrate_placeholder_annotation( $matches ) {
 		$id = intval( $matches['id'] );
-		if ( ! isset( $this->invocation_watcher->finalized_invocations[ $id ] ) ) {
+		if ( ! isset( $this->invocation_watcher->invocations[ $id ] ) ) {
 			return '';
 		}
-		$invocation = $this->invocation_watcher->finalized_invocations[ $id ];
+		$invocation = $this->invocation_watcher->invocations[ $id ];
 		$closing    = ! empty( $matches['closing'] );
 
 		if ( $closing ) {
@@ -244,6 +246,12 @@ class Output_Annotator {
 	 */
 	public function finish( $buffer ) {
 		$placeholder_annotation_pattern = static::get_placeholder_annotation_pattern();
+
+		// Make sure that all open invocations get closed, which can happen when an exit is done in a hook callback.
+		while ( ! empty( $this->invocation_watcher->invocation_stack ) ) {
+			$invocation = array_pop( $this->invocation_watcher->invocation_stack );
+			$buffer    .= $this->get_after_annotation( $invocation );
+		}
 
 		// Match all start tags that have attributes.
 		$pattern = join(
