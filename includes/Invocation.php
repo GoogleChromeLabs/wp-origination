@@ -60,6 +60,20 @@ class Invocation {
 	public $dependencies;
 
 	/**
+	 * Parent invocation.
+	 *
+	 * @var Invocation
+	 */
+	public $parent;
+
+	/**
+	 * Children invocations.
+	 *
+	 * @var Invocation[]
+	 */
+	public $children = [];
+
+	/**
 	 * Callback function.
 	 *
 	 * @var callable
@@ -314,6 +328,13 @@ class Invocation {
 			'source'   => [
 				'file' => $this->source_file,
 			],
+			'parent'   => $this->parent ? $this->parent->id : null,
+			'children' => array_map(
+				function( Invocation $invocation ) {
+					return $invocation->id;
+				},
+				$this->children
+			),
 		];
 
 		if ( $this->invocation_watcher->can_show_queries() ) {

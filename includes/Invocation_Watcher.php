@@ -126,7 +126,16 @@ class Invocation_Watcher {
 	 * }
 	 */
 	public function before_hook( $args ) {
+		$parent = null;
+		if ( ! empty( $this->invocation_stack ) ) {
+			$parent = $this->invocation_stack[ count( $this->invocation_stack ) - 1 ];
+		}
+
+		$args['parent'] = $parent;
+
 		$invocation = new Hook_Invocation( $this, $this->database, $this->file_locator, $this->dependencies, $args );
+
+		$parent->children[] = $invocation;
 
 		$this->invocation_stack[] = $invocation;
 
