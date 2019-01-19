@@ -78,9 +78,10 @@ class Invocation_Watcher {
 	 * @param Output_Annotator $output_annotator Output annotator.
 	 * @param Dependencies     $dependencies     Dependencies.
 	 * @param Database         $database         Database.
+	 * @param Hook_Wrapper     $hook_wrapper     Hook wrapper.
 	 * @param array            $options          Options.
 	 */
-	public function __construct( File_Locator $file_locator, Output_Annotator $output_annotator, Dependencies $dependencies, Database $database, $options ) {
+	public function __construct( File_Locator $file_locator, Output_Annotator $output_annotator, Dependencies $dependencies, Database $database, Hook_Wrapper $hook_wrapper, $options ) {
 		foreach ( $options as $key => $value ) {
 			$this->$key = $value;
 		}
@@ -89,18 +90,15 @@ class Invocation_Watcher {
 		$this->output_annotator = $output_annotator;
 		$this->dependencies     = $dependencies;
 		$this->database         = $database;
-
-		$this->hook_wrapper = new Hook_Wrapper(
-			[ $this, 'before_hook' ],
-			[ $this, 'after_hook' ]
-		);
-
+		$this->hook_wrapper     = $hook_wrapper;
 	}
 
 	/**
 	 * Start watching.
 	 */
 	public function start() {
+		$this->hook_wrapper->before_callback = [ $this, 'before_hook' ];
+		$this->hook_wrapper->after_callback  = [ $this, 'after_hook' ];
 		$this->hook_wrapper->add_all_hook();
 		$this->output_annotator->start();
 	}

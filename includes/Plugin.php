@@ -81,6 +81,13 @@ class Plugin {
 	public $output_annotator;
 
 	/**
+	 * Instance of Hook_Wrapper.
+	 *
+	 * @var Hook_Wrapper
+	 */
+	public $hook_wrapper;
+
+	/**
 	 * Retrieves the main instance of the plugin.
 	 *
 	 * @since 0.1.0
@@ -190,12 +197,14 @@ class Plugin {
 
 		$this->database = new Database( $wpdb );
 
-		// @todo Let Database and Dependencies instances be added as direct dependencies of this class as well.
+		$this->hook_wrapper = new Hook_Wrapper();
+
 		$this->invocation_watcher = new Invocation_Watcher(
 			$this->file_locator,
 			$this->output_annotator,
 			$this->dependencies,
 			$this->database,
+			$this->hook_wrapper,
 			[
 				'can_show_queries_callback' => function() {
 					return current_user_can( $this->show_queries_cap );
