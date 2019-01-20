@@ -332,7 +332,7 @@ class Invocation {
 		$data = [
 			'id'       => $this->id,
 			'function' => $this->function_name,
-			'duration' => $this->duration(),
+			'duration' => $this->duration( true ),
 			'source'   => [
 				'file' => $this->source_file,
 			],
