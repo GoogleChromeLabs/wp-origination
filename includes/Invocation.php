@@ -258,13 +258,21 @@ class Invocation {
 	/**
 	 * Get the duration of the hook callback invocation.
 	 *
+	 * @param bool $own_time Whether to exclude children invocations from the total time.
 	 * @return float Duration.
 	 */
-	public function duration() {
-		if ( ! isset( $this->end_time ) ) {
-			return -1;
+	public function duration( $own_time = false ) {
+		// The end_time won't be set if method is invoked before finalize() is called.
+		$end_time = isset( $this->end_time ) ? $this->end_time : microtime( true );
+
+		$duration = $end_time - $this->start_time;
+
+		if ( $own_time ) {
+			foreach ( $this->children as $invocation ) {
+				$duration -= $invocation->duration( false );
+			}
 		}
-		return $this->end_time - $this->start_time;
+		return $duration;
 	}
 
 	/**

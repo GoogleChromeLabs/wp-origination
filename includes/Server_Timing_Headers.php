@@ -38,11 +38,7 @@ class Server_Timing_Headers {
 		$entity_timings = [];
 
 		foreach ( $this->invocation_watcher->invocations as $processed_hook ) {
-			try {
-				$hook_duration = $processed_hook->duration();
-			} catch ( \Exception $e ) {
-				$hook_duration = -1;
-			}
+			$hook_duration = $processed_hook->duration( true );
 
 			$file_location = $processed_hook->file_location();
 			if ( $file_location ) {
