@@ -213,7 +213,6 @@ class Plugin {
 		);
 
 		$this->output_annotator->set_invocation_watcher( $this->invocation_watcher );
-		$this->database->set_invocation_watcher( $this->invocation_watcher );
 
 		$this->invocation_watcher->start();
 

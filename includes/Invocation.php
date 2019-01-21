@@ -124,11 +124,18 @@ class Invocation {
 	public $intra_tag = false;
 
 	/**
-	 * Number of queries before function called.
+	 * Number of queries before function started.
 	 *
 	 * @var int
 	 */
-	protected $before_num_queries;
+	public $before_query_index;
+
+	/**
+	 * Query index after the invocation finished.
+	 *
+	 * @var int
+	 */
+	public $after_query_index;
 
 	/**
 	 * Script handles that were enqueued prior to running the hook callback.
@@ -137,7 +144,7 @@ class Invocation {
 	 *
 	 * @var string[]
 	 */
-	protected $before_scripts_queue;
+	public $before_scripts_queue;
 
 	/**
 	 * Scripts enqueued during invocation of hook callback.
@@ -169,7 +176,7 @@ class Invocation {
 	 *
 	 * @var int[]
 	 */
-	public $query_indices;
+	public $own_query_indices = [];
 
 	/**
 	 * Constructor.
@@ -193,7 +200,7 @@ class Invocation {
 		$this->dependencies       = $dependencies;
 		$this->start_time         = microtime( true );
 
-		$this->before_num_queries = $this->database->get_wpdb()->num_queries;
+		$this->before_query_index = $this->database->get_latest_query_index();
 
 		// @todo Better to have some multi-dimensional array structure here?
 		$this->before_scripts_queue = $this->dependencies->get_dependency_queue( 'wp_scripts' );
@@ -207,15 +214,6 @@ class Invocation {
 	 */
 	public function can_output() {
 		return true;
-	}
-
-	/**
-	 * Get the query count before the hook was invoked.
-	 *
-	 * @return int Query count.
-	 */
-	public function get_before_num_queries() {
-		return $this->before_num_queries;
 	}
 
 	/**
@@ -244,7 +242,9 @@ class Invocation {
 		$this->end_time = microtime( true );
 
 		// Flag the queries that were used during this hook.
-		$this->query_indices = $this->database->identify_invocation_queries( $this );
+		$this->after_query_index = $this->database->get_latest_query_index();
+
+		$this->own_query_indices = $this->database->identify_invocation_queries( $this );
 
 		// Capture the scripts and styles that were enqueued by this hook.
 		$this->enqueued_scripts = $this->dependencies->identify_enqueued_scripts( $this );
@@ -261,7 +261,7 @@ class Invocation {
 	 * @param bool $own_time Whether to exclude children invocations from the total time.
 	 * @return float Duration.
 	 */
-	public function duration( $own_time = false ) {
+	public function duration( $own_time = true ) {
 		// The end_time won't be set if method is invoked before finalize() is called.
 		$end_time = isset( $this->end_time ) ? $this->end_time : microtime( true );
 
@@ -276,36 +276,56 @@ class Invocation {
 	}
 
 	/**
-	 * Get the queries made during the hook callback invocation.
+	 * Get the indices for the queries that were made for this hook.
 	 *
-	 * @return array|null Queries or null if no queries are being saved (SAVEQUERIES).
+	 * @param bool $own Whether to only return query indices for this invocation and not the children.
+	 * @return array Query indices.
 	 */
-	public function queries() {
-		$wpdb = $this->database->get_wpdb();
-		if ( empty( $wpdb->queries ) || ! isset( $this->query_indices ) ) {
-			return null;
+	public function query_indices( $own = true ) {
+
+		// The after_query_index won't be set if method is invoked before finalize() is called.
+		$after_query_index = isset( $this->after_query_index ) ? $this->after_query_index : $this->database->get_latest_query_index();
+
+		if ( $this->before_query_index === $after_query_index ) {
+			return [];
 		}
 
-		$search = sprintf( '%1$s->%2$s\{closure}, call_user_func_array, ', Hook_Wrapper::class, __NAMESPACE__ );
+		$query_indices = $this->own_query_indices;
 
-		$queries = array_map(
-			function ( $query_index ) use ( $wpdb, $search ) {
-				$query = $wpdb->queries[ $query_index ];
+		if ( $own ) {
+			return $query_indices;
+		}
 
-				// Purge references to the hook wrapper from the query call stack.
-				$backtrace = explode( ', ', str_replace( $search, '', $query[2] ) );
-
-				return [
-					'sql'       => $query[0],
-					'duration'  => floatval( $query[1] ),
-					'backtrace' => $backtrace,
-					'timestamp' => floatval( $query[2] ),
-				];
-			},
-			$this->query_indices
+		// Recursively gather all children query indices.
+		$query_indices = array_merge(
+			$query_indices,
+			...array_map(
+				function ( Invocation $invocation ) {
+					return $invocation->query_indices( false );
+				},
+				$this->children
+			)
 		);
 
-		return $queries;
+		sort( $query_indices );
+		return $query_indices;
+	}
+
+	/**
+	 * Get the queries made during the hook callback invocation.
+	 *
+	 * @param bool $own Whether to only return queries from this invocation and not the children.
+	 * @return array|null Queries or null if no queries are being saved (SAVEQUERIES).
+	 */
+	public function queries( $own = true ) {
+		return array_filter(
+			array_map(
+				function( $query_index ) {
+					return $this->database->get_query_by_index( $query_index );
+				},
+				$this->query_indices( $own )
+			)
+		);
 	}
 
 	/**
@@ -332,7 +352,7 @@ class Invocation {
 		$data = [
 			'id'       => $this->id,
 			'function' => $this->function_name,
-			'duration' => $this->duration( true ),
+			'own_time' => $this->duration( true ),
 			'source'   => [
 				'file' => $this->source_file,
 			],
@@ -346,7 +366,7 @@ class Invocation {
 		];
 
 		if ( $this->invocation_watcher->can_show_queries() ) {
-			$queries = $this->queries();
+			$queries = $this->queries( true );
 			if ( ! empty( $queries ) ) {
 				$data['queries'] = $queries;
 			}

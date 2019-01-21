@@ -159,9 +159,6 @@ class Invocation_Watcher {
 
 		$invocation->finalize();
 
-		// @todo This is not correct. An invocation should only store the start query index and end query index. Actual queries performed by invocation can then be determined by examining children.
-		$this->database->identify_invocation_queries( $invocation );
-
 		if ( $invocation->can_output() ) {
 			echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
