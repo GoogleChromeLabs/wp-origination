@@ -43,7 +43,7 @@ function print_template() {
 			<meta charset="utf-8">
 			<?php wp_head(); ?>
 		</head>
-		<body <?php body_class() ?>>
+		<body <?php body_class(); ?>>
 			<?php do_action( 'hook_invoker_body' ); ?>
 
 			<?php wp_footer(); ?>
@@ -62,7 +62,6 @@ function print_body() {
 
 	do_action( 'hook_invoker_container_print_extra_attributes' );
 	echo '>';
-
 
 	echo '</main>';
 }

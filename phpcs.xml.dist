@@ -4,6 +4,7 @@
 
 	<file>./sourcery.php</file>
 	<file>./includes</file>
+	<file>./tests</file>
 
 	<exclude-pattern type="relative">^/vendor/*</exclude-pattern>
 
@@ -23,6 +24,12 @@
 
     <rule ref="PHPCompatibilityWP">
 		<include-pattern>*\.php$</include-pattern>
+	</rule>
+	<rule ref="Generic.Commenting.DocComment">
+		<include-pattern>tests/tests/phpunit/data/plugins/*</include-pattern>
+	</rule>
+	<rule ref="Squiz.Commenting.FunctionComment">
+		<include-pattern>tests/tests/phpunit/data/plugins/*</include-pattern>
 	</rule>
 	<config name="testVersion" value="5.6-"/>
 
