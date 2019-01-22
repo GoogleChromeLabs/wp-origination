@@ -140,7 +140,17 @@ class Output_Annotator {
 	 * @return string HTML tag with annotation.
 	 */
 	public function add_enqueued_dependency_annotation( $tag, $handle, $type, $registry ) {
+		// Abort if filter has been applied without passing all required arguments.
 		if ( ! $handle ) {
+			return $tag;
+		}
+
+		/*
+		 * Abort if this is a stylesheet that has conditional comments, as adding comments will cause them to be nested,
+		 * which is not allowed for comments. Also, styles that are inside conditional comments are mostly pointless
+		 * to identify the source of since they area dead and won't impact the page for any modern browsers.
+		 */
+		if ( 'wp_styles' === $registry && wp_styles()->get_data( $handle, 'conditional' ) ) {
 			return $tag;
 		}
 
@@ -217,6 +227,7 @@ class Output_Annotator {
 				return '';
 			}
 
+			// Determine invocations for this dependency and store for the closing annotation comment.
 			if ( ! isset( $this->pending_dependency_annotations[ $id ]['invocations'] ) ) {
 				$this->pending_dependency_annotations[ $id ]['invocations'] = wp_list_pluck(
 					$this->dependencies->get_dependency_enqueueing_invocations(
@@ -228,6 +239,7 @@ class Output_Annotator {
 				);
 			}
 
+			// Remove annotation entirely if there are no invocations (which shouldn't happen).
 			if ( empty( $this->pending_dependency_annotations[ $id ]['invocations'] ) ) {
 				unset( $this->pending_dependency_annotations[ $id ] );
 				return '';
