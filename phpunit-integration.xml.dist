@@ -1,0 +1,27 @@
+<phpunit
+	bootstrap="vendor/xwp/wp-dev-lib/sample-config/phpunit-plugin-bootstrap.php"
+	backupGlobals="false"
+	colors="true"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	backupStaticAttributes="false"
+	processIsolation="false"
+	stopOnError="false"
+	stopOnFailure="false"
+	stopOnIncomplete="false"
+	stopOnSkipped="false"
+	syntaxCheck="false"
+	verbose="true"
+	>
+	<testsuites>
+		<testsuite>
+			<directory suffix="Tests.php">./tests/phpunit/integration/</directory>
+		</testsuite>
+	</testsuites>
+	<filter>
+		<whitelist>
+			<directory>./includes</directory>
+		</whitelist>
+	</filter>
+</phpunit>

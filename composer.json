@@ -19,9 +19,19 @@
   "support": {
     "issues": "https://github.com/westonruter/wp-sourcery/issues"
   },
+  "config": {
+    "platform": {
+      "php": "5.6"
+    }
+  },
   "autoload": {
     "psr-4": {
       "Google\\WP_Sourcery\\": "includes"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Google\\WP_Sourcery\\Tests\\PHPUnit\\Framework\\": "tests/phpunit/framework"
     }
   },
   "require": {
@@ -33,12 +43,13 @@
     "squizlabs/php_codesniffer": "^3.4",
     "wp-coding-standards/wpcs": "^1.2.1",
     "phpcompatibility/phpcompatibility-wp": "^2",
-    "xwp/wp-dev-lib": "dev-master"
+    "phpunit/phpunit": "^5.0 || ^6.0 || ^7.0",
+    "xwp/wp-dev-lib": "1.0.0"
   },
   "prefer-stable" : true,
   "scripts": {
-    "phplint": "find -L .  -path ./vendor -prune -o -name '*.php' -print0 | xargs -0 -n 1 -P 4 php -l",
-    "phpcs": "@php ./vendor/bin/phpcs",
+    "lint": "git ls-files -z -- '*.php' | xargs -0 -n 1 -P 4 php -l && phpcs",
+    "test": "WP_TESTS_DIR=/app/public/core-dev/tests/phpunit/ phpunit --config=phpunit-integration.xml.dist",
     "generate-readme": "@php ./vendor/xwp/wp-dev-lib/generate-markdown-readme"
   }
 }
