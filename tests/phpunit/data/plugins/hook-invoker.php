@@ -6,23 +6,20 @@
  * @copyright 2019 Google Inc.
  *
  * @wordpress-plugin
- * Plugin Name:  Hook Invoker
+ * Plugin Name: Hook Invoker
  * Description: Test plugin for hooks.
  */
 
 namespace Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker;
 
-function run() {
+function add_hooks() {
 	add_filter( 'hook_invoker_container_attributes', __NAMESPACE__ . '\add_container_id_attribute' );
 	add_action( 'hook_invoker_container_print_extra_attributes', __NAMESPACE__ . '\print_container_attributes' );
 	add_action( 'hook_invoker_body', __NAMESPACE__ . '\print_body' );
 	add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_scripts' );
-
-	print_template();
 }
 
 function enqueue_scripts() {
-	wp_enqueue_script( 'jquery-ui-widget' );
 	do_action( 'hook_invoker_enqueue_scripts' );
 }
 
