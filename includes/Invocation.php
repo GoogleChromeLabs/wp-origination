@@ -32,6 +32,13 @@ class Invocation {
 	public $id;
 
 	/**
+	 * Whether invocation has been finalized.
+	 *
+	 * @var bool
+	 */
+	public $finalized = false;
+
+	/**
 	 * Invocation Watcher.
 	 *
 	 * @var Invocation_Watcher
@@ -128,14 +135,14 @@ class Invocation {
 	 *
 	 * @var int
 	 */
-	public $before_query_index;
+	protected $before_query_index;
 
 	/**
 	 * Query index after the invocation finished.
 	 *
 	 * @var int
 	 */
-	public $after_query_index;
+	protected $after_query_index;
 
 	/**
 	 * Script handles that were enqueued prior to running the hook callback.
@@ -144,7 +151,7 @@ class Invocation {
 	 *
 	 * @var string[]
 	 */
-	public $before_scripts_queue;
+	protected $before_scripts_queue;
 
 	/**
 	 * Scripts enqueued during invocation of hook callback.
@@ -152,7 +159,7 @@ class Invocation {
 	 * @todo Put into a multi-dimensional enqueued_dependencies array?
 	 * @var string[]
 	 */
-	public $enqueued_scripts;
+	protected $enqueued_scripts;
 
 	/**
 	 * Style handles that were enqueued prior to running the hook callback.
@@ -169,7 +176,7 @@ class Invocation {
 	 * @todo Before finalized, this could return the current array_diff( wp_styles()->queue, $before_styles_queue ) or call identify_enqueued_styles? Would not be final, however.
 	 * @var string[]
 	 */
-	public $enqueued_styles;
+	protected $enqueued_styles;
 
 	/**
 	 * The indices of the queries in $wpdb->queries that this hook was responsible for.
@@ -217,6 +224,26 @@ class Invocation {
 	}
 
 	/**
+	 * Number of queries before function started.
+	 *
+	 * @return int Query index.
+	 */
+	public function get_before_query_index() {
+		return $this->before_query_index;
+	}
+
+	/**
+	 * Number of queries after function started.
+	 *
+	 * The after_query_index won't be set if method is invoked before finalize() is called.
+	 *
+	 * @return int Query index.
+	 */
+	public function get_after_query_index() {
+		return isset( $this->after_query_index ) ? $this->after_query_index : $this->database->get_latest_query_index();
+	}
+
+	/**
 	 * Get the script handles enqueued before the hook callback was invoked.
 	 *
 	 * @todo Combine into get_before_dependencies_queue?
@@ -224,6 +251,19 @@ class Invocation {
 	 */
 	public function get_before_scripts_queue() {
 		return $this->before_scripts_queue;
+	}
+
+	/**
+	 * Get the enqueued script handles during invocation (excluding child invocations).
+	 *
+	 * @throws \Exception If called prior to being finalized.
+	 * @return string[] Script handles.
+	 */
+	public function get_enqueued_scripts() {
+		if ( ! $this->finalized ) {
+			throw new \Exception( 'Not finalized.' );
+		}
+		return $this->enqueued_scripts;
 	}
 
 	/**
@@ -236,9 +276,27 @@ class Invocation {
 	}
 
 	/**
+	 * Get the enqueued style handles during invocation (excluding child invocations).
+	 *
+	 * @throws \Exception If called prior to being finalized.
+	 * @return string[] Style handles.
+	 */
+	public function get_enqueued_styles() {
+		if ( ! $this->finalized ) {
+			throw new \Exception( 'Not finalized.' );
+		}
+		return $this->enqueued_styles;
+	}
+
+	/**
 	 * Finalize the invocation.
+	 *
+	 * @throws \Exception If the invocation was already finalized.
 	 */
 	public function finalize() {
+		if ( $this->finalized ) {
+			throw new \Exception( 'Already finalized.' );
+		}
 		$this->end_time = microtime( true );
 
 		// Flag the queries that were used during this hook.
@@ -249,6 +307,8 @@ class Invocation {
 		// Capture the scripts and styles that were enqueued by this hook.
 		$this->enqueued_scripts = $this->dependencies->identify_enqueued_scripts( $this );
 		$this->enqueued_styles  = $this->dependencies->identify_enqueued_styles( $this );
+
+		$this->finalized = true;
 
 		// These are no longer needed after calling identify_queued_scripts and identify_queued_styles, and they just take up memory.
 		unset( $this->before_scripts_queue );
@@ -282,11 +342,9 @@ class Invocation {
 	 * @return array Query indices.
 	 */
 	public function query_indices( $own = true ) {
+		$after_query_index = $this->get_after_query_index();
 
-		// The after_query_index won't be set if method is invoked before finalize() is called.
-		$after_query_index = isset( $this->after_query_index ) ? $this->after_query_index : $this->database->get_latest_query_index();
-
-		if ( $this->before_query_index === $after_query_index ) {
+		if ( $this->get_before_query_index() === $after_query_index ) {
 			return [];
 		}
 

@@ -113,12 +113,12 @@ class Database {
 		$latest_query_index = $this->get_latest_query_index();
 
 		// If no queries have been made during the hook invocation, short-circuit.
-		if ( $latest_query_index === $invocation->before_query_index ) {
+		if ( $latest_query_index === $invocation->get_before_query_index() ) {
 			return [];
 		}
 
 		$query_indices = [];
-		foreach ( range( $invocation->before_query_index, $latest_query_index ) as $query_index ) {
+		foreach ( range( $invocation->get_before_query_index(), $latest_query_index ) as $query_index ) {
 
 			// Flag this query as being associated with this hook instance.
 			if ( ! isset( $this->sourced_query_indices[ $query_index ] ) ) {

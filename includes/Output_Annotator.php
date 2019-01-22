@@ -23,6 +23,20 @@ class Output_Annotator {
 	const ANNOTATION_TAG = 'sourcery';
 
 	/**
+	 * Identifier used to signify invocation annotation comments.
+	 *
+	 * @var string
+	 */
+	const INVOCATION_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_invocation';
+
+	/**
+	 * Identifier used to signify dependency (scripts & styles) annotation comments.
+	 *
+	 * @var string
+	 */
+	const DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_dependency';
+
+	/**
 	 * Instance of Invocation_Watcher.
 	 *
 	 * @var Invocation_Watcher
@@ -35,6 +49,13 @@ class Output_Annotator {
 	 * @var Dependencies
 	 */
 	public $dependencies;
+
+	/**
+	 * Pending dependency annotations.
+	 *
+	 * @var array
+	 */
+	protected $pending_dependency_annotations = [];
 
 	/**
 	 * Output_Annotator constructor.
@@ -62,7 +83,10 @@ class Output_Annotator {
 	 * @return string Pattern.
 	 */
 	public function get_placeholder_annotation_pattern() {
-		return '<!-- (?P<closing>/)?' . static::ANNOTATION_TAG . ' (?P<id>\d+) -->';
+		return sprintf(
+			'<!-- (?P<closing>/)?(?P<type>%s) (?P<id>\d+) -->',
+			static::INVOCATION_ANNOTATION_PLACEHOLDER_TAG . '|' . static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG
+		);
 	}
 
 	/**
@@ -91,7 +115,7 @@ class Output_Annotator {
 	 * @return string Before placeholder annotation HTML comment.
 	 */
 	public function get_before_annotation( Invocation $invocation ) {
-		return sprintf( '<!-- %s %d -->', static::ANNOTATION_TAG, $invocation->id );
+		return sprintf( '<!-- %s %d -->', static::INVOCATION_ANNOTATION_PLACEHOLDER_TAG, $invocation->id );
 	}
 
 	/**
@@ -101,7 +125,7 @@ class Output_Annotator {
 	 * @return string After placeholder annotation HTML comment.
 	 */
 	public function get_after_annotation( Invocation $invocation ) {
-		return sprintf( '<!-- /%s %d -->', static::ANNOTATION_TAG, $invocation->id );
+		return sprintf( '<!-- /%s %d -->', static::INVOCATION_ANNOTATION_PLACEHOLDER_TAG, $invocation->id );
 	}
 
 	/**
@@ -118,22 +142,16 @@ class Output_Annotator {
 			return $tag;
 		}
 
-		$invocations = $this->dependencies->get_dependency_enqueueing_invocations( $this->invocation_watcher, $registry, $handle );
-		if ( empty( $invocations ) ) {
-			return $tag;
-		}
+		$id = count( $this->pending_dependency_annotations );
 
-		$data = [
-			'type'        => $type,
-			'invocations' => wp_list_pluck( $invocations, 'id' ),
-		];
+		$this->pending_dependency_annotations[] = compact( 'handle', 'type', 'registry' );
 
 		return implode(
 			'',
 			[
-				$this->get_annotation_comment( $data, false ),
+				sprintf( '<!-- %s %d -->', static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG, $id ),
 				$tag,
-				$this->get_annotation_comment( $data, true ),
+				sprintf( '<!-- /%s %d -->', static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG, $id ),
 			]
 		);
 	}
@@ -183,28 +201,59 @@ class Output_Annotator {
 	}
 
 	/**
-	 * Hydrate annotation comments with their invocation details.
+	 * Hydrate annotation placeholder comments with their details.
 	 *
 	 * @param array $matches Matches.
 	 * @return string Hydrated annotation.
 	 */
 	public function hydrate_placeholder_annotation( $matches ) {
-		$id = intval( $matches['id'] );
-		if ( ! isset( $this->invocation_watcher->invocations[ $id ] ) ) {
-			return '';
-		}
-		$invocation = $this->invocation_watcher->invocations[ $id ];
-		$closing    = ! empty( $matches['closing'] );
+		$id      = intval( $matches['id'] );
+		$closing = ! empty( $matches['closing'] );
 
-		if ( $closing ) {
+		if ( self::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG === $matches['type'] ) {
+			if ( ! isset( $this->pending_dependency_annotations[ $id ] ) ) {
+				return '';
+			}
+
+			if ( ! isset( $this->pending_dependency_annotations[ $id ]['invocations'] ) ) {
+				$this->pending_dependency_annotations[ $id ]['invocations'] = wp_list_pluck(
+					$this->dependencies->get_dependency_enqueueing_invocations(
+						$this->invocation_watcher,
+						$this->pending_dependency_annotations[ $id ]['registry'],
+						$this->pending_dependency_annotations[ $id ]['handle']
+					),
+					'id'
+				);
+			}
+
+			if ( empty( $this->pending_dependency_annotations[ $id ]['invocations'] ) ) {
+				unset( $this->pending_dependency_annotations[ $id ] );
+				return '';
+			}
+
 			$data = [
-				'id' => $invocation->id,
+				'type'        => $this->pending_dependency_annotations[ $id ]['type'],
+				'invocations' => $this->pending_dependency_annotations[ $id ]['invocations'],
 			];
-		} else {
-			$data = $invocation->data();
-		}
 
-		return $this->get_annotation_comment( $data, $closing );
+			return $this->get_annotation_comment( $data, $closing );
+		} elseif ( self::INVOCATION_ANNOTATION_PLACEHOLDER_TAG === $matches['type'] ) {
+			if ( ! isset( $this->invocation_watcher->invocations[ $id ] ) ) {
+				return '';
+			}
+			$invocation = $this->invocation_watcher->invocations[ $id ];
+
+			if ( $closing ) {
+				$data = [
+					'id' => $invocation->id,
+				];
+			} else {
+				$data = $invocation->data();
+			}
+
+			return $this->get_annotation_comment( $data, $closing );
+		}
+		return '';
 	}
 
 	/**

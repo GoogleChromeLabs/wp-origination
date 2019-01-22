@@ -83,9 +83,9 @@ class Dependencies {
 		foreach ( $invocation_watcher->invocations as $invocation ) {
 			// @todo This should be be improved, perhaps a method that we can pass $type.
 			if ( 'wp_scripts' === $type ) {
-				$enqueued_handles = $invocation->enqueued_scripts;
+				$enqueued_handles = $invocation->get_enqueued_scripts();
 			} elseif ( 'wp_styles' === $type ) {
-				$enqueued_handles = $invocation->enqueued_styles;
+				$enqueued_handles = $invocation->get_enqueued_styles();
 			} else {
 				$enqueued_handles = [];
 			}
@@ -95,7 +95,8 @@ class Dependencies {
 				$is_enqueued = true;
 			} else {
 				foreach ( $enqueued_handles as $invocation_enqueue_handle ) {
-					if ( in_array( $handle, $this->get_dependencies( $this->get_dependency_registry( $type ), $invocation_enqueue_handle ), true ) ) {
+					$registry = $this->get_dependency_registry( $type );
+					if ( $registry && in_array( $handle, $this->get_dependencies( $registry, $invocation_enqueue_handle ), true ) ) {
 						$is_enqueued = true;
 						break;
 					}
