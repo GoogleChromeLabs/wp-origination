@@ -91,14 +91,16 @@ class Output_Annotator {
 
 	/**
 	 * Start.
+	 *
+	 * @param bool $lock_buffer Whether buffer is locked (can be flushed/erased/cancelled).
 	 */
-	public function start() {
+	public function start( $lock_buffer = true ) {
 
 		// Output buffer so that Server-Timing headers can be sent, and prevent plugins from flushing it.
 		ob_start(
 			[ $this, 'finish' ],
 			null,
-			0
+			$lock_buffer ? 0 : PHP_OUTPUT_HANDLER_STDFLAGS
 		);
 
 		// Prevent PHP Notice: ob_end_flush(): failed to send buffer.

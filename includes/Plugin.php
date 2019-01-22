@@ -112,7 +112,7 @@ class Plugin {
 		}
 
 		static::$instance = new static( $main_file );
-		static::$instance->init();
+		static::$instance->start();
 
 		return true;
 	}
@@ -179,15 +179,12 @@ class Plugin {
 	}
 
 	/**
-	 * Init.
+	 * Construct classes used by the plugin.
 	 *
 	 * @global \wpdb $wpdb
 	 */
 	public function init() {
 		global $wpdb;
-		if ( ! $this->should_run() ) {
-			return;
-		}
 
 		$this->file_locator = new File_Locator();
 
@@ -214,9 +211,21 @@ class Plugin {
 
 		$this->output_annotator->set_invocation_watcher( $this->invocation_watcher );
 
-		$this->invocation_watcher->start();
-
 		$this->server_timing_headers = new Server_Timing_Headers( $this->invocation_watcher );
+	}
+
+	/**
+	 * Run.
+	 */
+	public function start() {
+		if ( ! $this->should_run() ) {
+			return;
+		}
+
+		$this->init();
+
+		$this->invocation_watcher->start();
+		$this->output_annotator->start();
 		add_action( 'shutdown', [ $this->server_timing_headers, 'send' ] );
 	}
 }

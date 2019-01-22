@@ -100,7 +100,6 @@ class Invocation_Watcher {
 		$this->hook_wrapper->before_callback = [ $this, 'before_hook' ];
 		$this->hook_wrapper->after_callback  = [ $this, 'after_hook' ];
 		$this->hook_wrapper->add_all_hook();
-		$this->output_annotator->start();
 	}
 
 	/**
