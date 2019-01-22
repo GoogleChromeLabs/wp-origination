@@ -31,6 +31,8 @@
  */
 global $_google_wp_sourcery_load_errors;
 
+define( 'WP_SOURCERY_PLUGIN_FILE', __FILE__ );
+
 /**
  * Load the plugin, making sure the required dependencies are met.
  *
@@ -93,7 +95,7 @@ function _google_wp_sourcery_load() {
 		}
 	} else {
 		require_once __DIR__ . '/vendor/autoload.php';
-		call_user_func( array( 'Google\\WP_Sourcery\\Plugin', 'load' ), __FILE__ );
+		call_user_func( array( 'Google\\WP_Sourcery\\Plugin', 'load' ), WP_SOURCERY_PLUGIN_FILE );
 	}
 }
 

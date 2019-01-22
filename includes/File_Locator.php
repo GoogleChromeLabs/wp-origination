@@ -23,11 +23,11 @@ class File_Locator {
 	public $core_directory;
 
 	/**
-	 * Directory for plugins.
+	 * Directories for plugins.
 	 *
-	 * @var string
+	 * @var array
 	 */
-	public $plugins_directory;
+	public $plugins_directories = [];
 
 	/**
 	 * Directory for mu-plugins.
@@ -55,9 +55,9 @@ class File_Locator {
 	 * File_Locator constructor.
 	 */
 	public function __construct() {
-		$this->plugins_directory    = trailingslashit( wp_normalize_path( WP_PLUGIN_DIR ) );
-		$this->mu_plugins_directory = trailingslashit( wp_normalize_path( WPMU_PLUGIN_DIR ) );
-		$this->core_directory       = trailingslashit( wp_normalize_path( ABSPATH ) );
+		$this->core_directory        = trailingslashit( wp_normalize_path( ABSPATH ) );
+		$this->plugins_directories[] = trailingslashit( wp_normalize_path( WP_PLUGIN_DIR ) );
+		$this->mu_plugins_directory  = trailingslashit( wp_normalize_path( WPMU_PLUGIN_DIR ) );
 
 		$theme_roots = array_unique(
 			array_merge(
@@ -113,37 +113,46 @@ class File_Locator {
 
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-		if ( preg_match( ':' . preg_quote( $this->plugins_directory, ':' ) . $slug_pattern . '(?P<rel_path>/.+$)?:s', $file, $matches ) ) {
-			$plugin_dir = $this->plugins_directory . '/' . $matches['root_slug'] . '/';
+		$plugin_dir     = null;
+		$plugin_matches = null;
+		foreach ( $this->plugins_directories as $plugin_directory ) {
+			if ( preg_match( ':' . preg_quote( $plugin_directory, ':' ) . $slug_pattern . '(?P<rel_path>/.+$)?:s', $file, $matches ) ) {
+				$plugin_matches = $matches;
+				$plugin_dir     = $plugin_directory . '/' . $matches['root_slug'] . '/';
+				break;
+			}
+			unset( $matches );
+		}
 
+		if ( $plugin_dir && $plugin_matches ) {
 			// Fallback slug is the path segment under the plugins directory.
-			$slug = $matches['root_slug'];
+			$slug = $plugin_matches['root_slug'];
 
 			$data = null;
 
 			// Try getting the plugin data from the file itself if it is in a plugin directory.
-			if ( empty( $matches['rel_path'] ) || 0 === substr_count( trim( $matches['rel_path'], '/' ), '/' ) ) {
+			if ( empty( $plugin_matches['rel_path'] ) || 0 === substr_count( trim( $plugin_matches['rel_path'], '/' ), '/' ) ) {
 				$data = get_plugin_data( $file );
 			}
 
 			// If the file is itself a plugin file, then the slug includes the rel_path under the root_slug.
-			if ( ! empty( $data['Name'] ) && ! empty( $matches['rel_path'] ) ) {
-				$slug .= $matches['rel_path'];
+			if ( ! empty( $data['Name'] ) && ! empty( $plugin_matches['rel_path'] ) ) {
+				$slug .= $plugin_matches['rel_path'];
 			}
 
 			// If the file is not a plugin file, try looking for {slug}/{slug}.php.
-			if ( empty( $data['Name'] ) && file_exists( $plugin_dir . $matches['root_slug'] . '.php' ) ) {
-				$slug = $matches['root_slug'] . '/' . $matches['root_slug'] . '.php';
-				$data = get_plugin_data( $plugin_dir . $matches['root_slug'] . '.php' );
+			if ( empty( $data['Name'] ) && file_exists( $plugin_dir . $plugin_matches['root_slug'] . '.php' ) ) {
+				$slug = $plugin_matches['root_slug'] . '/' . $plugin_matches['root_slug'] . '.php';
+				$data = get_plugin_data( $plugin_dir . $plugin_matches['root_slug'] . '.php' );
 			}
 
 			// Otherwise, grab the first plugin file located in the plugin directory.
 			if ( empty( $data['Name'] ) ) {
-				$plugins = get_plugins( '/' . $matches['root_slug'] );
+				$plugins = get_plugins( '/' . $plugin_matches['root_slug'] );
 				if ( ! empty( $plugins ) ) {
 					$key  = key( $plugins );
 					$data = $plugins[ $key ];
-					$slug = $matches['root_slug'] . '/' . $key;
+					$slug = $plugin_matches['root_slug'] . '/' . $key;
 				}
 			}
 
