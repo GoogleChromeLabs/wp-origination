@@ -93,7 +93,7 @@ class Database {
 			'sql'       => $query[0],
 			'duration'  => floatval( $query[1] ),
 			'backtrace' => $backtrace,
-			'timestamp' => floatval( $query[3] ),
+			'timestamp' => isset( $query[3] ) ? floatval( $query[3] ) : null,
 		];
 	}
 
