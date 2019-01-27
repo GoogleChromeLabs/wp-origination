@@ -208,13 +208,7 @@ class Output_Annotator {
 	public function purge_annotations_in_start_tag( $start_tag_matches ) {
 		$attributes = preg_replace_callback(
 			'#' . static::get_placeholder_annotation_pattern() . '#',
-			function( $annotation_matches ) {
-				$id = intval( $annotation_matches['id'] );
-				if ( isset( $this->finalized_invocations[ $id ] ) ) {
-					$this->invocation_watcher->invocations[ $id ]->intra_tag = true;
-				}
-				return ''; // Purge since an HTML comment cannot occur in a start tag.
-			},
+			'__return_empty_string',
 			$start_tag_matches['attrs']
 		);
 
@@ -222,62 +216,83 @@ class Output_Annotator {
 	}
 
 	/**
-	 * Hydrate annotation placeholder comments with their details.
+	 * Hydrate an placeholder annotation.
 	 *
-	 * @param array $matches Matches.
+	 * @param int    $id      ID.
+	 * @param string $type    Type.
+	 * @param bool   $closing Closing.
 	 * @return string Hydrated annotation.
 	 */
-	public function hydrate_placeholder_annotation( $matches ) {
-		$id      = intval( $matches['id'] );
-		$closing = ! empty( $matches['closing'] );
-
-		if ( self::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG === $matches['type'] ) {
-			if ( ! isset( $this->pending_dependency_annotations[ $id ] ) ) {
-				return '';
-			}
-
-			// Determine invocations for this dependency and store for the closing annotation comment.
-			if ( ! isset( $this->pending_dependency_annotations[ $id ]['invocations'] ) ) {
-				$this->pending_dependency_annotations[ $id ]['invocations'] = wp_list_pluck(
-					$this->dependencies->get_dependency_enqueueing_invocations(
-						$this->invocation_watcher,
-						$this->pending_dependency_annotations[ $id ]['registry'],
-						$this->pending_dependency_annotations[ $id ]['handle']
-					),
-					'id'
-				);
-			}
-
-			// Remove annotation entirely if there are no invocations (which shouldn't happen).
-			if ( empty( $this->pending_dependency_annotations[ $id ]['invocations'] ) ) {
-				unset( $this->pending_dependency_annotations[ $id ] );
-				return '';
-			}
-
-			$data = [
-				'id'          => $id,
-				'type'        => $this->pending_dependency_annotations[ $id ]['type'],
-				'invocations' => $this->pending_dependency_annotations[ $id ]['invocations'],
-			];
-
-			return $this->get_annotation_comment( $data, $closing );
-		} elseif ( self::INVOCATION_ANNOTATION_PLACEHOLDER_TAG === $matches['type'] ) {
-			if ( ! isset( $this->invocation_watcher->invocations[ $id ] ) ) {
-				return '';
-			}
-			$invocation = $this->invocation_watcher->invocations[ $id ];
-
-			if ( $closing ) {
-				$data = [
-					'id' => $invocation->id,
-				];
-			} else {
-				$data = $invocation->data();
-			}
-
-			return $this->get_annotation_comment( $data, $closing );
+	public function hydrate_placeholder_annotation( $id, $type, $closing ) {
+		if ( self::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG === $type ) {
+			return $this->hydrate_invocation_placeholder_annotation( $id, $closing );
+		} elseif ( self::INVOCATION_ANNOTATION_PLACEHOLDER_TAG === $type ) {
+			return $this->hydrate_dependency_placeholder_annotation( $id, $closing );
 		}
 		return '';
+	}
+
+	/**
+	 * Hydrate an invocation placeholder annotation.
+	 *
+	 * @param int  $id      ID.
+	 * @param bool $closing Closing.
+	 * @return string Hydrated annotation.
+	 */
+	protected function hydrate_invocation_placeholder_annotation( $id, $closing ) {
+		if ( ! isset( $this->pending_dependency_annotations[ $id ] ) ) {
+			return '';
+		}
+
+		// Determine invocations for this dependency and store for the closing annotation comment.
+		if ( ! isset( $this->pending_dependency_annotations[ $id ]['invocations'] ) ) {
+			$this->pending_dependency_annotations[ $id ]['invocations'] = wp_list_pluck(
+				$this->dependencies->get_dependency_enqueueing_invocations(
+					$this->invocation_watcher,
+					$this->pending_dependency_annotations[ $id ]['registry'],
+					$this->pending_dependency_annotations[ $id ]['handle']
+				),
+				'id'
+			);
+		}
+
+		// Remove annotation entirely if there are no invocations (which shouldn't happen).
+		if ( empty( $this->pending_dependency_annotations[ $id ]['invocations'] ) ) {
+			unset( $this->pending_dependency_annotations[ $id ] );
+			return '';
+		}
+
+		$data = [
+			'id'          => $id,
+			'type'        => $this->pending_dependency_annotations[ $id ]['type'],
+			'invocations' => $this->pending_dependency_annotations[ $id ]['invocations'],
+		];
+
+		return $this->get_annotation_comment( $data, $closing );
+	}
+
+	/**
+	 * Hydrate a dependency placeholder annotation.
+	 *
+	 * @param int  $id      ID.
+	 * @param bool $closing Closing.
+	 * @return string Hydrated annotation.
+	 */
+	protected function hydrate_dependency_placeholder_annotation( $id, $closing ) {
+		if ( ! isset( $this->invocation_watcher->invocations[ $id ] ) ) {
+			return '';
+		}
+		$invocation = $this->invocation_watcher->invocations[ $id ];
+
+		if ( $closing ) {
+			$data = [
+				'id' => $invocation->id,
+			];
+		} else {
+			$data = $invocation->data();
+		}
+
+		return $this->get_annotation_comment( $data, $closing );
 	}
 
 	/**
@@ -414,11 +429,46 @@ class Output_Annotator {
 			$buffer
 		);
 
-		$buffer = preg_replace_callback(
-			'#' . $placeholder_annotation_pattern . '#',
-			[ $this, 'hydrate_placeholder_annotation' ],
-			$buffer
-		);
+		if ( ! preg_match_all( '#' . $placeholder_annotation_pattern . '#', $buffer, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER ) ) {
+			return $buffer;
+		}
+
+		// Determine all invocations that have been annotated.
+		$closing_index = 1;
+		$type_index    = 2;
+		$id_index      = 3;
+		foreach ( $matches as $match ) {
+			$type = $match[ $type_index ][0];
+			if ( self::INVOCATION_ANNOTATION_PLACEHOLDER_TAG === $type ) {
+				$id = $match[ $id_index ][0];
+				$this->invocation_watcher->invocations[ $id ]->annotated = true;
+			}
+		}
+
+		// Now hydrate the matching placeholder annotations.
+		$offset_differential = 0;
+		while ( ! empty( $matches ) ) {
+			$match  = array_shift( $matches );
+			$length = strlen( $match[0][0] );
+			$offset = $match[0][1];
+
+			$hydrated_annotation = $this->hydrate_placeholder_annotation(
+				intval( $match[ $id_index ][0] ),
+				$match[ $type_index ][0],
+				! empty( $match[ $closing_index ][0] )
+			);
+
+			// Splice the hydrated annotation into the buffer to replace the placeholder annotation.
+			$buffer = substr_replace(
+				$buffer,
+				$hydrated_annotation,
+				$offset + $offset_differential,
+				$length
+			);
+
+			// Update the offset differential based on the difference in length of the hydration.
+			$offset_differential += ( strlen( $hydrated_annotation ) - $length );
+		}
 
 		return $buffer;
 	}

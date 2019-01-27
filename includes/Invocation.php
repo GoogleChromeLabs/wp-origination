@@ -32,6 +32,13 @@ class Invocation {
 	public $finalized = false;
 
 	/**
+	 * Whether the invocation was annotated.
+	 *
+	 * @var bool
+	 */
+	public $annotated = false;
+
+	/**
 	 * Invocation Watcher.
 	 *
 	 * @var Invocation_Watcher
@@ -114,14 +121,6 @@ class Invocation {
 	 * @var float
 	 */
 	public $end_time;
-
-	/**
-	 * Whether the invocation happened inside of a start tag (e.g. in its attributes).
-	 *
-	 * @see Invocation_Watcher::purge_hook_annotations_in_start_tag()
-	 * @var bool
-	 */
-	public $intra_tag = false;
 
 	/**
 	 * Number of queries before function started.
@@ -396,7 +395,7 @@ class Invocation {
 	}
 
 	/**
-	 * Get data for exporting.
+	 * Get annotation data.
 	 *
 	 * @return array Data.
 	 */
@@ -435,6 +434,16 @@ class Invocation {
 		if ( $file_location ) {
 			$data['source']['type'] = $file_location['type'];
 			$data['source']['name'] = $file_location['name'];
+		}
+
+		$unannotated_children = [];
+		foreach ( $this->children as $child_invocation ) {
+			if ( ! $child_invocation->annotated ) {
+				$unannotated_children[] = $child_invocation->data();
+			}
+		}
+		if ( ! empty( $unannotated_children ) ) {
+			$data['unannotated_children'] = $unannotated_children;
 		}
 
 		return $data;
