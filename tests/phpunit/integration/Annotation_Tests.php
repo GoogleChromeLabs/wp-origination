@@ -86,7 +86,7 @@ class Annotation_Tests extends Integration_Test_Case {
 	/**
 	 * Ensure that the number of comments is as expected.
 	 */
-	public function test_expected_annotation_comment_counts() {
+	public function test_expected_well_formed_annotations() {
 		$predicates = [
 			sprintf( 'starts-with( ., " %s " )', \Google\WP_Sourcery\Output_Annotator::ANNOTATION_TAG ),
 			sprintf( 'starts-with( ., " /%s " )', \Google\WP_Sourcery\Output_Annotator::ANNOTATION_TAG ),
@@ -96,16 +96,23 @@ class Annotation_Tests extends Integration_Test_Case {
 
 		$this->assertGreaterThan( 0, $comments->length );
 		$this->assertTrue( 0 === $comments->length % 2, 'There should be an even number of comments.' );
-		$opening = [];
-		$closing = [];
+		$stack = [];
 		foreach ( $comments as $comment ) {
-			if ( preg_match( '#^ /#', $comment->nodeValue ) ) {
-				$closing[] = $comment;
+			$parsed_comment = self::$plugin->output_annotator->parse_annotation_comment( $comment );
+			$this->assertInternalType( 'array', $parsed_comment );
+			$this->assertArrayHasKey( 'data', $parsed_comment );
+			$this->assertArrayHasKey( 'closing', $parsed_comment );
+			$this->assertArrayHasKey( 'id', $parsed_comment['data'] );
+			$this->assertArrayHasKey( 'type', $parsed_comment['data'] );
+
+			if ( $parsed_comment['closing'] ) {
+				$open_parsed_comment = array_pop( $stack );
+				$this->assertEquals( $open_parsed_comment['data']['id'], $parsed_comment['data']['id'] );
 			} else {
-				$opening[] = $comment;
+				array_push( $stack, $parsed_comment );
 			}
 		}
-		$this->assertEquals( count( $opening ), count( $closing ) );
+		$this->assertCount( 0, $stack );
 	}
 
 	/**

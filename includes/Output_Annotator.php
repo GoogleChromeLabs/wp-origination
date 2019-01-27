@@ -304,6 +304,36 @@ class Output_Annotator {
 	}
 
 	/**
+	 * Parse data out of sourcery annotation comment text.
+	 *
+	 * @param string|\DOMComment $comment Comment.
+	 * @return null|array {
+	 *     Parsed comment. Returns null on parse error.
+	 *
+	 *     @type bool  $closing Closing.
+	 *     @type array $data    Data.
+	 * }
+	 */
+	public function parse_annotation_comment( $comment ) {
+		if ( $comment instanceof \DOMComment ) {
+			$comment = $comment->nodeValue;
+		}
+		$pattern = sprintf(
+			'#^ (?P<closing>/)?%s (?P<json>{.+}) $#s',
+			preg_quote( static::ANNOTATION_TAG, '#' )
+		);
+		if ( ! preg_match( $pattern, $comment, $matches ) ) {
+			return null;
+		}
+		$closing = ! empty( $matches['closing'] );
+		$data    = json_decode( $matches['json'], true );
+		if ( ! is_array( $data ) ) {
+			return null;
+		}
+		return compact( 'closing', 'data' );
+	}
+
+	/**
 	 * Finalize annotations.
 	 *
 	 * Given this HTML in the buffer:
