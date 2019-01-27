@@ -13,10 +13,17 @@
 namespace Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker;
 
 function add_hooks() {
+	add_filter( 'language_attributes', __NAMESPACE__ . '\filter_language_attributes' );
 	add_filter( 'hook_invoker_container_attributes', __NAMESPACE__ . '\add_container_id_attribute' );
 	add_action( 'hook_invoker_container_print_extra_attributes', __NAMESPACE__ . '\print_container_attributes' );
 	add_action( 'hook_invoker_body', __NAMESPACE__ . '\print_body' );
 	add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_scripts' );
+	add_action( 'wp_print_footer_scripts', __NAMESPACE__ . '\print_document_write' );
+}
+
+function filter_language_attributes( $attributes ) {
+	$attributes .= ' data-lang="test"';
+	return $attributes;
 }
 
 function enqueue_scripts() {
@@ -30,6 +37,10 @@ function add_container_id_attribute( $attributes ) {
 
 function print_container_attributes() {
 	echo ' data-extra-printed=1';
+}
+
+function print_document_write() {
+	echo '<script id="document-write-script">document.write("This is a bad function call.");</script>';
 }
 
 function print_template() {
@@ -59,6 +70,7 @@ function print_body() {
 
 	do_action( 'hook_invoker_container_print_extra_attributes' );
 	echo '>';
+	echo '<!--inner_main_start-->';
 
 	echo '</main>';
 }

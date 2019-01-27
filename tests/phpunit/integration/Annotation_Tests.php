@@ -87,10 +87,8 @@ class Annotation_Tests extends Integration_Test_Case {
 	 * Ensure that the number of comments is as expected.
 	 */
 	public function test_expected_annotation_comment_counts() {
-
 		$predicates = [
 			sprintf( 'starts-with( ., " %s " )', \Google\WP_Sourcery\Output_Annotator::ANNOTATION_TAG ),
-			sprintf( '( starts-with( ., "[" ) and contains( ., "<!-- %s" ) )', \Google\WP_Sourcery\Output_Annotator::ANNOTATION_TAG ),
 			sprintf( 'starts-with( ., " /%s " )', \Google\WP_Sourcery\Output_Annotator::ANNOTATION_TAG ),
 		];
 		$expression = sprintf( '//comment()[ %s ]', implode( ' or ', $predicates ) );
@@ -108,6 +106,24 @@ class Annotation_Tests extends Integration_Test_Case {
 			}
 		}
 		$this->assertEquals( count( $opening ), count( $closing ) );
+	}
+
+	/**
+	 * Ensure that filter annotations do not get written inside of start tags.
+	 *
+	 * @covers \Google\WP_Sourcery\Output_Annotator::finish()
+	 */
+	public function test_annotation_omission_inside_start_tag() {
+		$this->assertEquals( 1, preg_match( '#<html.+>#', self::$output, $matches ) );
+		$start_tag = $matches[0];
+		$this->assertContains( ' class="no-js no-svg"', self::$output );
+		$this->assertContains( ' data-lang="test"', self::$output );
+		$this->assertContains( ' lang="', self::$output );
+		$this->assertNotContains( '<!--', $start_tag );
+
+		$this->assertEquals( 1, preg_match( '#(<main.+>)<!--inner_main_start-->#', self::$output, $matches ) );
+		$start_tag = $matches[1];
+		$this->assertNotContains( '<!--', $start_tag );
 	}
 
 	/**
