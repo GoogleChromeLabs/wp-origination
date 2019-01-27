@@ -108,24 +108,30 @@ class Hook_Wrapper {
 					$hook_args = func_get_args();
 
 					// @todo Optionally capture debug backtrace?
-					$accepted_args = $callback['accepted_args'];
-					$context       = compact( 'name', 'function', 'function_name', 'reflection', 'source_file', 'accepted_args', 'priority', 'hook_args' );
-					$before_return = null;
+					$accepted_args  = $callback['accepted_args'];
+					$is_filter      = ! did_action( $name );
+					$value_modified = null;
+					$context        = compact( 'name', 'function', 'function_name', 'reflection', 'source_file', 'accepted_args', 'priority', 'hook_args', 'is_filter' );
 					if ( $this->before_callback ) {
-						$before_return = call_user_func( $this->before_callback, $context );
+						call_user_func( $this->before_callback, $context );
 					}
 					$exception = null;
 					try {
 						$return = call_user_func_array( $function, $hook_args );
+						if ( $is_filter && isset( $hook_args[0] ) ) {
+							$value_modified = ( $return !== $hook_args[0] );
+						}
 					} catch ( \Exception $e ) {
 						$exception = $e;
 						$return    = null;
 					}
 					if ( $this->after_callback ) {
-						call_user_func(
-							$this->after_callback,
-							array_merge( $context, compact( 'return', 'before_return' ) )
-						);
+						$context['return'] = $return;
+						if ( $is_filter ) {
+							$context['value_modified'] = $value_modified;
+						}
+
+						call_user_func( $this->after_callback, $context );
 					}
 					if ( $exception ) {
 						throw $exception;

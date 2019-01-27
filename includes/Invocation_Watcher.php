@@ -158,14 +158,29 @@ class Invocation_Watcher {
 	 * After hook.
 	 *
 	 * @throws \Exception If the stack was empty, which should not happen.
+	 *
+	 * @param array $args {
+	 *      Args.
+	 *
+	 *     @var string   $hook_name      Hook name.
+	 *     @var callable $function       Function.
+	 *     @var int      $accepted_args  Accepted argument count.
+	 *     @var int      $priority       Priority.
+	 *     @var array    $hook_args      Hook args.
+	 *     @var bool     $value_modified Whether the value was modified.
+	 * }
 	 */
-	public function after_hook() {
+	public function after_hook( $args ) {
 		$invocation = array_pop( $this->invocation_stack );
 		if ( ! $invocation ) {
 			throw new \Exception( 'Stack was empty' );
 		}
 
-		$invocation->finalize();
+		$invocation->finalize(
+			array(
+				'value_modified' => ! empty( $args['value_modified'] ),
+			)
+		);
 
 		if ( $invocation->can_output() ) {
 			echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped

@@ -285,8 +285,14 @@ class Invocation {
 	 * Finalize the invocation.
 	 *
 	 * @throws \Exception If the invocation was already finalized.
+	 * @param array $args Additional args to merge.
 	 */
-	public function finalize() {
+	public function finalize( $args = array() ) {
+		foreach ( $args as $key => $value ) {
+			if ( property_exists( $this, $key ) ) {
+				$this->$key = $value;
+			}
+		}
 		if ( $this->finalized ) {
 			throw new \Exception( 'Already finalized.' );
 		}

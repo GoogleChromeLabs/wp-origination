@@ -39,6 +39,13 @@ class Hook_Invocation extends Invocation {
 	}
 
 	/**
+	 * Whether a filter modified the value.
+	 *
+	 * @var null|bool
+	 */
+	public $value_modified = null;
+
+	/**
 	 * Whether this invocation is expected to produce output (an action) vs a filter.
 	 *
 	 * @return bool Whether output is expected.
@@ -57,7 +64,7 @@ class Hook_Invocation extends Invocation {
 		$id   = $data['id'];
 		unset( $data['id'] );
 
-		return array_merge(
+		$data = array_merge(
 			compact( 'id' ),
 			[
 				'type'     => $this->is_action() ? 'action' : 'filter',
@@ -66,5 +73,11 @@ class Hook_Invocation extends Invocation {
 			],
 			$data
 		);
+
+		if ( 'filter' === $data['type'] ) {
+			$data['value_modified'] = $this->value_modified;
+		}
+
+		return $data;
 	}
 }
