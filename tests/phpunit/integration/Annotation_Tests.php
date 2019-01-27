@@ -26,6 +26,13 @@ class Annotation_Tests extends Integration_Test_Case {
 	protected static $output;
 
 	/**
+	 * All annotations found in the document, keyed by ID.
+	 *
+	 * @var array[]
+	 */
+	protected static $annotations = [];
+
+	/**
 	 * Document.
 	 *
 	 * @var \DOMDocument
@@ -76,11 +83,19 @@ class Annotation_Tests extends Integration_Test_Case {
 		ob_end_flush(); // End workaround buffer.
 		self::$output = ob_get_clean();
 
-		$document              = new \DOMDocument();
+		self::$document        = new \DOMDocument();
 		$libxml_previous_state = libxml_use_internal_errors( true );
-		$document->loadHTML( self::$output );
+		self::$document->loadHTML( self::$output );
 		libxml_use_internal_errors( $libxml_previous_state );
-		self::$xpath = new \DOMXPath( $document );
+		self::$xpath = new \DOMXPath( self::$document );
+
+		$start_comments = self::$xpath->query( sprintf( '//comment()[ starts-with( ., " %s " ) ]', \Google\WP_Sourcery\Output_Annotator::ANNOTATION_TAG ) );
+		foreach ( $start_comments as $start_comment ) {
+			$parsed_comment = self::$plugin->output_annotator->parse_annotation_comment( $start_comment );
+			if ( isset( $parsed_comment['data']['id'] ) ) {
+				self::$annotations[ $parsed_comment['data']['id'] ] = $parsed_comment['data'];
+			}
+		}
 	}
 
 	/**
@@ -103,7 +118,9 @@ class Annotation_Tests extends Integration_Test_Case {
 			$this->assertArrayHasKey( 'data', $parsed_comment );
 			$this->assertArrayHasKey( 'closing', $parsed_comment );
 			$this->assertArrayHasKey( 'id', $parsed_comment['data'] );
-			$this->assertArrayHasKey( 'type', $parsed_comment['data'] );
+			if ( ! $parsed_comment['closing'] ) {
+				$this->assertArrayHasKey( 'type', $parsed_comment['data'], 'Data array: ' . wp_json_encode( $parsed_comment['data'] ) );
+			}
 
 			if ( $parsed_comment['closing'] ) {
 				$open_parsed_comment = array_pop( $stack );
@@ -131,6 +148,52 @@ class Annotation_Tests extends Integration_Test_Case {
 		$this->assertEquals( 1, preg_match( '#(<main.+>)<!--inner_main_start-->#', self::$output, $matches ) );
 		$start_tag = $matches[1];
 		$this->assertNotContains( '<!--', $start_tag );
+	}
+
+	/**
+	 * Test that script output during wp_print_footer_scripts has expected annotation comments.
+	 */
+	public function test_expected_print_footer_scripts_annotations() {
+		$script = self::$document->getElementById( 'document-write-script' );
+		$this->assertInstanceOf( 'DOMElement', $script );
+
+		$stack = self::$plugin->output_annotator->get_node_annotation_stack( $script );
+
+		$this->assertCount( 2, $stack );
+
+		$expected = array(
+			array(
+				'type'     => 'action',
+				'name'     => 'wp_footer',
+				'function' => 'wp_print_footer_scripts',
+				'priority' => 20,
+				'parent'   => null,
+			),
+			array(
+				'type'     => 'action',
+				'name'     => 'wp_print_footer_scripts',
+				'function' => 'Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_document_write',
+				'children' => [],
+				'priority' => 10,
+			),
+		);
+
+		foreach ( $stack as $i => $annotation_data ) {
+			$this->assertArraySubset( $expected[ $i ], $annotation_data );
+			$this->assertInternalType( 'float', $annotation_data['own_time'] );
+			$this->assertGreaterThan( 0.0, $annotation_data['own_time'] );
+		}
+
+		$this->assertContains( $stack[1]['id'], $stack[0]['children'] );
+		$this->assertEquals( $stack[0]['id'], $stack[1]['parent'] );
+
+		// Verify sources.
+		$this->assertStringEndsWith( 'wp-includes/script-loader.php', $stack[0]['source']['file'] );
+		$this->assertEquals( 'core', $stack[0]['source']['type'] );
+		$this->assertEquals( 'wp-includes', $stack[0]['source']['name'] );
+		$this->assertStringEndsWith( 'plugins/hook-invoker.php', $stack[1]['source']['file'] );
+		$this->assertEquals( 'plugin', $stack[1]['source']['type'] );
+		$this->assertEquals( 'hook-invoker.php', $stack[1]['source']['name'] );
 	}
 
 	/**

@@ -334,6 +334,44 @@ class Output_Annotator {
 	}
 
 	/**
+	 * Get the annotation stack for a given DOM node.
+	 *
+	 * @param \DOMNode $node Target DOM node.
+	 * @return array[] Stack of annotation comment data.
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function get_node_annotation_stack( \DOMNode $node ) {
+		$stack = [];
+		$xpath = new \DOMXPath( $node->ownerDocument );
+
+		$open_prefix  = sprintf( ' %s ', self::ANNOTATION_TAG );
+		$close_prefix = sprintf( ' /%s ', self::ANNOTATION_TAG );
+
+		$expr = sprintf(
+			'preceding::comment()[ starts-with( ., "%s" ) or starts-with( ., "%s" ) ]',
+			$open_prefix,
+			$close_prefix
+		);
+
+		foreach ( $xpath->query( $expr, $node ) as $comment ) {
+			$parsed_comment = $this->parse_annotation_comment( $comment );
+			if ( ! is_array( $parsed_comment ) ) {
+				continue;
+			}
+
+			if ( $parsed_comment['closing'] ) {
+				$popped = array_pop( $stack );
+				if ( $popped['id'] !== $parsed_comment['data']['id'] ) {
+					throw new \Exception( sprintf( 'Comment stack mismatch: saw closing comment %1$d but expected %2$d.', $parsed_comment['data']['id'], $popped['id'] ) );
+				}
+			} else {
+				array_push( $stack, $parsed_comment['data'] );
+			}
+		}
+		return $stack;
+	}
+
+	/**
 	 * Finalize annotations.
 	 *
 	 * Given this HTML in the buffer:

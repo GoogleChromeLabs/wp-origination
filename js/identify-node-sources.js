@@ -16,8 +16,6 @@ export default function identifyNodeSources( node ) {
 		preceding::comment()[
 			starts-with( ., "${openCommentPrefix}" )
 			or
-			( starts-with( ., "[" ) and contains( ., "<!--${openCommentPrefix}" ) )
-			or
 			starts-with( ., "${closeCommentPrefix}" )
 		]`;
 	const xPathResult = document.evaluate( expression, node, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
