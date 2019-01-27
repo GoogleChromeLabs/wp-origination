@@ -175,17 +175,16 @@ class Annotation_Tests extends Integration_Test_Case {
 				'function' => 'Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_document_write',
 				'children' => [],
 				'priority' => 10,
+				'parent'   => $stack[0]['id'],
 			),
 		);
 
 		foreach ( $stack as $i => $annotation_data ) {
 			$this->assertArraySubset( $expected[ $i ], $annotation_data );
 			$this->assertInternalType( 'float', $annotation_data['own_time'] );
-			$this->assertGreaterThan( 0.0, $annotation_data['own_time'] );
+			$this->assertGreaterThanOrEqual( 0.0, $annotation_data['own_time'] );
 		}
-
 		$this->assertContains( $stack[1]['id'], $stack[0]['children'] );
-		$this->assertEquals( $stack[0]['id'], $stack[1]['parent'] );
 
 		// Verify sources.
 		$this->assertStringEndsWith( 'wp-includes/script-loader.php', $stack[0]['source']['file'] );
@@ -194,6 +193,36 @@ class Annotation_Tests extends Integration_Test_Case {
 		$this->assertStringEndsWith( 'plugins/hook-invoker.php', $stack[1]['source']['file'] );
 		$this->assertEquals( 'plugin', $stack[1]['source']['type'] );
 		$this->assertEquals( 'hook-invoker.php', $stack[1]['source']['name'] );
+	}
+
+	/**
+	 * Test that an enqueued script has the expected annnotation stack.
+	 */
+	public function test_enqueued_script_has_annotation_stack() {
+		$script = self::$xpath->query( '//script[ contains( @src, "jquery.js" ) ]' )->item( 0 );
+		$this->assertInstanceOf( 'DOMElement', $script );
+		$stack = self::$plugin->output_annotator->get_node_annotation_stack( $script );
+		$this->assertCount( 2, $stack );
+
+		$this->assertEquals( 'action', $stack[0]['type'] );
+		$this->assertEquals( 'wp_head', $stack[0]['name'] );
+		$this->assertEquals( 'wp_print_head_scripts', $stack[0]['function'] );
+		$this->assertStringEndsWith( 'wp-includes/script-loader.php', $stack[0]['source']['file'] );
+
+		$this->assertEquals( 'enqueued_script', $stack[1]['type'] );
+		$this->assertCount( 2, $stack[1]['invocations'] );
+
+		$expected_source_enqueues = array(
+			[ 'wp-a11y' ],
+			[ 'jquery-ui-widget' ],
+		);
+
+		foreach ( $stack[1]['invocations'] as $i => $source_invocation_id ) {
+			$this->assertArrayHasKey( $source_invocation_id, self::$annotations );
+			$source_invocation = self::$annotations[ $source_invocation_id ];
+			$this->assertTrue( ! empty( $source_invocation['enqueued_scripts'] ) );
+			$this->assertEqualSets( $expected_source_enqueues[ $i ], $source_invocation['enqueued_scripts'] );
+		}
 	}
 
 	/**
