@@ -51,6 +51,13 @@ class Output_Annotator {
 	public $dependencies;
 
 	/**
+	 * Instance of Incrementor.
+	 *
+	 * @var Incrementor
+	 */
+	public $incrementor;
+
+	/**
 	 * Pending dependency annotations.
 	 *
 	 * @var array
@@ -61,9 +68,11 @@ class Output_Annotator {
 	 * Output_Annotator constructor.
 	 *
 	 * @param Dependencies $dependencies Dependencies.
+	 * @param Incrementor  $incrementor  Incrementor.
 	 */
-	public function __construct( Dependencies $dependencies ) {
+	public function __construct( Dependencies $dependencies, $incrementor ) {
 		$this->dependencies = $dependencies;
+		$this->incrementor  = $incrementor;
 	}
 
 	/**
@@ -154,9 +163,9 @@ class Output_Annotator {
 			return $tag;
 		}
 
-		$id = count( $this->pending_dependency_annotations );
+		$id = $this->incrementor->next();
 
-		$this->pending_dependency_annotations[] = compact( 'handle', 'type', 'registry' );
+		$this->pending_dependency_annotations[ $id ] = compact( 'handle', 'type', 'registry' );
 
 		return implode(
 			'',
@@ -246,6 +255,7 @@ class Output_Annotator {
 			}
 
 			$data = [
+				'id'          => $id,
 				'type'        => $this->pending_dependency_annotations[ $id ]['type'],
 				'invocations' => $this->pending_dependency_annotations[ $id ]['invocations'],
 			];

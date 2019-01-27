@@ -18,13 +18,6 @@ namespace Google\WP_Sourcery;
 class Invocation {
 
 	/**
-	 * Number of instances.
-	 *
-	 * @var int
-	 */
-	protected static $instance_count = 0;
-
-	/**
 	 * ID.
 	 *
 	 * @var int
@@ -189,18 +182,19 @@ class Invocation {
 	 * Constructor.
 	 *
 	 * @param Invocation_Watcher $watcher      Watcher.
+	 * @param Incrementor        $incrementor  Incrementor.
 	 * @param Database           $database     Database.
 	 * @param File_Locator       $file_locator File locator.
 	 * @param Dependencies       $dependencies Dependencies.
 	 * @param array              $args    Arguments which are assigned to properties.
 	 */
-	public function __construct( Invocation_Watcher $watcher, Database $database, File_Locator $file_locator, Dependencies $dependencies, $args ) {
+	public function __construct( Invocation_Watcher $watcher, Incrementor $incrementor, Database $database, File_Locator $file_locator, Dependencies $dependencies, $args ) {
 		foreach ( $args as $key => $value ) {
 			if ( property_exists( $this, $key ) ) {
 				$this->$key = $value;
 			}
 		}
-		$this->id                 = ++static::$instance_count;
+		$this->id                 = $incrementor->next();
 		$this->invocation_watcher = $watcher;
 		$this->database           = $database;
 		$this->file_locator       = $file_locator;

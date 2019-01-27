@@ -74,6 +74,13 @@ class Plugin {
 	public $file_locator;
 
 	/**
+	 * Instance of Incrementor.
+	 *
+	 * @var Incrementor
+	 */
+	public $incrementor;
+
+	/**
 	 * Instance of Output_Annotator.
 	 *
 	 * @var Output_Annotator
@@ -186,11 +193,13 @@ class Plugin {
 	public function init() {
 		global $wpdb;
 
+		$this->incrementor = new Incrementor();
+
 		$this->file_locator = new File_Locator();
 
 		$this->dependencies = new Dependencies();
 
-		$this->output_annotator = new Output_Annotator( $this->dependencies );
+		$this->output_annotator = new Output_Annotator( $this->dependencies, $this->incrementor );
 
 		$this->database = new Database( $wpdb );
 
@@ -201,6 +210,7 @@ class Plugin {
 			$this->output_annotator,
 			$this->dependencies,
 			$this->database,
+			$this->incrementor,
 			$this->hook_wrapper,
 			[
 				'can_show_queries_callback' => function() {

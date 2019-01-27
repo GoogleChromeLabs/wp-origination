@@ -44,6 +44,13 @@ class Invocation_Watcher {
 	public $file_locator;
 
 	/**
+	 * Instance of Incrementor.
+	 *
+	 * @var Incrementor
+	 */
+	public $incrementor;
+
+	/**
 	 * Instance of Dependencies.
 	 *
 	 * @var Dependencies
@@ -78,10 +85,11 @@ class Invocation_Watcher {
 	 * @param Output_Annotator $output_annotator Output annotator.
 	 * @param Dependencies     $dependencies     Dependencies.
 	 * @param Database         $database         Database.
+	 * @param Incrementor      $incrementor      Incrementor.
 	 * @param Hook_Wrapper     $hook_wrapper     Hook wrapper.
 	 * @param array            $options          Options.
 	 */
-	public function __construct( File_Locator $file_locator, Output_Annotator $output_annotator, Dependencies $dependencies, Database $database, Hook_Wrapper $hook_wrapper, $options ) {
+	public function __construct( File_Locator $file_locator, Output_Annotator $output_annotator, Dependencies $dependencies, Database $database, Incrementor $incrementor, Hook_Wrapper $hook_wrapper, $options ) {
 		foreach ( $options as $key => $value ) {
 			$this->$key = $value;
 		}
@@ -90,6 +98,7 @@ class Invocation_Watcher {
 		$this->output_annotator = $output_annotator;
 		$this->dependencies     = $dependencies;
 		$this->database         = $database;
+		$this->incrementor      = $incrementor;
 		$this->hook_wrapper     = $hook_wrapper;
 	}
 
@@ -132,7 +141,7 @@ class Invocation_Watcher {
 
 		$args['parent'] = $parent;
 
-		$invocation = new Hook_Invocation( $this, $this->database, $this->file_locator, $this->dependencies, $args );
+		$invocation = new Hook_Invocation( $this, $this->incrementor, $this->database, $this->file_locator, $this->dependencies, $args );
 
 		$parent->children[] = $invocation;
 
