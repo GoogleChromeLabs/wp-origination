@@ -196,7 +196,7 @@ class Annotation_Tests extends Integration_Test_Case {
 	}
 
 	/**
-	 * Test that an enqueued script has the expected annnotation stack.
+	 * Test that an enqueued script has the expected annotation stack.
 	 */
 	public function test_enqueued_script_has_annotation_stack() {
 		$script = self::$xpath->query( '//script[ contains( @src, "jquery.js" ) ]' )->item( 0 );
@@ -223,6 +223,52 @@ class Annotation_Tests extends Integration_Test_Case {
 			$this->assertTrue( ! empty( $source_invocation['enqueued_scripts'] ) );
 			$this->assertEqualSets( $expected_source_enqueues[ $i ], $source_invocation['enqueued_scripts'] );
 		}
+	}
+
+	/**
+	 * Test that an enqueued style has the expected annotation stack.
+	 */
+	public function test_enqueued_style_has_annotation_stack() {
+		/*
+		 *                 <!-- sourcery {"type":"enqueued_style","invocations":[12]} -->
+                    <link rel='stylesheet' id='mediaelement-css'  href='http://example.org/core-dev/src/wp-includes/js/mediaelement/mediaelementplayer-legacy.min.css?ver=4.2.6-78496d1' type='text/css' media='all' />
+                <!-- /sourcery {"type":"enqueued_style","invocations":[12]} -->
+                <!-- sourcery {"type":"enqueued_style","invocations":[12]} -->
+                    <link rel='stylesheet' id='wp-mediaelement-css'  href='http://example.org/core-dev/src/wp-includes/js/mediaelement/wp-mediaelement.min.css?ver=5.1-beta1-44558-src' type='text/css' media='all' />
+                <!-- /sourcery {"type":"enqueued_style","invocations":[12]} -->
+		 */
+
+		$mediaelement_css_link = self::$document->getElementById( 'mediaelement-css' );
+		$mediaelement_stack    = self::$plugin->output_annotator->get_node_annotation_stack( $mediaelement_css_link );
+		$this->assertCount( 2, $mediaelement_stack );
+		$this->assertInstanceOf( 'DOMElement', $mediaelement_css_link );
+
+		$wp_mediaelement_css_link = self::$document->getElementById( 'wp-mediaelement-css' );
+		$wp_mediaelement_stack    = self::$plugin->output_annotator->get_node_annotation_stack( $wp_mediaelement_css_link );
+		$this->assertCount( 2, $wp_mediaelement_stack );
+		$this->assertInstanceOf( 'DOMElement', $wp_mediaelement_css_link );
+
+		$this->assertEquals( 'action', $mediaelement_stack[0]['type'] );
+		$this->assertEquals( 'wp_head', $mediaelement_stack[0]['name'] );
+		$this->assertEquals( 'wp_print_styles', $mediaelement_stack[0]['function'] );
+		$this->assertStringEndsWith( 'wp-includes/functions.wp-styles.php', $mediaelement_stack[0]['source']['file'] );
+		$this->assertEquals( $mediaelement_stack[0], $wp_mediaelement_stack[0] );
+
+		$this->assertEquals( 'enqueued_style', $mediaelement_stack[1]['type'] );
+		$this->assertEquals( $mediaelement_stack[1]['type'], $wp_mediaelement_stack[1]['type'] );
+		$this->assertEquals( $mediaelement_stack[1]['invocations'], $wp_mediaelement_stack[1]['invocations'] );
+
+		$this->assertEquals( $mediaelement_stack[1]['invocations'], $mediaelement_stack[1]['invocations'] );
+		$source_invocation_id = $mediaelement_stack[1]['invocations'][0];
+		$this->assertArrayHasKey( $source_invocation_id, self::$annotations );
+		$source_invocation = self::$annotations[ $source_invocation_id ];
+
+		$this->assertEquals( 'action', $source_invocation['type'] );
+		$this->assertEquals( 'hook_invoker_enqueue_scripts', $source_invocation['name'] );
+		$this->assertStringEndsWith( 'plugins/dependency-enqueuer.php', $source_invocation['source']['file'] );
+
+		$this->assertArrayHasKey( 'enqueued_styles', $source_invocation );
+		$this->assertContains( 'wp-mediaelement', $source_invocation['enqueued_styles'] );
 	}
 
 	/**
