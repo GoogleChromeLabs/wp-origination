@@ -79,6 +79,12 @@ While this is also sent via `Server-Timing` headers, you can determine the amoun
 </pre>
 
 
+= Contributing =
+
+You can [contribute](https://github.com/westonruter/wp-sourcery/blob/master/contributing.md) to this plugin via its [GitHub project](https://github.com/westonruter/wp-sourcery).
+
+This is not an officially supported Google product.
+
 == Screenshots ==
 
 1. Server-Timing headers are sent when running.
