@@ -444,16 +444,6 @@ class Invocation {
 			$data['source']['name'] = $file_location['name'];
 		}
 
-		$unannotated_children = [];
-		foreach ( $this->children as $child_invocation ) {
-			if ( ! $child_invocation->annotated ) {
-				$unannotated_children[] = $child_invocation->data();
-			}
-		}
-		if ( ! empty( $unannotated_children ) ) {
-			$data['unannotated_children'] = $unannotated_children;
-		}
-
 		return $data;
 	}
 }

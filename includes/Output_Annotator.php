@@ -37,6 +37,21 @@ class Output_Annotator {
 	const DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_dependency';
 
 	/**
+	 * Opening annotation type (start tag).
+	 */
+	const OPEN_ANNOTATION = 0;
+
+	/**
+	 * Closing annotation type (end tag).
+	 */
+	const CLOSE_ANNOTATION = 1;
+
+	/**
+	 * Empty annotation type (self-closing).
+	 */
+	const EMPTY_ANNOTATION = 2;
+
+	/**
 	 * Instance of Invocation_Watcher.
 	 *
 	 * @var Invocation_Watcher
@@ -268,7 +283,7 @@ class Output_Annotator {
 			'invocations' => $this->pending_dependency_annotations[ $index ]['invocations'],
 		];
 
-		return $this->get_annotation_comment( $data, $closing );
+		return $this->get_annotation_comment( $data, $closing ? self::CLOSE_ANNOTATION : self::OPEN_ANNOTATION );
 	}
 
 	/**
@@ -292,17 +307,21 @@ class Output_Annotator {
 			$data = $invocation->data();
 		}
 
-		return $this->get_annotation_comment( $data, $closing );
+		return $this->get_annotation_comment( $data, $closing ? self::CLOSE_ANNOTATION : self::OPEN_ANNOTATION );
 	}
 
 	/**
 	 * Get annotation comment.
 	 *
 	 * @param array $data    Data.
-	 * @param bool  $closing Whether the comment is closing.
+	 * @param int   $type    Comment type. Either OPEN_ANNOTATION, CLOSE_ANNOTATION, EMPTY_ANNOTATION.
 	 * @return string HTML comment.
 	 */
-	public function get_annotation_comment( array $data, $closing = false ) {
+	public function get_annotation_comment( array $data, $type = self::OPEN_ANNOTATION ) {
+
+		if ( ! in_array( $type, [ self::OPEN_ANNOTATION, self::CLOSE_ANNOTATION, self::EMPTY_ANNOTATION ], true ) ) {
+			_doing_it_wrong( __METHOD__, esc_html__( 'Wrong annotation type.', 'sourcery' ), '0.1' );
+		}
 
 		// Escape double-hyphens in comment content.
 		$json = str_replace(
@@ -312,9 +331,11 @@ class Output_Annotator {
 		);
 
 		return sprintf(
-			'<!-- %s' . static::ANNOTATION_TAG . ' %s -->',
-			$closing ? '/' : '',
-			$json
+			'<!-- %s%s %s %s-->',
+			self::CLOSE_ANNOTATION === $type ? '/' : '',
+			static::ANNOTATION_TAG,
+			$json,
+			self::EMPTY_ANNOTATION === $type ? '/' : ''
 		);
 	}
 
@@ -468,6 +489,15 @@ class Output_Annotator {
 
 			// Update the offset differential based on the difference in length of the hydration.
 			$offset_differential += ( strlen( $hydrated_annotation ) - $length );
+		}
+
+		// Finally, amend the response with all remaining invocations that have not been annotated. These do not wrap any output.
+		foreach ( $this->invocation_watcher->invocations as $invocation ) {
+			if ( ! $invocation->annotated ) {
+				$invocation->annotated = true;
+
+				$buffer .= $this->get_annotation_comment( $invocation->data(), self::EMPTY_ANNOTATION );
+			}
 		}
 
 		return $buffer;
