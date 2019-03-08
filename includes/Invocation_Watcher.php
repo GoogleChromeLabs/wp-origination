@@ -126,7 +126,7 @@ class Invocation_Watcher {
 	 * @param array $args {
 	 *      Args.
 	 *
-	 *     @var string   $hook_name     Hook name.
+	 *     @var string   $name          Name.
 	 *     @var callable $function      Function.
 	 *     @var int      $accepted_args Accepted argument count.
 	 *     @var int      $priority      Priority.
@@ -162,7 +162,7 @@ class Invocation_Watcher {
 	 * @param array $args {
 	 *      Args.
 	 *
-	 *     @var string   $hook_name      Hook name.
+	 *     @var string   $name           Name.
 	 *     @var callable $function       Function.
 	 *     @var int      $accepted_args  Accepted argument count.
 	 *     @var int      $priority       Priority.
