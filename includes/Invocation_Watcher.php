@@ -72,7 +72,7 @@ class Invocation_Watcher {
 	public $invocation_stack = [];
 
 	/**
-	 * All invocations by ID and ordered by occurrence.
+	 * All invocations by index and ordered by occurrence.
 	 *
 	 * @var Invocation[]
 	 */
@@ -147,7 +147,7 @@ class Invocation_Watcher {
 
 		$this->invocation_stack[] = $invocation;
 
-		$this->invocations[ $invocation->id ] = $invocation;
+		$this->invocations[ $invocation->index ] = $invocation;
 
 		if ( $invocation->can_output() ) {
 			echo $this->output_annotator->get_before_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped

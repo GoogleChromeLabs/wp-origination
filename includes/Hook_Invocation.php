@@ -60,12 +60,12 @@ class Hook_Invocation extends Invocation {
 	 * @return array Data.
 	 */
 	public function data() {
-		$data = parent::data();
-		$id   = $data['id'];
-		unset( $data['id'] );
+		$data  = parent::data();
+		$index = $data['index'];
+		unset( $data['index'] );
 
 		$data = array_merge(
-			compact( 'id' ),
+			compact( 'index' ),
 			[
 				'type'     => $this->is_action() ? 'action' : 'filter',
 				'name'     => $this->name,

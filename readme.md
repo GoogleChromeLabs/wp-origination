@@ -31,7 +31,7 @@ Then access a site frontend with `?sourcery` in the URL. For example, `https://e
 {
     "callback": "rel_canonical",
     "duration": 0.0026450157165527344,
-    "id": 242,
+    "index": 242,
     "name": "wp_head",
     "priority": 10,
     "source": {
@@ -42,7 +42,7 @@ Then access a site frontend with `?sourcery` in the URL. For example, `https://e
 }
 --&gt;
 &lt;link rel="canonical" href="https://example.com/2019/08/07/foo/" /&gt;
-&lt;!-- /sourcery {"id":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} --&gt;
+&lt;!-- /sourcery {"index":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} --&gt;
 </code></pre>
 
 With such annotation comments in place, to determine annotation stack for a given DOM node import [identify-node-sources.js](https://github.com/westonruter/wp-sourcery/blob/master/js/identify-node-sources.js) you then select a node in DevTools and then paste the following JS code into the console (see second screenshot):

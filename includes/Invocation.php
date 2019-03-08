@@ -18,11 +18,13 @@ namespace Google\WP_Sourcery;
 class Invocation {
 
 	/**
-	 * ID.
+	 * Index.
+	 *
+	 * An auto-incremented number that indicates the order in which the invocation occurred.
 	 *
 	 * @var int
 	 */
-	public $id;
+	public $index;
 
 	/**
 	 * Whether invocation has been finalized.
@@ -193,7 +195,7 @@ class Invocation {
 				$this->$key = $value;
 			}
 		}
-		$this->id                 = $incrementor->next();
+		$this->index              = $incrementor->next();
 		$this->invocation_watcher = $watcher;
 		$this->database           = $database;
 		$this->file_locator       = $file_locator;
@@ -407,16 +409,16 @@ class Invocation {
 	 */
 	public function data() {
 		$data = [
-			'id'       => $this->id,
+			'index'    => $this->index,
 			'function' => $this->function_name,
 			'own_time' => $this->duration( true ),
 			'source'   => [
 				'file' => $this->source_file,
 			],
-			'parent'   => $this->parent ? $this->parent->id : null,
+			'parent'   => $this->parent ? $this->parent->index : null,
 			'children' => array_map(
 				function( Invocation $invocation ) {
-					return $invocation->id;
+					return $invocation->index;
 				},
 				$this->children
 			),

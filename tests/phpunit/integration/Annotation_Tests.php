@@ -26,7 +26,7 @@ class Annotation_Tests extends Integration_Test_Case {
 	protected static $output;
 
 	/**
-	 * All annotations found in the document, keyed by ID.
+	 * All annotations found in the document, keyed by index.
 	 *
 	 * @var array[]
 	 */
@@ -92,8 +92,8 @@ class Annotation_Tests extends Integration_Test_Case {
 		$start_comments = self::$xpath->query( sprintf( '//comment()[ starts-with( ., " %s " ) ]', \Google\WP_Sourcery\Output_Annotator::ANNOTATION_TAG ) );
 		foreach ( $start_comments as $start_comment ) {
 			$parsed_comment = self::$plugin->output_annotator->parse_annotation_comment( $start_comment );
-			if ( isset( $parsed_comment['data']['id'] ) ) {
-				self::$annotations[ $parsed_comment['data']['id'] ] = $parsed_comment['data'];
+			if ( isset( $parsed_comment['data']['index'] ) ) {
+				self::$annotations[ $parsed_comment['data']['index'] ] = $parsed_comment['data'];
 			}
 		}
 	}
@@ -117,14 +117,14 @@ class Annotation_Tests extends Integration_Test_Case {
 			$this->assertInternalType( 'array', $parsed_comment );
 			$this->assertArrayHasKey( 'data', $parsed_comment );
 			$this->assertArrayHasKey( 'closing', $parsed_comment );
-			$this->assertArrayHasKey( 'id', $parsed_comment['data'] );
+			$this->assertArrayHasKey( 'index', $parsed_comment['data'] );
 			if ( ! $parsed_comment['closing'] ) {
 				$this->assertArrayHasKey( 'type', $parsed_comment['data'], 'Data array: ' . wp_json_encode( $parsed_comment['data'] ) );
 			}
 
 			if ( $parsed_comment['closing'] ) {
 				$open_parsed_comment = array_pop( $stack );
-				$this->assertEquals( $open_parsed_comment['data']['id'], $parsed_comment['data']['id'] );
+				$this->assertEquals( $open_parsed_comment['data']['index'], $parsed_comment['data']['index'] );
 			} else {
 				array_push( $stack, $parsed_comment );
 			}
@@ -175,7 +175,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'function' => 'Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_document_write',
 				'children' => [],
 				'priority' => 10,
-				'parent'   => $stack[0]['id'],
+				'parent'   => $stack[0]['index'],
 			),
 		);
 
@@ -184,7 +184,7 @@ class Annotation_Tests extends Integration_Test_Case {
 			$this->assertInternalType( 'float', $annotation_data['own_time'] );
 			$this->assertGreaterThanOrEqual( 0.0, $annotation_data['own_time'] );
 		}
-		$this->assertContains( $stack[1]['id'], $stack[0]['children'] );
+		$this->assertContains( $stack[1]['index'], $stack[0]['children'] );
 
 		// Verify sources.
 		$this->assertStringEndsWith( 'wp-includes/script-loader.php', $stack[0]['source']['file'] );

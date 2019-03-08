@@ -33,27 +33,27 @@ export default function identifyNodeSources( node ) {
 		const isOpen = commentText.startsWith( openCommentPrefix );
 		const data = JSON.parse( commentText.substr( isOpen ? openCommentPrefix.length : closeCommentPrefix.length ) );
 		if ( isOpen ) {
-			if ( data.id ) {
-				invocations[ data.id ] = data;
+			if ( data.index ) {
+				invocations[ data.index ] = data;
 			}
 			if ( data.invocations ) {
-				for ( const id of data.invocations ) {
-					annotationStack.push( invocations[ id ] );
+				for ( const index of data.invocations ) {
+					annotationStack.push( invocations[ index ] );
 				}
 			} else {
 				annotationStack.push( data );
 			}
 		} else {
 			if ( data.invocations ) {
-				for ( const id of [...data.invocations].reverse() ) {
+				for ( const index of [...data.invocations].reverse() ) {
 					const popped = annotationStack.pop();
-					if ( id !== popped.id ) {
+					if ( index !== popped.index ) {
 						throw new Error( 'Unexpected closing annotation comment for ref: ' + commentText );
 					}
 				}
 			} else {
 				const popped = annotationStack.pop();
-				if ( data.id !== popped.id ) {
+				if ( data.index !== popped.index ) {
 					throw new Error( 'Unexpected closing annotation comment: ' + commentText );
 				}
 			}
