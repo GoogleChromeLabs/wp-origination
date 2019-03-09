@@ -412,9 +412,7 @@ class Invocation {
 			'index'    => $this->index,
 			'function' => $this->function_name,
 			'own_time' => $this->duration( true ),
-			'source'   => [
-				'file' => $this->source_file,
-			],
+			'source'   => [],
 			'parent'   => $this->parent ? $this->parent->index : null,
 			'children' => array_map(
 				function( Invocation $invocation ) {
@@ -438,10 +436,17 @@ class Invocation {
 			$data['enqueued_styles'] = $this->enqueued_styles;
 		}
 
-		$file_location = $this->file_location();
-		if ( $file_location ) {
-			$data['source']['type'] = $file_location['type'];
-			$data['source']['name'] = $file_location['name'];
+		if ( $this->source_file ) {
+			$data['source']['file'] = $this->source_file;
+
+			$file_location = $this->file_location();
+			if ( $file_location ) {
+				$data['source']['type'] = $file_location['type'];
+				$data['source']['name'] = $file_location['name'];
+			}
+		} else {
+			$data['source']['type'] = 'php';
+			$data['source']['name'] = $this->reflection->getExtensionName();
 		}
 
 		return $data;

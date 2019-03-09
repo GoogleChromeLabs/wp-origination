@@ -37,17 +37,20 @@ class Server_Timing_Headers {
 	public function send() {
 		$entity_timings = [];
 
-		foreach ( $this->invocation_watcher->invocations as $processed_hook ) {
-			$hook_duration = $processed_hook->duration( true );
+		foreach ( $this->invocation_watcher->invocations as $invocation ) {
+			$hook_duration = $invocation->duration( true );
 
-			$file_location = $processed_hook->file_location();
+			$file_location = $invocation->file_location();
 			if ( $file_location ) {
 				$entity_key = sprintf( '%s:%s', $file_location['type'], $file_location['name'] );
-				if ( ! isset( $entity_timings[ $entity_key ] ) ) {
-					$entity_timings[ $entity_key ] = 0.0;
-				}
-				$entity_timings[ $entity_key ] += $hook_duration;
+			} else {
+				$entity_key = sprintf( '%s:%s', 'php', $invocation->reflection->getExtensionName() );
 			}
+
+			if ( ! isset( $entity_timings[ $entity_key ] ) ) {
+				$entity_timings[ $entity_key ] = 0.0;
+			}
+			$entity_timings[ $entity_key ] += $hook_duration;
 		}
 
 		$round_to_fourth_precision = function( $timing ) {
