@@ -240,21 +240,21 @@ class Output_Annotator {
 	 */
 	public function hydrate_placeholder_annotation( $index, $type, $closing ) {
 		if ( self::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG === $type ) {
-			return $this->hydrate_invocation_placeholder_annotation( $index, $closing );
-		} elseif ( self::INVOCATION_ANNOTATION_PLACEHOLDER_TAG === $type ) {
 			return $this->hydrate_dependency_placeholder_annotation( $index, $closing );
+		} elseif ( self::INVOCATION_ANNOTATION_PLACEHOLDER_TAG === $type ) {
+			return $this->hydrate_invocation_placeholder_annotation( $index, $closing );
 		}
 		return '';
 	}
 
 	/**
-	 * Hydrate an invocation placeholder annotation.
+	 * Hydrate an dependency placeholder annotation.
 	 *
 	 * @param int  $index   Index.
 	 * @param bool $closing Closing.
 	 * @return string Hydrated annotation.
 	 */
-	protected function hydrate_invocation_placeholder_annotation( $index, $closing ) {
+	protected function hydrate_dependency_placeholder_annotation( $index, $closing ) {
 		if ( ! isset( $this->pending_dependency_annotations[ $index ] ) ) {
 			return '';
 		}
@@ -293,7 +293,7 @@ class Output_Annotator {
 	 * @param bool $closing Closing.
 	 * @return string Hydrated annotation.
 	 */
-	protected function hydrate_dependency_placeholder_annotation( $index, $closing ) {
+	protected function hydrate_invocation_placeholder_annotation( $index, $closing ) {
 		if ( ! isset( $this->invocation_watcher->invocations[ $index ] ) ) {
 			return '';
 		}
