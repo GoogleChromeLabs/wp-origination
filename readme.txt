@@ -60,18 +60,21 @@ While this is also sent via `Server-Timing` headers, you can determine the amoun
 (() => {
     const durations = {};
     const openCommentPrefix = ' sourcery ';
-    const expression = `comment()[ starts-with( ., "${openCommentPrefix}" ) ]`;
+    const expression = `//comment()[ starts-with( ., "${openCommentPrefix}" ) ]`;
     const result = document.evaluate( expression, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
 
     for ( let i = 0; i < result.snapshotLength; i++ ) {
         const commentText = result.snapshotItem( i ).nodeValue;
-        const data = JSON.parse( commentText.substr( openCommentPrefix.length ) );
+        const data = JSON.parse( commentText.substr( openCommentPrefix.length ).replace( /\/$/, '' ) );
+        if ( ! data.source ) {
+            continue;
+        }
 
-        const key = data.source.type + ':' + data.source.name;
+        const key = ( data.source.type || 'unknown' ) + ':' + ( data.source.name || 'unknown' );
         if ( ! ( key in durations ) ) {
             durations[ key ] = 0.0;
         }
-        durations[ key ] += data.duration;
+        durations[ key ] += data.own_time;
 
     }
     return durations;
