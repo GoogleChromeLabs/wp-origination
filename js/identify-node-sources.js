@@ -23,15 +23,15 @@ export default function identifyNodeSources( node ) {
 	for ( let i = 0; i < xPathResult.snapshotLength; i++ ) {
 		let commentText = xPathResult.snapshotItem( i ).nodeValue;
 
-		// Account for IE conditional comments which result in comment nodes that look like:
-		// [if lt IE 9]><!-- sourcery {...
-		const conditionalCommentOffset = commentText.indexOf( `<!--${openCommentPrefix}` );
-		if ( conditionalCommentOffset !== -1 ) {
-			commentText = commentText.substr( conditionalCommentOffset + 4 );
+		const isOpen = commentText.startsWith( openCommentPrefix );
+		const isSelfClosing = commentText.endsWith( '/' );
+
+		commentText = commentText.substr( isOpen ? openCommentPrefix.length : closeCommentPrefix.length );
+		if ( isSelfClosing ) {
+			commentText = commentText.replace( /\/$/, '' );
 		}
 
-		const isOpen = commentText.startsWith( openCommentPrefix );
-		const data = JSON.parse( commentText.substr( isOpen ? openCommentPrefix.length : closeCommentPrefix.length ) );
+		const data = JSON.parse( commentText );
 		if ( isOpen ) {
 			if ( data.index ) {
 				invocations[ data.index ] = data;
@@ -42,6 +42,11 @@ export default function identifyNodeSources( node ) {
 				}
 			} else {
 				annotationStack.push( data );
+			}
+
+			// Turn around and pop right away when self-closing.
+			if ( isSelfClosing ) {
+				annotationStack.pop();
 			}
 		} else {
 			if ( data.invocations ) {
