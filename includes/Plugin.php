@@ -199,7 +199,16 @@ class Plugin {
 
 		$this->dependencies = new Dependencies();
 
-		$this->output_annotator = new Output_Annotator( $this->dependencies, $this->incrementor );
+		// @todo Pass options for verbosity, which filters to wrap, whether to output annotations that have no output, etc.
+		$this->output_annotator = new Output_Annotator(
+			$this->dependencies,
+			$this->incrementor,
+			[
+				'can_show_queries_callback' => function() {
+					return current_user_can( $this->show_queries_cap );
+				},
+			]
+		);
 
 		$this->database = new Database( $wpdb );
 
@@ -211,12 +220,7 @@ class Plugin {
 			$this->dependencies,
 			$this->database,
 			$this->incrementor,
-			$this->hook_wrapper,
-			[
-				'can_show_queries_callback' => function() {
-					return current_user_can( $this->show_queries_cap );
-				},
-			]
+			$this->hook_wrapper
 		);
 
 		$this->output_annotator->set_invocation_watcher( $this->invocation_watcher );

@@ -73,6 +73,22 @@ class Output_Annotator {
 	public $incrementor;
 
 	/**
+	 * Callback to determine whether to show queries.
+	 *
+	 * This is called once at shutdown to populate `$show_queries`.
+	 *
+	 * @var callback
+	 */
+	public $can_show_queries_callback = '__return_false';
+
+	/**
+	 * Whether to show queries.
+	 *
+	 * @var bool
+	 */
+	protected $show_queries = false;
+
+	/**
 	 * Pending dependency annotations.
 	 *
 	 * @var array
@@ -84,8 +100,12 @@ class Output_Annotator {
 	 *
 	 * @param Dependencies $dependencies Dependencies.
 	 * @param Incrementor  $incrementor  Incrementor.
+	 * @param array        $options      Options.
 	 */
-	public function __construct( Dependencies $dependencies, $incrementor ) {
+	public function __construct( Dependencies $dependencies, Incrementor $incrementor, $options ) {
+		foreach ( $options as $key => $value ) {
+			$this->$key = $value;
+		}
 		$this->dependencies = $dependencies;
 		$this->incrementor  = $incrementor;
 	}
@@ -305,6 +325,14 @@ class Output_Annotator {
 			];
 		} else {
 			$data = $invocation->data();
+
+			// Include queries if requested.
+			if ( $this->show_queries ) {
+				$queries = $invocation->queries( true );
+				if ( ! empty( $queries ) ) {
+					$data['queries'] = $queries;
+				}
+			}
 		}
 
 		return $this->get_annotation_comment( $data, $closing ? self::CLOSE_ANNOTATION : self::OPEN_ANNOTATION );
@@ -423,6 +451,8 @@ class Output_Annotator {
 	 */
 	public function finish( $buffer ) {
 		$placeholder_annotation_pattern = static::get_placeholder_annotation_pattern();
+
+		$this->show_queries = call_user_func( $this->can_show_queries_callback );
 
 		// Make sure that all open invocations get closed, which can happen when an exit is done in a hook callback.
 		while ( ! empty( $this->invocation_watcher->invocation_stack ) ) {

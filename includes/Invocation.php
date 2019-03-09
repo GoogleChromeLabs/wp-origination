@@ -422,13 +422,6 @@ class Invocation {
 			),
 		];
 
-		if ( $this->invocation_watcher->can_show_queries() ) {
-			$queries = $this->queries( true );
-			if ( ! empty( $queries ) ) {
-				$data['queries'] = $queries;
-			}
-		}
-
 		if ( ! empty( $this->enqueued_scripts ) ) {
 			$data['enqueued_scripts'] = $this->enqueued_scripts;
 		}

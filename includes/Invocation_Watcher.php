@@ -58,13 +58,6 @@ class Invocation_Watcher {
 	public $dependencies;
 
 	/**
-	 * Callback for whether queries can be displayed.
-	 *
-	 * @var callback
-	 */
-	public $can_show_queries_callback = '__return_true';
-
-	/**
 	 * Hook stack.
 	 *
 	 * @var Invocation[]
@@ -87,13 +80,8 @@ class Invocation_Watcher {
 	 * @param Database         $database         Database.
 	 * @param Incrementor      $incrementor      Incrementor.
 	 * @param Hook_Wrapper     $hook_wrapper     Hook wrapper.
-	 * @param array            $options          Options.
 	 */
-	public function __construct( File_Locator $file_locator, Output_Annotator $output_annotator, Dependencies $dependencies, Database $database, Incrementor $incrementor, Hook_Wrapper $hook_wrapper, $options ) {
-		foreach ( $options as $key => $value ) {
-			$this->$key = $value;
-		}
-
+	public function __construct( File_Locator $file_locator, Output_Annotator $output_annotator, Dependencies $dependencies, Database $database, Incrementor $incrementor, Hook_Wrapper $hook_wrapper ) {
 		$this->file_locator     = $file_locator;
 		$this->output_annotator = $output_annotator;
 		$this->dependencies     = $dependencies;
@@ -149,6 +137,7 @@ class Invocation_Watcher {
 
 		$this->invocations[ $invocation->index ] = $invocation;
 
+		// @todo There needs to be a callback to be given an $invocation and for us to determine whether or not to render given $args.
 		if ( $invocation->can_output() ) {
 			echo $this->output_annotator->get_before_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
@@ -182,6 +171,8 @@ class Invocation_Watcher {
 			)
 		);
 
+		// @todo There needs to be a callback to be given an $invocation and for us to determine whether or not to render given $args.
+		// @todo $this->output_annotator->should_annotate( $invocation, $args )
 		if ( $invocation->can_output() ) {
 			echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
