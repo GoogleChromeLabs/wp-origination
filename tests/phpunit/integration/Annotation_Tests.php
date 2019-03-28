@@ -110,7 +110,6 @@ class Annotation_Tests extends Integration_Test_Case {
 		$comments   = self::$xpath->query( $expression );
 
 		$this->assertGreaterThan( 0, $comments->length );
-		$this->assertTrue( 0 === $comments->length % 2, 'There should be an even number of comments.' );
 		$stack = [];
 		foreach ( $comments as $comment ) {
 			$parsed_comment = self::$plugin->output_annotator->parse_annotation_comment( $comment );
@@ -125,7 +124,7 @@ class Annotation_Tests extends Integration_Test_Case {
 			if ( $parsed_comment['closing'] ) {
 				$open_parsed_comment = array_pop( $stack );
 				$this->assertEquals( $open_parsed_comment['data']['index'], $parsed_comment['data']['index'] );
-			} else {
+			} elseif ( ! $parsed_comment['self_closing'] ) {
 				array_push( $stack, $parsed_comment );
 			}
 		}

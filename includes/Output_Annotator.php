@@ -49,7 +49,7 @@ class Output_Annotator {
 	/**
 	 * Empty annotation type (self-closing).
 	 */
-	const EMPTY_ANNOTATION = 2;
+	const SELF_CLOSING_ANNOTATION = 2;
 
 	/**
 	 * Instance of Invocation_Watcher.
@@ -123,6 +123,9 @@ class Output_Annotator {
 	 * Get placeholder annotation pattern.
 	 *
 	 * Pattern assumes that regex delimiter will be '#'.
+	 *
+	 * Note that placeholder annotations do not include self-closing annotations because those are only added at the end
+	 * in `\Google\WP_Sourcery\Output_Annotator::finish()` if it is determined that they have not already been annotated.
 	 *
 	 * @return string Pattern.
 	 */
@@ -347,7 +350,7 @@ class Output_Annotator {
 	 */
 	public function get_annotation_comment( array $data, $type = self::OPEN_ANNOTATION ) {
 
-		if ( ! in_array( $type, [ self::OPEN_ANNOTATION, self::CLOSE_ANNOTATION, self::EMPTY_ANNOTATION ], true ) ) {
+		if ( ! in_array( $type, [ self::OPEN_ANNOTATION, self::CLOSE_ANNOTATION, self::SELF_CLOSING_ANNOTATION ], true ) ) {
 			_doing_it_wrong( __METHOD__, esc_html__( 'Wrong annotation type.', 'sourcery' ), '0.1' );
 		}
 
@@ -363,7 +366,7 @@ class Output_Annotator {
 			self::CLOSE_ANNOTATION === $type ? '/' : '',
 			static::ANNOTATION_TAG,
 			$json,
-			self::EMPTY_ANNOTATION === $type ? '/' : ''
+			self::SELF_CLOSING_ANNOTATION === $type ? '/' : ''
 		);
 	}
 
@@ -383,18 +386,19 @@ class Output_Annotator {
 			$comment = $comment->nodeValue;
 		}
 		$pattern = sprintf(
-			'#^ (?P<closing>/)?%s (?P<json>{.+}) $#s',
+			'#^ (?P<closing>/)?%s (?P<json>{.+}) (?P<self_closing>/)?$#s',
 			preg_quote( static::ANNOTATION_TAG, '#' )
 		);
 		if ( ! preg_match( $pattern, $comment, $matches ) ) {
 			return null;
 		}
-		$closing = ! empty( $matches['closing'] );
-		$data    = json_decode( $matches['json'], true );
+		$closing      = ! empty( $matches['closing'] );
+		$self_closing = ! empty( $matches['self_closing'] );
+		$data         = json_decode( $matches['json'], true );
 		if ( ! is_array( $data ) ) {
 			return null;
 		}
-		return compact( 'closing', 'data' );
+		return compact( 'closing', 'data', 'self_closing' );
 	}
 
 	/**
@@ -526,7 +530,7 @@ class Output_Annotator {
 			if ( ! $invocation->annotated ) {
 				$invocation->annotated = true;
 
-				$buffer .= $this->get_annotation_comment( $invocation->data(), self::EMPTY_ANNOTATION );
+				$buffer .= $this->get_annotation_comment( $invocation->data(), self::SELF_CLOSING_ANNOTATION );
 			}
 		}
 
