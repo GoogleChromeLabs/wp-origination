@@ -131,7 +131,12 @@ class Hook_Wrapper {
 							$context['value_modified'] = $value_modified;
 						}
 
-						call_user_func( $this->after_callback, $context );
+						$return_override = call_user_func( $this->after_callback, $context );
+
+						// Give the opportunity for the after_callback to override the (filtered) hook response, e.g. to add annotations.
+						if ( isset( $return_override ) ) {
+							$return = $return_override;
+						}
 					}
 					if ( $exception ) {
 						throw $exception;

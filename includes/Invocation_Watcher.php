@@ -157,7 +157,9 @@ class Invocation_Watcher {
 	 *     @var int      $priority       Priority.
 	 *     @var array    $hook_args      Hook args.
 	 *     @var bool     $value_modified Whether the value was modified.
+	 *     @var mixed    $return         The returned value when filtering.
 	 * }
+	 * @return null|mixed
 	 */
 	public function after_hook( $args ) {
 		$invocation = array_pop( $this->invocation_stack );
@@ -175,7 +177,12 @@ class Invocation_Watcher {
 		// @todo $this->output_annotator->should_annotate( $invocation, $args )
 		if ( $invocation->can_output() ) {
 			echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		} elseif ( ! empty( $args['value_modified'] ) && ! empty( $args['return'] ) && $invocation instanceof Hook_Invocation && ! $invocation->is_action() && 'the_content' === $invocation->name ) {
+			return $this->output_annotator->get_before_annotation( $invocation ) . $args['return'] . $this->output_annotator->get_after_annotation( $invocation );
 		}
+
+		// Do not override the return value of the hook.
+		return null;
 	}
 }
 
