@@ -33,6 +33,13 @@ class Annotation_Tests extends Integration_Test_Case {
 	protected static $annotations = [];
 
 	/**
+	 * Post IDs used for testing.
+	 *
+	 * @var array
+	 */
+	protected static $post_ids = [];
+
+	/**
 	 * Document.
 	 *
 	 * @var \DOMDocument
@@ -67,16 +74,24 @@ class Annotation_Tests extends Integration_Test_Case {
 			dirname( __DIR__ ) . '/data/plugins/'
 		);
 
-		$post_id = self::factory()->post->create(
+		self::$post_ids['test_core_filters'] = self::factory()->post->create(
 			[
-				'post_title'   => 'Test Title',
-				'post_excerpt' => 'Test Excerpt',
+				'post_title'   => 'Test Core Filters',
+				'post_excerpt' => 'Test... "texturize".',
 				'post_content' => 'Test Wordpress', // Test capital_P_dangit.
+			]
+		);
+
+		self::$post_ids['test_shortcode'] = self::factory()->post->create(
+			[
+				'post_title'   => 'Test Shortcodes',
+				'post_content' => 'Please [transform_text case=upper]upper[/transform_text] the volume. I cannot year you.',
 			]
 		);
 
 		require_once __DIR__ . '/../data/plugins/hook-invoker.php';
 		require_once __DIR__ . '/../data/plugins/dependency-enqueuer.php';
+		require_once __DIR__ . '/../data/plugins/shortcode-adder.php';
 
 		// Start workaround output buffering to deal with inability of ob_start() to manipulate buffer when calling ob_get_clean(). See <>https://stackoverflow.com/a/12392694>.
 		ob_start();
@@ -84,12 +99,12 @@ class Annotation_Tests extends Integration_Test_Case {
 		self::$plugin->invocation_watcher->start();
 		self::$plugin->output_annotator->start( false );
 
-		// @todo Add Shortcode_Adder.
 		// @todo Add Block_Registerer.
 		// @todo Add Widget_Registerer.
 		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\add_hooks();
+		\Google\WP_Sourcery\Tests\Data\Plugins\Shortcode_Adder\add_shortcode();
 		\Google\WP_Sourcery\Tests\Data\Plugins\Dependency_Enqueuer\add_hooks();
-		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_template( [ 'p' => $post_id ] );
+		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_template( [ 'p' => array_values( self::$post_ids ) ] );
 
 		ob_end_flush(); // End workaround buffer.
 		self::$output = ob_get_clean();
@@ -279,7 +294,8 @@ class Annotation_Tests extends Integration_Test_Case {
 	 */
 	public function test_the_content_has_annotations_for_mutating_filters() {
 		$this->assertContains( '<p>Test WordPress</p>', self::$output );
-		$p = self::$xpath->query( '//p[ text() = "Test WordPress"]' )->item( 0 );
+
+		$p = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_core_filters'] . '"]//div[ @class = "entry-content" ]/p[ text() = "Test WordPress"]' )->item( 0 );
 		$this->assertInstanceOf( 'DOMElement', $p );
 
 		$this->assertInstanceOf( 'DOMComment', $p->previousSibling );
@@ -319,7 +335,6 @@ class Annotation_Tests extends Integration_Test_Case {
 		 */
 		$this->assertArraySubset(
 			[
-				'index'          => 103,
 				'type'           => 'filter',
 				'name'           => 'the_content',
 				'priority'       => 11,
@@ -337,12 +352,10 @@ class Annotation_Tests extends Integration_Test_Case {
 		);
 		$this->assertArraySubset(
 			[
-				'index'          => 99,
 				'type'           => 'filter',
 				'name'           => 'the_content',
 				'priority'       => 10,
 				'function'       => 'wpautop',
-				'own_time'       => 3.0994415283203125E-5,
 				'source'         => [
 					'file' => ABSPATH . 'wp-includes/formatting.php',
 					'type' => 'core',
@@ -354,6 +367,109 @@ class Annotation_Tests extends Integration_Test_Case {
 			],
 			$annotation_stack[1]
 		);
+	}
+
+	/**
+	 * Test that callbacks for the the_excerpt filter which actually mutated the value get wrapping annotations.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function test_the_excerpt_has_annotations_for_mutating_filters() {
+		$text_node = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_core_filters'] . '"]//div[ @class = "entry-excerpt" ]/p/text()' )->item( 0 );
+
+		$this->assertInstanceOf( 'DOMText', $text_node );
+
+		$this->assertEquals( 'Test… “texturize”.', $text_node->nodeValue );
+		$annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $text_node );
+		$this->assertCount( 2, $annotation_stack );
+
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'the_excerpt',
+				'priority'       => 10,
+				'function'       => 'wpautop',
+				'source'         => [
+					'file' => ABSPATH . 'wp-includes/formatting.php',
+					'type' => 'core',
+					'name' => 'wp-includes',
+				],
+				'parent'         => null,
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$annotation_stack[0]
+		);
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'the_excerpt',
+				'priority'       => 10,
+				'function'       => 'wptexturize',
+				'source'         => [
+					'file' => ABSPATH . 'wp-includes/formatting.php',
+					'type' => 'core',
+					'name' => 'wp-includes',
+				],
+				'parent'         => null,
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$annotation_stack[1]
+		);
+	}
+
+	/**
+	 * Test that shortcodes are added.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function test_the_content_has_annotations_for_shortcodes() {
+		$text_node = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_shortcode'] . '"]//div[ @class = "entry-content" ]/p/text()[ contains( ., "UPPER" ) ]' )->item( 0 );
+		$this->assertInstanceOf( 'DOMText', $text_node );
+
+		$this->assertSame( 'Please UPPER the volume. I cannot year you.', $text_node->parentNode->textContent );
+
+		$shortcode_annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $text_node );
+
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'the_content',
+				'priority'       => 11,
+				'function'       => 'do_shortcode',
+				'source'         =>
+					[
+						'file' => ABSPATH . 'wp-includes/shortcodes.php',
+						'type' => 'core',
+						'name' => 'wp-includes',
+					],
+				'parent'         => null,
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$shortcode_annotation_stack[0]
+		);
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'the_content',
+				'priority'       => 10,
+				'function'       => 'wpautop',
+				'source'         =>
+					[
+						'file' => ABSPATH . 'wp-includes/formatting.php',
+						'type' => 'core',
+						'name' => 'wp-includes',
+					],
+				'parent'         => null,
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$shortcode_annotation_stack[1]
+		);
+
+		$this->markTestIncomplete( 'The annotation stack needs to have a count of 3, with the top of the stack being a shortcode annotation.' );
 	}
 
 	/**

@@ -72,6 +72,16 @@ class Invocation_Watcher {
 	public $invocations = [];
 
 	/**
+	 * Filters that can be annotated.
+	 *
+	 * @var string[]
+	 */
+	public $annotatable_filters = [
+		'the_content',
+		'the_excerpt',
+	];
+
+	/**
 	 * Invocation_Watcher constructor.
 	 *
 	 * @param File_Locator     $file_locator     File locator.
@@ -167,17 +177,17 @@ class Invocation_Watcher {
 			throw new \Exception( 'Stack was empty' );
 		}
 
+		$value_modified = ! empty( $args['value_modified'] );
+
 		$invocation->finalize(
-			array(
-				'value_modified' => ! empty( $args['value_modified'] ),
-			)
+			compact( 'value_modified' )
 		);
 
 		// @todo There needs to be a callback to be given an $invocation and for us to determine whether or not to render given $args.
 		// @todo $this->output_annotator->should_annotate( $invocation, $args )
 		if ( $invocation->can_output() ) {
 			echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		} elseif ( ! empty( $args['value_modified'] ) && ! empty( $args['return'] ) && $invocation instanceof Hook_Invocation && ! $invocation->is_action() && 'the_content' === $invocation->name ) {
+		} elseif ( $value_modified && ! empty( $args['return'] ) && $invocation instanceof Hook_Invocation && ! $invocation->is_action() && in_array( $invocation->name, $this->annotatable_filters, true ) ) {
 			return $this->output_annotator->get_before_annotation( $invocation ) . $args['return'] . $this->output_annotator->get_after_annotation( $invocation );
 		}
 

@@ -62,7 +62,7 @@ function print_template( $query_args ) {
 
 			<?php while ( $query->have_posts() ) : ?>
 				<?php $query->the_post(); ?>
-				<article>
+				<article id="post-<?php the_ID(); ?>">
 					<h1 class="entry-title"><?php the_title(); ?></h1>
 					<div class="entry-excerpt">
 						<?php the_excerpt(); ?>
