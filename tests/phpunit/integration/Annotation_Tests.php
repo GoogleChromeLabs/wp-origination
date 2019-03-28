@@ -67,6 +67,14 @@ class Annotation_Tests extends Integration_Test_Case {
 			dirname( __DIR__ ) . '/data/plugins/'
 		);
 
+		$post_id = self::factory()->post->create(
+			[
+				'post_title'   => 'Test Title',
+				'post_excerpt' => 'Test Excerpt',
+				'post_content' => 'Test Wordpress', // Test capital_P_dangit.
+			]
+		);
+
 		require_once __DIR__ . '/../data/plugins/hook-invoker.php';
 		require_once __DIR__ . '/../data/plugins/dependency-enqueuer.php';
 
@@ -76,9 +84,12 @@ class Annotation_Tests extends Integration_Test_Case {
 		self::$plugin->invocation_watcher->start();
 		self::$plugin->output_annotator->start( false );
 
+		// @todo Add Shortcode_Adder.
+		// @todo Add Block_Registerer.
+		// @todo Add Widget_Registerer.
 		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\add_hooks();
 		\Google\WP_Sourcery\Tests\Data\Plugins\Dependency_Enqueuer\add_hooks();
-		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_template();
+		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_template( [ 'p' => $post_id ] );
 
 		ob_end_flush(); // End workaround buffer.
 		self::$output = ob_get_clean();
@@ -228,15 +239,6 @@ class Annotation_Tests extends Integration_Test_Case {
 	 * Test that an enqueued style has the expected annotation stack.
 	 */
 	public function test_enqueued_style_has_annotation_stack() {
-		/*
-		 *                 <!-- sourcery {"type":"enqueued_style","invocations":[12]} -->
-                    <link rel='stylesheet' id='mediaelement-css'  href='http://example.org/core-dev/src/wp-includes/js/mediaelement/mediaelementplayer-legacy.min.css?ver=4.2.6-78496d1' type='text/css' media='all' />
-                <!-- /sourcery {"type":"enqueued_style","invocations":[12]} -->
-                <!-- sourcery {"type":"enqueued_style","invocations":[12]} -->
-                    <link rel='stylesheet' id='wp-mediaelement-css'  href='http://example.org/core-dev/src/wp-includes/js/mediaelement/wp-mediaelement.min.css?ver=5.1-beta1-44558-src' type='text/css' media='all' />
-                <!-- /sourcery {"type":"enqueued_style","invocations":[12]} -->
-		 */
-
 		$mediaelement_css_link = self::$document->getElementById( 'mediaelement-css' );
 		$mediaelement_stack    = self::$plugin->output_annotator->get_node_annotation_stack( $mediaelement_css_link );
 		$this->assertCount( 2, $mediaelement_stack );
@@ -268,6 +270,90 @@ class Annotation_Tests extends Integration_Test_Case {
 
 		$this->assertArrayHasKey( 'enqueued_styles', $source_invocation );
 		$this->assertContains( 'wp-mediaelement', $source_invocation['enqueued_styles'] );
+	}
+
+	/**
+	 * Test that callbacks for the the_content filter which actually mutated the value get wrapping annotations.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function test_the_content_has_annotations_for_mutating_filters() {
+		$this->assertContains( '<p>Test WordPress</p>', self::$output );
+		$p = self::$xpath->query( '//p[ text() = "Test WordPress"]' )->item( 0 );
+		$this->assertInstanceOf( 'DOMElement', $p );
+
+		$this->assertInstanceOf( 'DOMComment', $p->previousSibling );
+		$this->assertInstanceOf( 'DOMComment', $p->previousSibling->previousSibling );
+		$this->assertNotInstanceOf( 'DOMComment', $p->previousSibling->previousSibling->previousSibling, 'Expected there to not be a comment 3 nodes behind.' );
+		$this->assertInstanceOf( 'DOMText', $p->nextSibling, 'Expected newline whitespace due to wpautop.' );
+		$this->assertRegExp( '/^\s+$/', $p->nextSibling->nodeValue, 'Expected newline whitespace due to wpautop.' );
+		$this->assertInstanceOf( 'DOMComment', $p->nextSibling->nextSibling );
+		$this->assertInstanceOf( 'DOMComment', $p->nextSibling->nextSibling->nextSibling );
+		$this->assertNotInstanceOf( 'DOMComment', $p->nextSibling->nextSibling->nextSibling->nextSibling, 'Expected there to not be a comment node 3 nodes ahead of the wpautop whitespace.' );
+		$expected_pairs = [
+			[
+				$p->previousSibling->previousSibling,
+				$p->nextSibling->nextSibling->nextSibling,
+			],
+			[
+				$p->previousSibling,
+				$p->nextSibling->nextSibling,
+			],
+		];
+
+		$annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $p );
+		$this->assertCount( count( $expected_pairs ), $annotation_stack );
+
+		foreach ( $expected_pairs as $i => $expected_pair ) {
+			$before_comment = self::$plugin->output_annotator->parse_annotation_comment( $expected_pair[0] );
+			$after_comment  = self::$plugin->output_annotator->parse_annotation_comment( $expected_pair[1] );
+
+			$this->assertSame( $before_comment['data']['index'], $after_comment['data']['index'] );
+			$this->assertSame( $annotation_stack[ $i ]['index'], $before_comment['data']['index'] );
+		}
+
+		/*
+		 * Note that the first callback for the filter is the one that appears highest in the stack.
+		 * Each subsequent filter callback wraps the previous filter callback's output. This is why
+		 * the stack appears somewhat to be in reverse order.
+		 */
+		$this->assertArraySubset(
+			[
+				'index'          => 103,
+				'type'           => 'filter',
+				'name'           => 'the_content',
+				'priority'       => 11,
+				'function'       => 'capital_P_dangit',
+				'source'         => [
+					'file' => ABSPATH . 'wp-includes/formatting.php',
+					'type' => 'core',
+					'name' => 'wp-includes',
+				],
+				'parent'         => null,
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$annotation_stack[0]
+		);
+		$this->assertArraySubset(
+			[
+				'index'          => 99,
+				'type'           => 'filter',
+				'name'           => 'the_content',
+				'priority'       => 10,
+				'function'       => 'wpautop',
+				'own_time'       => 3.0994415283203125E-5,
+				'source'         => [
+					'file' => ABSPATH . 'wp-includes/formatting.php',
+					'type' => 'core',
+					'name' => 'wp-includes',
+				],
+				'parent'         => null,
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$annotation_stack[1]
+		);
 	}
 
 	/**

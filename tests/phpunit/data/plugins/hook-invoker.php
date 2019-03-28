@@ -19,6 +19,10 @@ function add_hooks() {
 	add_action( 'hook_invoker_body', __NAMESPACE__ . '\print_body' );
 	add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_scripts' );
 	add_action( 'wp_print_footer_scripts', __NAMESPACE__ . '\print_document_write' );
+
+	// @todo Add shortcode.
+	// @todo Add widget.
+	// @todo Add block.
 }
 
 function filter_language_attributes( $attributes ) {
@@ -43,7 +47,9 @@ function print_document_write() {
 	echo '<script id="document-write-script">document.write("This is a bad function call.");</script>';
 }
 
-function print_template() {
+function print_template( $query_args ) {
+	$query = new \WP_Query( $query_args );
+
 	?>
 	<!DOCTYPE html>
 	<html <?php language_attributes(); ?> class="no-js no-svg">
@@ -53,6 +59,20 @@ function print_template() {
 		</head>
 		<body <?php body_class(); ?>>
 			<?php do_action( 'hook_invoker_body' ); ?>
+
+			<?php while ( $query->have_posts() ) : ?>
+				<?php $query->the_post(); ?>
+				<article>
+					<h1 class="entry-title"><?php the_title(); ?></h1>
+					<div class="entry-excerpt">
+						<?php the_excerpt(); ?>
+					</div>
+					<div class="entry-content">
+						<?php the_content(); ?>
+					</div>
+				</article>
+			<?php endwhile; ?>
+			<?php wp_reset_postdata(); ?>
 
 			<?php wp_footer(); ?>
 		</body>
