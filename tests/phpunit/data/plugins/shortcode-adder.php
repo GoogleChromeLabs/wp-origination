@@ -12,17 +12,28 @@
 
 namespace Google\WP_Sourcery\Tests\Data\Plugins\Shortcode_Adder;
 
-const SHORTCODE_TAG = 'transform_text';
+const SHORTCODE_TAG = 'passthru';
 
+/**
+ * Add shortcode.
+ */
 function add_shortcode() {
-	\add_shortcode( SHORTCODE_TAG, __NAMESPACE__ . '\transform_text_shortcode' );
+	\add_shortcode( SHORTCODE_TAG, __NAMESPACE__ . '\passthru_shortcode' );
 }
 
-function transform_text_shortcode( $attributes, $content ) {
+/**
+ * Run passthru shortcode, which just invokes the supplied (whitelisted) function and enqueues assets.
+ *
+ * @param array  $attributes Attributes.
+ * @param string $content    Content.
+ * @return string Content.
+ */
+function passthru_shortcode( $attributes, $content ) {
 	$attributes = shortcode_atts(
 		[
-			'case'   => '',
-			'styles' => [],
+			'function' => '',
+			'styles'   => [],
+			'scripts'  => [],
 		],
 		$attributes,
 		SHORTCODE_TAG
@@ -31,11 +42,16 @@ function transform_text_shortcode( $attributes, $content ) {
 	foreach ( explode( ',', $attributes['styles'] ) as $style ) {
 		wp_enqueue_style( $style );
 	}
+	foreach ( explode( ',', $attributes['scripts'] ) as $script ) {
+		wp_enqueue_script( $script );
+	}
 
-	if ( 'upper' === $attributes['case'] ) {
-		$content = strtoupper( $content );
-	} elseif ( 'lower' === $attributes['case'] ) {
-		$content = strtolower( $content );
+	$allowed_functions = [
+		'strtoupper',
+	];
+
+	if ( isset( $attributes['function'] ) && in_array( $attributes['function'], $allowed_functions, true ) ) {
+		$content = call_user_func( $attributes['function'], $content );
 	}
 
 	return $content;

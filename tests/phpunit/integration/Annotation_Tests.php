@@ -85,7 +85,7 @@ class Annotation_Tests extends Integration_Test_Case {
 		self::$post_ids['test_shortcode'] = self::factory()->post->create(
 			[
 				'post_title'   => 'Test Shortcodes',
-				'post_content' => 'Please [transform_text styles=common case=upper]upper[/transform_text] the volume. I cannot year you.',
+				'post_content' => 'Please [passthru styles=common scripts=wp-api-fetch,colorpicker function=strtoupper]upper[/passthru] the volume. I cannot year you.',
 			]
 		);
 
@@ -477,21 +477,24 @@ class Annotation_Tests extends Integration_Test_Case {
 		);
 		$this->assertArraySubset(
 			[
-				'type'            => 'shortcode',
-				'tag'             => 'transform_text',
-				'attributes'      => [
-					'case' => 'upper',
+				'type'             => 'shortcode',
+				'tag'              => 'passthru',
+				'attributes'       => [
+					'function' => 'strtoupper',
+					'styles'   => 'common',
+					'scripts'  => 'wp-api-fetch,colorpicker',
 				],
-				'function'        => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Shortcode_Adder\\transform_text_shortcode',
-				'source'          =>
+				'function'         => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Shortcode_Adder\\passthru_shortcode',
+				'source'           =>
 					[
 						'file' => dirname( __DIR__ ) . '/data/plugins/shortcode-adder.php',
 						'type' => 'plugin',
 						'name' => 'shortcode-adder.php',
 					],
-				'parent'          => $shortcode_annotation_stack[0]['index'],
-				'children'        => [],
-				'enqueued_styles' => [ 'common' ],
+				'parent'           => $shortcode_annotation_stack[0]['index'],
+				'children'         => [],
+				'enqueued_styles'  => [ 'common' ],
+				'enqueued_scripts' => [ 'wp-api-fetch', 'colorpicker' ],
 			],
 			$shortcode_annotation_stack[2]
 		);
