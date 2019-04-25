@@ -107,6 +107,8 @@ class Invocation_Watcher {
 		$this->hook_wrapper->before_callback = [ $this, 'before_hook' ];
 		$this->hook_wrapper->after_callback  = [ $this, 'after_hook' ];
 		$this->hook_wrapper->add_all_hook();
+
+		add_action( 'template_redirect', [ $this, 'wrap_shortcode_callbacks' ] );
 	}
 
 	/**
@@ -116,6 +118,19 @@ class Invocation_Watcher {
 	 */
 	public function can_show_queries() {
 		return ! empty( $this->can_show_queries_callback ) && call_user_func( $this->can_show_queries_callback );
+	}
+
+	/**
+	 * Get the parent invocation based on the stack.
+	 *
+	 * @return Invocation|null Parent invocation.
+	 */
+	public function get_parent_invocation() {
+		$parent = null;
+		if ( ! empty( $this->invocation_stack ) ) {
+			$parent = $this->invocation_stack[ count( $this->invocation_stack ) - 1 ];
+		}
+		return $parent;
 	}
 
 	/**
@@ -132,16 +147,15 @@ class Invocation_Watcher {
 	 * }
 	 */
 	public function before_hook( $args ) {
-		$parent = null;
-		if ( ! empty( $this->invocation_stack ) ) {
-			$parent = $this->invocation_stack[ count( $this->invocation_stack ) - 1 ];
-		}
+		$parent = $this->get_parent_invocation();
 
 		$args['parent'] = $parent;
 
 		$invocation = new Hook_Invocation( $this, $this->incrementor, $this->database, $this->file_locator, $this->dependencies, $args );
 
-		$parent->children[] = $invocation;
+		if ( $parent ) {
+			$parent->children[] = $invocation;
+		}
 
 		$this->invocation_stack[] = $invocation;
 
@@ -193,6 +207,50 @@ class Invocation_Watcher {
 
 		// Do not override the return value of the hook.
 		return null;
+	}
+
+	/**
+	 * Wrap each shortcode callback to capture the invocation.
+	 *
+	 * This function must be called after all shortcodes are added, such as at template_redirect.
+	 * Note that overriding and wrapping the callback is done instead of using the 'do_shortcode_tag' filter
+	 * because the former method allows us to capture the stylesheets that were enqueued when it was called.
+	 *
+	 * @global array $shortcode_tags
+	 */
+	public function wrap_shortcode_callbacks() {
+		global $shortcode_tags;
+
+		foreach ( $shortcode_tags as $tag => &$callback ) {
+			$function = $callback;
+
+			$callback = function( $attributes, $content ) use ( $tag, $function ) {
+				$parent = $this->get_parent_invocation();
+
+				$source = $this->hook_wrapper::get_source( $function );
+
+				$args = compact( 'tag', 'attributes', 'content', 'parent', 'function' );
+
+				$args['source_file']   = $source['file'];
+				$args['reflection']    = $source['reflection'];
+				$args['function_name'] = $source['function'];
+
+				$invocation = new Shortcode_Invocation( $this, $this->incrementor, $this->database, $this->file_locator, $this->dependencies, $args );
+				if ( $parent ) {
+					$parent->children[] = $invocation;
+				}
+
+				$this->invocation_stack[]                = $invocation;
+				$this->invocations[ $invocation->index ] = $invocation;
+
+				$return = call_user_func( $function, $attributes, $content );
+
+				array_pop( $this->invocation_stack );
+				$invocation->finalize();
+
+				return $this->output_annotator->get_before_annotation( $invocation ) . $return . $this->output_annotator->get_after_annotation( $invocation );
+			};
+		}
 	}
 }
 

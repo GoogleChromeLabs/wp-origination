@@ -153,7 +153,7 @@ class Invocation {
 	 * @todo Put into a multi-dimensional enqueued_dependencies array?
 	 * @var string[]
 	 */
-	protected $enqueued_scripts;
+	protected $enqueued_scripts = [];
 
 	/**
 	 * Style handles that were enqueued prior to running the hook callback.
@@ -170,7 +170,7 @@ class Invocation {
 	 * @todo Before finalized, this could return the current array_diff( wp_styles()->queue, $before_styles_queue ) or call identify_enqueued_styles? Would not be final, however.
 	 * @var string[]
 	 */
-	protected $enqueued_styles;
+	protected $enqueued_styles = [];
 
 	/**
 	 * The indices of the queries in $wpdb->queries that this hook was responsible for.
@@ -211,6 +211,8 @@ class Invocation {
 
 	/**
 	 * Whether this invocation is expected to produce output.
+	 *
+	 * @todo This is perhaps not relevant in the base class.
 	 *
 	 * @return bool Whether output is expected.
 	 */
@@ -437,7 +439,7 @@ class Invocation {
 				$data['source']['type'] = $file_location['type'];
 				$data['source']['name'] = $file_location['name'];
 			}
-		} else {
+		} elseif ( $this->reflection ) {
 			$data['source']['type'] = 'php';
 			$data['source']['name'] = $this->reflection->getExtensionName();
 		}

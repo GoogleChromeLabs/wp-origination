@@ -21,11 +21,16 @@ function add_shortcode() {
 function transform_text_shortcode( $attributes, $content ) {
 	$attributes = shortcode_atts(
 		[
-			'case' => '',
+			'case'   => '',
+			'styles' => [],
 		],
 		$attributes,
 		SHORTCODE_TAG
 	);
+
+	foreach ( explode( ',', $attributes['styles'] ) as $style ) {
+		wp_enqueue_style( $style );
+	}
 
 	if ( 'upper' === $attributes['case'] ) {
 		$content = strtoupper( $content );

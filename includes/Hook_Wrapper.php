@@ -151,6 +151,8 @@ class Hook_Wrapper {
 	/**
 	 * Gets the plugin or theme of the callback, if one exists.
 	 *
+	 * @todo This is the wrong location for this.
+	 *
 	 * @param callable|string|array $callback The callback for which to get the plugin.
 	 * @return array|null {
 	 *     The source data.

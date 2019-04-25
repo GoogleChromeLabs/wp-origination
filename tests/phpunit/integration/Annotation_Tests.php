@@ -85,7 +85,7 @@ class Annotation_Tests extends Integration_Test_Case {
 		self::$post_ids['test_shortcode'] = self::factory()->post->create(
 			[
 				'post_title'   => 'Test Shortcodes',
-				'post_content' => 'Please [transform_text case=upper]upper[/transform_text] the volume. I cannot year you.',
+				'post_content' => 'Please [transform_text styles=common case=upper]upper[/transform_text] the volume. I cannot year you.',
 			]
 		);
 
@@ -104,6 +104,9 @@ class Annotation_Tests extends Integration_Test_Case {
 		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\add_hooks();
 		\Google\WP_Sourcery\Tests\Data\Plugins\Shortcode_Adder\add_shortcode();
 		\Google\WP_Sourcery\Tests\Data\Plugins\Dependency_Enqueuer\add_hooks();
+
+		self::$plugin->invocation_watcher->wrap_shortcode_callbacks();
+
 		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_template( [ 'p' => array_values( self::$post_ids ) ] );
 
 		ob_end_flush(); // End workaround buffer.
@@ -432,6 +435,8 @@ class Annotation_Tests extends Integration_Test_Case {
 
 		$shortcode_annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $text_node );
 
+		$this->assertCount( 3, $shortcode_annotation_stack );
+
 		$this->assertArraySubset(
 			[
 				'type'           => 'filter',
@@ -445,7 +450,9 @@ class Annotation_Tests extends Integration_Test_Case {
 						'name' => 'wp-includes',
 					],
 				'parent'         => null,
-				'children'       => [],
+				'children'       => [
+					$shortcode_annotation_stack[2]['index'],
+				],
 				'value_modified' => true,
 			],
 			$shortcode_annotation_stack[0]
@@ -468,8 +475,26 @@ class Annotation_Tests extends Integration_Test_Case {
 			],
 			$shortcode_annotation_stack[1]
 		);
-
-		$this->markTestIncomplete( 'The annotation stack needs to have a count of 3, with the top of the stack being a shortcode annotation.' );
+		$this->assertArraySubset(
+			[
+				'type'            => 'shortcode',
+				'tag'             => 'transform_text',
+				'attributes'      => [
+					'case' => 'upper',
+				],
+				'function'        => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Shortcode_Adder\\transform_text_shortcode',
+				'source'          =>
+					[
+						'file' => dirname( __DIR__ ) . '/data/plugins/shortcode-adder.php',
+						'type' => 'plugin',
+						'name' => 'shortcode-adder.php',
+					],
+				'parent'          => $shortcode_annotation_stack[0]['index'],
+				'children'        => [],
+				'enqueued_styles' => [ 'common' ],
+			],
+			$shortcode_annotation_stack[2]
+		);
 	}
 
 	/**
