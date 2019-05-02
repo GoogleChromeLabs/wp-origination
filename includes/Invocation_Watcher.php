@@ -109,6 +109,7 @@ class Invocation_Watcher {
 		$this->hook_wrapper->add_all_hook();
 
 		add_action( 'template_redirect', [ $this, 'wrap_shortcode_callbacks' ] );
+		add_action( 'template_redirect', [ $this, 'wrap_block_render_callbacks' ] );
 	}
 
 	/**
@@ -236,6 +237,52 @@ class Invocation_Watcher {
 				$args['function_name'] = $source['function'];
 
 				$invocation = new Shortcode_Invocation( $this, $this->incrementor, $this->database, $this->file_locator, $this->dependencies, $args );
+				if ( $parent ) {
+					$parent->children[] = $invocation;
+				}
+
+				$this->invocation_stack[]                = $invocation;
+				$this->invocations[ $invocation->index ] = $invocation;
+
+				$return = call_user_func( $function, $attributes, $content );
+
+				array_pop( $this->invocation_stack );
+				$invocation->finalize();
+
+				return $this->output_annotator->get_before_annotation( $invocation ) . $return . $this->output_annotator->get_after_annotation( $invocation );
+			};
+		}
+	}
+
+	/**
+	 * Wrap each block render callback to capture the invocation.
+	 *
+	 * This function must be called after all blocks are registered, such as at template_redirect.
+	 * Note that overriding and wrapping the callback is done instead of exclusively using the 'render_block' filter
+	 * because the former method allows us to capture the stylesheets that were enqueued when it was called.
+	 * This only applies to dynamic blocks. For other blocks, the 'render_block' is used alone.
+	 */
+	public function wrap_block_render_callbacks() {
+		foreach ( \WP_Block_Type_Registry::get_instance()->get_all_registered() as $block_type ) {
+			if ( $block_type->is_dynamic() ) {
+				continue;
+			}
+
+			$function = $block_type->render_callback;
+
+			$block_type->render_callback = function( $attributes, $content ) use ( $block_type, $function ) {
+				$parent = $this->get_parent_invocation();
+
+				$source = $this->hook_wrapper::get_source( $function );
+				$name   = $block_type->name;
+
+				$args = compact( 'name', 'attributes', 'content', 'parent', 'function' );
+
+				$args['source_file']   = $source['file'];
+				$args['reflection']    = $source['reflection'];
+				$args['function_name'] = $source['function'];
+
+				$invocation = new Block_Invocation( $this, $this->incrementor, $this->database, $this->file_locator, $this->dependencies, $args );
 				if ( $parent ) {
 					$parent->children[] = $invocation;
 				}
