@@ -257,14 +257,18 @@ class Invocation_Watcher {
 	/**
 	 * Wrap each block render callback to capture the invocation.
 	 *
+	 * This only applies to dynamic blocks. For static blocks, the 'render_block' filter is used and which is handled
+	 * by the Output_Annotator, since static blocks do not involve invocations.
+	 *
 	 * This function must be called after all blocks are registered, such as at template_redirect.
 	 * Note that overriding and wrapping the callback is done instead of exclusively using the 'render_block' filter
 	 * because the former method allows us to capture the stylesheets that were enqueued when it was called.
-	 * This only applies to dynamic blocks. For other blocks, the 'render_block' is used alone.
+	 *
+	 * @see \Google\WP_Sourcery\Output_Annotator::add_static_block_annotation()
 	 */
 	public function wrap_block_render_callbacks() {
 		foreach ( \WP_Block_Type_Registry::get_instance()->get_all_registered() as $block_type ) {
-			if ( $block_type->is_dynamic() ) {
+			if ( ! $block_type->is_dynamic() ) {
 				continue;
 			}
 

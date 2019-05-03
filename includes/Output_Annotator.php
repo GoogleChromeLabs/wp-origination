@@ -37,6 +37,13 @@ class Output_Annotator {
 	const DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_dependency';
 
 	/**
+	 * Identifier used to signify (static) block annotation comments.
+	 *
+	 * @var string
+	 */
+	const BLOCK_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_block';
+
+	/**
 	 * Opening annotation type (start tag).
 	 */
 	const OPEN_ANNOTATION = 0;
@@ -96,6 +103,13 @@ class Output_Annotator {
 	protected $pending_dependency_annotations = [];
 
 	/**
+	 * Pending block annotations.
+	 *
+	 * @var array
+	 */
+	protected $pending_block_annotations = [];
+
+	/**
 	 * Output_Annotator constructor.
 	 *
 	 * @param Dependencies $dependencies Dependencies.
@@ -132,7 +146,7 @@ class Output_Annotator {
 	public function get_placeholder_annotation_pattern() {
 		return sprintf(
 			'<!-- (?P<closing>/)?(?P<type>%s) (?P<index>\d+) -->',
-			static::INVOCATION_ANNOTATION_PLACEHOLDER_TAG . '|' . static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG
+			static::INVOCATION_ANNOTATION_PLACEHOLDER_TAG . '|' . static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG . '|' . static::BLOCK_ANNOTATION_PLACEHOLDER_TAG
 		);
 	}
 
@@ -155,6 +169,7 @@ class Output_Annotator {
 
 		add_filter( 'script_loader_tag', [ $this, 'add_enqueued_script_annotation' ], PHP_INT_MAX, 2 );
 		add_filter( 'style_loader_tag', [ $this, 'add_enqueued_style_annotation' ], PHP_INT_MAX, 2 );
+		add_filter( 'render_block', [ $this, 'add_static_block_annotation' ], PHP_INT_MAX, 2 );
 	}
 
 	/**
@@ -205,13 +220,10 @@ class Output_Annotator {
 
 		$this->pending_dependency_annotations[ $index ] = compact( 'handle', 'type', 'registry' );
 
-		return implode(
-			'',
-			[
-				sprintf( '<!-- %s %d -->', static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG, $index ),
-				$tag,
-				sprintf( '<!-- /%s %d -->', static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG, $index ),
-			]
+		return (
+			sprintf( '<!-- %s %d -->', static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG, $index )
+			. $tag
+			. sprintf( '<!-- /%s %d -->', static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG, $index )
 		);
 	}
 
@@ -235,6 +247,38 @@ class Output_Annotator {
 	 */
 	public function add_enqueued_style_annotation( $tag, $handle = null ) {
 		return $this->add_enqueued_dependency_annotation( $tag, $handle, 'enqueued_style', 'wp_styles' );
+	}
+
+	/**
+	 * Annotate static block.
+	 *
+	 * @param string $block_content The block content about to be appended.
+	 * @param array  $block         The full block, including name and attributes.
+	 * @return string Block content.
+	 */
+	public function add_static_block_annotation( $block_content, $block ) {
+		$is_registered = \WP_Block_Type_Registry::get_instance()->is_registered( $block['blockName'] );
+
+		if ( empty( $block['blockName'] ) ) {
+			return $block_content;
+		}
+
+		// Skip annotating dynamic blocks since they'll be annotated separately.
+		if ( $is_registered && \WP_Block_Type_Registry::get_instance()->get_registered( $block['blockName'] )->is_dynamic() ) {
+			return $block_content;
+		}
+
+		$index = $this->incrementor->next();
+
+		unset( $block['innerHTML'], $block['innerBlocks'], $block['innerContent'] );
+		$this->pending_block_annotations[ $index ] = $block;
+
+		// @todo How do we determine the source for static blocks that lack render callbacks?
+		return (
+			sprintf( '<!-- %s %d -->', static::BLOCK_ANNOTATION_PLACEHOLDER_TAG, $index )
+			. $block_content
+			. sprintf( '<!-- /%s %d -->', static::BLOCK_ANNOTATION_PLACEHOLDER_TAG, $index )
+		);
 	}
 
 	/**
@@ -266,6 +310,8 @@ class Output_Annotator {
 			return $this->hydrate_dependency_placeholder_annotation( $index, $closing );
 		} elseif ( self::INVOCATION_ANNOTATION_PLACEHOLDER_TAG === $type ) {
 			return $this->hydrate_invocation_placeholder_annotation( $index, $closing );
+		} elseif ( self::BLOCK_ANNOTATION_PLACEHOLDER_TAG === $type ) {
+			return $this->hydrate_block_placeholder_annotation( $index, $closing );
 		}
 		return '';
 	}
@@ -305,6 +351,33 @@ class Output_Annotator {
 			'type'        => $this->pending_dependency_annotations[ $index ]['type'],
 			'invocations' => $this->pending_dependency_annotations[ $index ]['invocations'],
 		];
+
+		return $this->get_annotation_comment( $data, $closing ? self::CLOSE_ANNOTATION : self::OPEN_ANNOTATION );
+	}
+
+	/**
+	 * Hydrate an block placeholder annotation.
+	 *
+	 * @param int  $index   Index.
+	 * @param bool $closing Closing.
+	 * @return string Hydrated annotation.
+	 */
+	protected function hydrate_block_placeholder_annotation( $index, $closing ) {
+		if ( ! isset( $this->pending_block_annotations[ $index ] ) ) {
+			return '';
+		}
+
+		$block = $this->pending_block_annotations[ $index ];
+
+		$data = [
+			'index'   => $index,
+			'type'    => 'block',
+			'name'    => $block['blockName'],
+			'dynamic' => false,
+		];
+		if ( ! empty( $block['attrs'] ) ) {
+			$data['attributes'] = $block['attrs'];
+		}
 
 		return $this->get_annotation_comment( $data, $closing ? self::CLOSE_ANNOTATION : self::OPEN_ANNOTATION );
 	}
