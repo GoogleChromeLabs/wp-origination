@@ -87,19 +87,28 @@ class Hook_Wrapper {
 				}
 
 				/*
+				 * Prevent wrapping our own hooks.
+				 * @todo Why does ReflectionMethod::getNamespaceName() returns nothing? This is why we have to getDeclaringClass().
+				 */
+				$reflection = $source['reflection'];
+				$namespace  = ( $reflection instanceof \ReflectionMethod ? $reflection->getDeclaringClass() : $reflection )->getNamespaceName();
+				if ( __NAMESPACE__ === $namespace ) {
+					continue;
+				}
+
+				/*
 				 * A current limitation with wrapping callbacks is that the wrapped function cannot have
 				 * any parameters passed by reference. Without this the result is:
 				 *
 				 * > PHP Warning:  Parameter 1 to wp_default_styles() expected to be a reference, value given.
 				 */
-				if ( static::has_parameters_passed_by_reference( $source['reflection'] ) ) {
+				if ( static::has_parameters_passed_by_reference( $reflection ) ) {
 					// @todo This should perform a callback to communicate this case.
 					continue;
 				}
 
 				$function_name = $source['function'];
 				$source_file   = $source['file'];
-				$reflection    = $source['reflection'];
 
 				$callback['function'] = function() use ( &$callback, $name, $priority, $function, $reflection, $function_name, $source_file ) {
 					// Restore the original callback function after this wrapped callback function is invoked.
