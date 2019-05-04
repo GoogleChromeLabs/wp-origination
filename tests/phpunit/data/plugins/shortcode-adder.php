@@ -1,5 +1,7 @@
 <?php
 /**
+ * Shortcode adder.
+ *
  * @package   Google\WP_Sourcery
  * @link      https://github.com/westonruter/wp-sourcery
  * @license   GPL-2.0-or-later

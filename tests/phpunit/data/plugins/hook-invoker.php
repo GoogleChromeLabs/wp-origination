@@ -1,5 +1,7 @@
 <?php
 /**
+ * Hook Invoker.
+ *
  * @package   Google\WP_Sourcery
  * @link      https://github.com/westonruter/wp-sourcery
  * @license   GPL-2.0-or-later
@@ -12,6 +14,9 @@
 
 namespace Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker;
 
+/**
+ * Add hooks.
+ */
 function add_hooks() {
 	add_filter( 'language_attributes', __NAMESPACE__ . '\filter_language_attributes' );
 	add_filter( 'hook_invoker_container_attributes', __NAMESPACE__ . '\add_container_id_attribute' );
@@ -25,28 +30,56 @@ function add_hooks() {
 	// @todo Add block.
 }
 
+/**
+ * Filter language attributes.
+ *
+ * @param string $attributes Attributes.
+ * @return string Attributes.
+ */
 function filter_language_attributes( $attributes ) {
 	$attributes .= ' data-lang="test"';
 	return $attributes;
 }
 
+/**
+ * Trigger hook_invoker_enqueue_scripts action.
+ */
 function enqueue_scripts() {
 	do_action( 'hook_invoker_enqueue_scripts' );
 }
 
+/**
+ * Add container ID attribute.
+ *
+ * @param array $attributes Attributes.
+ * @return array Attributes.
+ */
 function add_container_id_attribute( $attributes ) {
 	$attributes['id'] = 'container';
 	return $attributes;
 }
 
+/**
+ * Print container attributes.
+ */
 function print_container_attributes() {
 	echo ' data-extra-printed=1';
 }
 
+/**
+ * Print document.write().
+ *
+ * Or write document.print()? 😉
+ */
 function print_document_write() {
 	echo '<script id="document-write-script">document.write("This is a bad function call.");</script>';
 }
 
+/**
+ * Print template.
+ *
+ * @param array $query_args Query args.
+ */
 function print_template( $query_args ) {
 	$query = new \WP_Query( $query_args );
 
@@ -55,6 +88,7 @@ function print_template( $query_args ) {
 	<html <?php language_attributes(); ?> class="no-js no-svg">
 		<head>
 			<meta charset="utf-8">
+			<title>Test template</title>
 			<?php wp_head(); ?>
 		</head>
 		<body <?php body_class(); ?>>
@@ -80,6 +114,9 @@ function print_template( $query_args ) {
 	<?php
 }
 
+/**
+ * Print body.
+ */
 function print_body() {
 	echo '<main ';
 	$attributes = apply_filters( 'hook_invoker_container_attributes', [] );
