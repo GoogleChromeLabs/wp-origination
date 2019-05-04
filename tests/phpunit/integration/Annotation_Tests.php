@@ -12,6 +12,7 @@ namespace Google\WP_Sourcery\Tests\PHPUnit\Unit;
 
 use Google\WP_Sourcery\Plugin;
 use Google\WP_Sourcery\Tests\PHPUnit\Framework\Integration_Test_Case;
+use Google\WP_Sourcery\Tests\Data\Plugins\Block_Registerer;
 
 /**
  * Testing annotations.
@@ -74,6 +75,11 @@ class Annotation_Tests extends Integration_Test_Case {
 			dirname( __DIR__ ) . '/data/plugins/'
 		);
 
+		require_once __DIR__ . '/../data/plugins/hook-invoker.php';
+		require_once __DIR__ . '/../data/plugins/dependency-enqueuer.php';
+		require_once __DIR__ . '/../data/plugins/shortcode-adder.php';
+		require_once __DIR__ . '/../data/plugins/block-registerer.php';
+
 		self::$post_ids['test_core_filters'] = self::factory()->post->create(
 			[
 				'post_title'   => 'Test Core Filters',
@@ -89,9 +95,15 @@ class Annotation_Tests extends Integration_Test_Case {
 			]
 		);
 
-		require_once __DIR__ . '/../data/plugins/hook-invoker.php';
-		require_once __DIR__ . '/../data/plugins/dependency-enqueuer.php';
-		require_once __DIR__ . '/../data/plugins/shortcode-adder.php';
+		self::$post_ids['test_blocks'] = self::factory()->post->create(
+			[
+				'post_title'   => 'Test Blocks',
+				'post_content' => implode(
+					"\n\n",
+					\Google\WP_Sourcery\Tests\Data\Plugins\Block_Registerer\get_sample_serialized_blocks()
+				),
+			]
+		);
 
 		// Start workaround output buffering to deal with inability of ob_start() to manipulate buffer when calling ob_get_clean(). See <>https://stackoverflow.com/a/12392694>.
 		ob_start();
@@ -99,13 +111,14 @@ class Annotation_Tests extends Integration_Test_Case {
 		self::$plugin->invocation_watcher->start();
 		self::$plugin->output_annotator->start( false );
 
-		// @todo Add Block_Registerer.
 		// @todo Add Widget_Registerer.
 		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\add_hooks();
 		\Google\WP_Sourcery\Tests\Data\Plugins\Shortcode_Adder\add_shortcode();
 		\Google\WP_Sourcery\Tests\Data\Plugins\Dependency_Enqueuer\add_hooks();
+		\Google\WP_Sourcery\Tests\Data\Plugins\Block_Registerer\register_blocks();
 
 		self::$plugin->invocation_watcher->wrap_shortcode_callbacks();
+		self::$plugin->invocation_watcher->wrap_block_render_callbacks();
 
 		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_template( [ 'p' => array_values( self::$post_ids ) ] );
 
@@ -507,9 +520,92 @@ class Annotation_Tests extends Integration_Test_Case {
 	}
 
 	/**
+	 * Test that annotations for blocks are added.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function test_the_content_has_annotations_for_blocks() {
+		$block_elements = [];
+		$block_stacks   = [];
+		foreach ( [ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME, Block_Registerer\TEXT_TRANSFORM_BLOCK_NAME, Block_Registerer\CURRENT_TIME_BLOCK_NAME ] as $block_name ) {
+			$block_elements[ $block_name ] = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_blocks'] . '"]//*[ @data-block-name = "' . $block_name . '" ]' )->item( 0 );
+			$block_stacks[ $block_name ]   = self::$plugin->output_annotator->get_node_annotation_stack( $block_elements[ $block_name ] );
+		}
+
+		// @todo Add test for columns block!
+		$this->assertCount( 3, array_filter( $block_elements ) );
+
+		// Foreign text block: a static block.
+		$this->assertCount( 2, $block_stacks[ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME ] );
+		$this->assertArraySubset(
+			[
+				'type'     => 'filter',
+				'name'     => 'the_content',
+				'function' => 'do_blocks',
+			],
+			$block_stacks[ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME ][0]
+		);
+		$this->assertArraySubset(
+			[
+				'type'       => 'block',
+				'name'       => Block_Registerer\FOREIGN_TEXT_BLOCK_NAME,
+				'dynamic'    => false,
+				// @todo Need to guess the source based on the block namespace.
+				'attributes' => [ 'voice' => 'Juan' ],
+			],
+			$block_stacks[ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME ][1]
+		);
+		$this->assertArrayNotHasKey( 'parent', $block_stacks[ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME ][1] ); // @todo Why shouldn't static blocks get parent/child relationships?
+
+		// Text transform block: a dynamic block.
+		$this->assertCount( 2, $block_stacks[ Block_Registerer\TEXT_TRANSFORM_BLOCK_NAME ] );
+		$this->assertSame( $block_stacks[ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME ][0], $block_stacks[ Block_Registerer\TEXT_TRANSFORM_BLOCK_NAME ][0] );
+		$this->assertArraySubset(
+			[
+				'type'            => 'block',
+				'name'            => Block_Registerer\TEXT_TRANSFORM_BLOCK_NAME,
+				'dynamic'         => true,
+				'attributes'      => [ 'transform' => 'strtoupper' ],
+				'enqueued_styles' => [ Block_Registerer\TEXT_TRANSFORM_STYLE_HANDLE ],
+				'function'        => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Block_Registerer\\render_text_transform_block',
+				'source'          => [
+					'file' => dirname( __DIR__ ) . '/data/plugins/block-registerer.php',
+					'type' => 'plugin',
+					'name' => 'block-registerer.php',
+				],
+				'parent'          => $block_stacks[ Block_Registerer\TEXT_TRANSFORM_BLOCK_NAME ][0]['index'],
+			],
+			$block_stacks[ Block_Registerer\TEXT_TRANSFORM_BLOCK_NAME ][1]
+		);
+		$this->assertEquals( 'I USED TO BE LOWER-CASE.', $block_elements[ Block_Registerer\TEXT_TRANSFORM_BLOCK_NAME ]->textContent );
+
+		// Current time block: a dynamic block.
+		$this->assertCount( 2, $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ] );
+		$this->assertSame( $block_stacks[ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME ][0], $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][0] );
+		$this->assertArraySubset(
+			[
+				'type'       => 'block',
+				'name'       => Block_Registerer\CURRENT_TIME_BLOCK_NAME,
+				'dynamic'    => true,
+				'attributes' => [ 'format' => 'c' ],
+				'function'   => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Block_Registerer\\render_current_time_block',
+				'source'     => [
+					'file' => dirname( __DIR__ ) . '/data/plugins/block-registerer.php',
+					'type' => 'plugin',
+					'name' => 'block-registerer.php',
+				],
+				'parent'     => $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][0]['index'],
+			],
+			$block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][1]
+		);
+		$this->assertContains( gmdate( 'Y' ), $block_elements[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ]->textContent );
+	}
+
+	/**
 	 * Tear down after class.
 	 */
 	public static function tearDownAfterClass() {
+		\Google\WP_Sourcery\Tests\Data\Plugins\Block_Registerer\unregister_blocks();
 		parent::tearDownAfterClass();
 		self::$xpath    = null;
 		self::$document = null;
