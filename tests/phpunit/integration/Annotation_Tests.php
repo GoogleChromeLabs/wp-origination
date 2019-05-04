@@ -180,6 +180,8 @@ class Annotation_Tests extends Integration_Test_Case {
 
 	/**
 	 * Test that script output during wp_print_footer_scripts has expected annotation comments.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_expected_print_footer_scripts_annotations() {
 		$script = self::$document->getElementById( 'document-write-script' );
@@ -225,6 +227,8 @@ class Annotation_Tests extends Integration_Test_Case {
 
 	/**
 	 * Test that an enqueued script has the expected annotation stack.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_enqueued_script_has_annotation_stack() {
 		$script = self::$xpath->query( '//script[ contains( @src, "jquery.js" ) ]' )->item( 0 );
@@ -255,6 +259,8 @@ class Annotation_Tests extends Integration_Test_Case {
 
 	/**
 	 * Test that an enqueued style has the expected annotation stack.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_enqueued_style_has_annotation_stack() {
 		$mediaelement_css_link = self::$document->getElementById( 'mediaelement-css' );

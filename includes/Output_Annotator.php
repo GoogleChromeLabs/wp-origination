@@ -175,6 +175,8 @@ class Output_Annotator {
 	/**
 	 * Print annotation placeholder before an printing invoked callback.
 	 *
+	 * @todo This should be renamed to get_before_invocation_placeholder_annotation()?
+	 *
 	 * @param Invocation $invocation Invocation.
 	 * @return string Before placeholder annotation HTML comment.
 	 */
@@ -184,6 +186,8 @@ class Output_Annotator {
 
 	/**
 	 * Print annotation placeholder after an printing invoked callback.
+	 *
+	 * @todo This should be renamed to get_after_invocation_placeholder_annotation()?
 	 *
 	 * @param Invocation $invocation Invocation.
 	 * @return string After placeholder annotation HTML comment.
@@ -346,11 +350,16 @@ class Output_Annotator {
 			return '';
 		}
 
-		$data = [
-			'index'       => $index,
-			'type'        => $this->pending_dependency_annotations[ $index ]['type'],
-			'invocations' => $this->pending_dependency_annotations[ $index ]['invocations'],
-		];
+		$data = compact( 'index' );
+		if ( ! $closing ) {
+			$data = array_merge(
+				$data,
+				[
+					'type'        => $this->pending_dependency_annotations[ $index ]['type'],
+					'invocations' => $this->pending_dependency_annotations[ $index ]['invocations'],
+				]
+			);
+		}
 
 		return $this->get_annotation_comment( $data, $closing ? self::CLOSE_ANNOTATION : self::OPEN_ANNOTATION );
 	}
@@ -369,14 +378,19 @@ class Output_Annotator {
 
 		$block = $this->pending_block_annotations[ $index ];
 
-		$data = [
-			'index'   => $index,
-			'type'    => 'block',
-			'name'    => $block['blockName'],
-			'dynamic' => false,
-		];
-		if ( ! empty( $block['attrs'] ) ) {
-			$data['attributes'] = $block['attrs'];
+		$data = compact( 'index' );
+		if ( ! $closing ) {
+			$data = array_merge(
+				$data,
+				[
+					'type'    => 'block',
+					'name'    => $block['blockName'],
+					'dynamic' => false,
+				]
+			);
+			if ( ! empty( $block['attrs'] ) ) {
+				$data['attributes'] = $block['attrs'];
+			}
 		}
 
 		return $this->get_annotation_comment( $data, $closing ? self::CLOSE_ANNOTATION : self::OPEN_ANNOTATION );
@@ -395,12 +409,9 @@ class Output_Annotator {
 		}
 		$invocation = $this->invocation_watcher->invocations[ $index ];
 
-		if ( $closing ) {
-			$data = [
-				'index' => $invocation->index,
-			];
-		} else {
-			$data = $invocation->data();
+		$data = compact( 'index' );
+		if ( ! $closing ) {
+			$data = array_merge( $data, $invocation->data() );
 
 			// Include queries if requested.
 			if ( $this->show_queries ) {
