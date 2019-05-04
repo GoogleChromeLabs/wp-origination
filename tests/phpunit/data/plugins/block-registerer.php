@@ -90,6 +90,14 @@ function register_blocks() {
  * @return string[] Sample serialized blocks.
  */
 function get_sample_serialized_blocks() {
+
+	$current_time_block   = sprintf(
+		'<!-- wp:%1$s %2$s /-->',
+		CURRENT_TIME_BLOCK_NAME,
+		wp_json_encode( [ 'format' => 'c' ] )
+	);
+	$nested_columns_block = "<!-- wp:columns -->\n<div class=\"wp-block-columns has-2-columns\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:paragraph -->\n<p>Column 1</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column -->\n\n<!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:columns -->\n<div class=\"wp-block-columns has-2-columns\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:paragraph -->\n<p>Column 2a</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column -->\n\n<!-- wp:column -->\n<div class=\"wp-block-column\">$current_time_block</div>\n<!-- /wp:column --></div>\n<!-- /wp:columns --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns -->";
+
 	return [
 		sprintf(
 			'<!-- wp:%1$s %2$s --><span data-block-name="%1$s" dir="ltr" lang="es">¡Hola, [todo el] mundo!</span><!-- /wp:%1$s -->',
@@ -101,11 +109,7 @@ function get_sample_serialized_blocks() {
 			TEXT_TRANSFORM_BLOCK_NAME,
 			wp_json_encode( [ 'transform' => 'strtoupper' ] )
 		),
-		sprintf(
-			'<!-- wp:%1$s %2$s /-->',
-			CURRENT_TIME_BLOCK_NAME,
-			wp_json_encode( [ 'format' => 'c' ] )
-		),
+		$nested_columns_block,
 	];
 }
 

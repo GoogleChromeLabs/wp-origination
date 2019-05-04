@@ -532,7 +532,6 @@ class Annotation_Tests extends Integration_Test_Case {
 			$block_stacks[ $block_name ]   = self::$plugin->output_annotator->get_node_annotation_stack( $block_elements[ $block_name ] );
 		}
 
-		// @todo Add test for columns block!
 		$this->assertCount( 3, array_filter( $block_elements ) );
 
 		// Foreign text block: a static block.
@@ -579,9 +578,13 @@ class Annotation_Tests extends Integration_Test_Case {
 		);
 		$this->assertEquals( 'I USED TO BE LOWER-CASE.', $block_elements[ Block_Registerer\TEXT_TRANSFORM_BLOCK_NAME ]->textContent );
 
-		// Current time block: a dynamic block.
-		$this->assertCount( 2, $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ] );
+		// Current time block: a dynamic block inside nested column blocks.
+		$this->assertCount( 6, $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ] );
 		$this->assertSame( $block_stacks[ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME ][0], $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][0] );
+		$this->assertEquals( 'core/columns', $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][1]['name'] );
+		$this->assertEquals( 'core/column', $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][2]['name'] );
+		$this->assertEquals( 'core/columns', $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][3]['name'] );
+		$this->assertEquals( 'core/column', $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][4]['name'] );
 		$this->assertArraySubset(
 			[
 				'type'       => 'block',
@@ -596,7 +599,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				],
 				'parent'     => $block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][0]['index'],
 			],
-			$block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][1]
+			$block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][5]
 		);
 		$this->assertContains( gmdate( 'Y' ), $block_elements[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ]->textContent );
 	}
