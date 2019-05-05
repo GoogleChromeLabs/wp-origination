@@ -74,11 +74,24 @@ class Invocation_Watcher {
 	/**
 	 * Filters that can be annotated.
 	 *
+	 * @todo This list should be easily configurable.
+	 *
 	 * @var string[]
 	 */
 	public $annotatable_filters = [
+		'comment_text',
+		'post_gallery',
+		'pre_wp_nav_menu',
+		'render_block',
+		'script_loader_tag',
+		'style_loader_tag',
 		'the_content',
 		'the_excerpt',
+		'the_title',
+		'walker_nav_menu_start_el',
+		'widget_text',
+		'widget_text_content',
+		'wp_nav_menu',
 	];
 
 	/**
