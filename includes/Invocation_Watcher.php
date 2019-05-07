@@ -65,6 +65,17 @@ class Invocation_Watcher {
 	public $invocation_stack = [];
 
 	/**
+	 * Stack of pending hook invocations.
+	 *
+	 * When all filters have applied, the array of hook invocations is popped off this stack and used to wrap the filtered value.
+	 * Deferring the annotations in this way prevents the annotations from interfering with the normal operation of the
+	 * filter callbacks.
+	 *
+	 * @var array[Hook_Invocation[]]
+	 */
+	protected $pending_filter_invocations_stack = [];
+
+	/**
 	 * All invocations by index and ordered by occurrence.
 	 *
 	 * @var Invocation[]
@@ -117,8 +128,10 @@ class Invocation_Watcher {
 	 * Start watching.
 	 */
 	public function start() {
-		$this->hook_wrapper->before_callback = [ $this, 'before_hook' ];
-		$this->hook_wrapper->after_callback  = [ $this, 'after_hook' ];
+		$this->hook_wrapper->before_each_callback = [ $this, 'before_each_hook_callback' ];
+		$this->hook_wrapper->after_each_callback  = [ $this, 'after_each_hook_callback' ];
+		$this->hook_wrapper->before_all_callback  = [ $this, 'before_all_hook_callbacks' ];
+		$this->hook_wrapper->after_all_callback   = [ $this, 'after_all_hook_callbacks' ];
 		$this->hook_wrapper->add_all_hook();
 
 		add_action( 'template_redirect', [ $this, 'wrap_shortcode_callbacks' ] );
@@ -148,6 +161,27 @@ class Invocation_Watcher {
 	}
 
 	/**
+	 * Determine whether a hook is a filter.
+	 *
+	 * @param string $name Hook name.
+	 * @return bool Whether filter.
+	 */
+	protected function is_filter( $name ) {
+		return ! did_action( $name );
+	}
+
+	/**
+	 * Add a filter to run at the very end to wrap the output with the annotations, if the filter is annotatable.
+	 *
+	 * @param string $name Name.
+	 */
+	public function before_all_hook_callbacks( $name ) {
+		if ( $this->is_filter( $name ) ) {
+			$this->pending_filter_invocations_stack[] = [];
+		}
+	}
+
+	/**
 	 * Before hook.
 	 *
 	 * @param array $args {
@@ -160,7 +194,7 @@ class Invocation_Watcher {
 	 *     @var array    $hook_args     Hook args.
 	 * }
 	 */
-	public function before_hook( $args ) {
+	public function before_each_hook_callback( $args ) {
 		$parent = $this->get_parent_invocation();
 
 		$args['parent'] = $parent;
@@ -197,30 +231,48 @@ class Invocation_Watcher {
 	 *     @var bool     $value_modified Whether the value was modified.
 	 *     @var mixed    $return         The returned value when filtering.
 	 * }
-	 * @return null|mixed
 	 */
-	public function after_hook( $args ) {
+	public function after_each_hook_callback( $args ) {
 		$invocation = array_pop( $this->invocation_stack );
 		if ( ! $invocation ) {
 			throw new \Exception( 'Stack was empty' );
 		}
 
 		$value_modified = ! empty( $args['value_modified'] );
-
 		$invocation->finalize(
 			compact( 'value_modified' )
 		);
+
+		if ( $invocation instanceof Hook_Invocation && ! $invocation->is_action() ) {
+			$this->pending_filter_invocations_stack[ count( $this->pending_filter_invocations_stack ) - 1 ][] = $invocation;
+		}
 
 		// @todo There needs to be a callback to be given an $invocation and for us to determine whether or not to render given $args.
 		// @todo $this->output_annotator->should_annotate( $invocation, $args )
 		if ( $invocation->can_output() ) {
 			echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		} elseif ( $value_modified && ! empty( $args['return'] ) && $invocation instanceof Hook_Invocation && ! $invocation->is_action() && in_array( $invocation->name, $this->annotatable_filters, true ) ) {
-			return $this->output_annotator->get_before_annotation( $invocation ) . $args['return'] . $this->output_annotator->get_after_annotation( $invocation );
 		}
+	}
 
-		// Do not override the return value of the hook.
-		return null;
+	/**
+	 * After all filter hook callbacks.
+	 *
+	 * @param string $name  Hook name.
+	 * @param mixed  $value Filtered value.
+	 * @return mixed Filtered value, with wrapped annotations if filter is annotatable.
+	 */
+	public function after_all_hook_callbacks( $name, $value = null ) {
+		if ( $this->is_filter( $name ) && is_string( $value ) ) {
+			$pending_invocations = array_pop( $this->pending_filter_invocations_stack );
+			foreach ( $pending_invocations as $invocation ) {
+				assert( $invocation instanceof Hook_Invocation );
+				assert( ! $invocation->is_action() );
+				if ( $invocation->value_modified && in_array( $name, $this->annotatable_filters, true ) ) {
+					$value = $this->output_annotator->get_before_annotation( $invocation ) . $value . $this->output_annotator->get_after_annotation( $invocation );
+				}
+			}
+		}
+		return $value;
 	}
 
 	/**

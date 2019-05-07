@@ -16,28 +16,46 @@ namespace Google\WP_Sourcery;
 class Hook_Wrapper {
 
 	/**
-	 * Function called before invoking original hook callback.
+	 * Function called before all the hook callbacks are invoked.
 	 *
 	 * @var callable|string
 	 */
-	public $before_callback;
+	public $before_all_callback;
 
 	/**
-	 * Function called after invoking original hook callback.
+	 * Function called before invoking each original hook callback.
 	 *
 	 * @var callable|string
 	 */
-	public $after_callback;
+	public $before_each_callback;
+
+	/**
+	 * Function called after invoking each original hook callback.
+	 *
+	 * @var callable|string
+	 */
+	public $after_each_callback;
+
+	/**
+	 * Function called after all the hook callbacks have been invoked.
+	 *
+	 * @var callable|string
+	 */
+	public $after_all_callback;
 
 	/**
 	 * Hook_Wrapper constructor.
 	 *
-	 * @param callable|string $before_callback Function which is called before the original callback function is invoked.
-	 * @param callable|string $after_callback  Function which is called after the original callback function is invoked.
+	 * @param callable|string $before_each_callback Function which is called before the original callback function is invoked.
+	 * @param callable|string $after_each_callback  Function which is called after the original callback function is invoked.
+	 * @param callable|string $before_all_callback  Function which is called before all the hook callbacks are invoked.
+	 * @param callable|string $after_all_callback   Function which is called after all the hook callbacks are invoked.
 	 */
-	public function __construct( $before_callback = null, $after_callback = null ) {
-		$this->before_callback = $before_callback;
-		$this->after_callback  = $after_callback;
+	public function __construct( $before_each_callback = null, $after_each_callback = null, $before_all_callback = null, $after_all_callback = null ) {
+		$this->before_each_callback = $before_each_callback;
+		$this->after_each_callback  = $after_each_callback;
+		$this->before_all_callback  = $before_all_callback;
+		$this->after_all_callback   = $after_all_callback;
 	}
 
 	/**
@@ -74,8 +92,14 @@ class Hook_Wrapper {
 			return;
 		}
 
-		foreach ( $wp_filter[ $name ]->callbacks as $priority => &$callbacks ) {
-			foreach ( $callbacks as &$callback ) {
+		// Run callback before all.
+		if ( $this->before_all_callback ) {
+			call_user_func( $this->before_all_callback, $name );
+		}
+
+		$priorities = array_keys( $wp_filter[ $name ]->callbacks );
+		foreach ( $priorities as $priority ) {
+			foreach ( $wp_filter[ $name ]->callbacks[ $priority ] as &$callback ) {
 				$function = $callback['function'];
 
 				$source = static::get_source( $function );
@@ -121,8 +145,8 @@ class Hook_Wrapper {
 					$is_filter      = ! did_action( $name );
 					$value_modified = null;
 					$context        = compact( 'name', 'function', 'function_name', 'reflection', 'source_file', 'accepted_args', 'priority', 'hook_args', 'is_filter' );
-					if ( $this->before_callback ) {
-						call_user_func( $this->before_callback, $context );
+					if ( $this->before_each_callback ) {
+						call_user_func( $this->before_each_callback, $context );
 					}
 					$exception = null;
 					try {
@@ -134,13 +158,13 @@ class Hook_Wrapper {
 						$exception = $e;
 						$return    = null;
 					}
-					if ( $this->after_callback ) {
+					if ( $this->after_each_callback ) {
 						$context['return'] = $return;
 						if ( $is_filter ) {
 							$context['value_modified'] = $value_modified;
 						}
 
-						$return_override = call_user_func( $this->after_callback, $context );
+						$return_override = call_user_func( $this->after_each_callback, $context );
 
 						// Give the opportunity for the after_callback to override the (filtered) hook response, e.g. to add annotations.
 						if ( isset( $return_override ) ) {
@@ -154,6 +178,16 @@ class Hook_Wrapper {
 					return $return;
 				};
 			}
+		}
+
+		// Run callback after all.
+		if ( $this->after_all_callback ) {
+			$after_all_priority = max( $priorities ) + 1;
+			$after_all_callback = function () use ( $name, &$after_all_callback, $after_all_priority ) {
+				remove_filter( $name, $after_all_callback, $after_all_priority ); // Remove self.
+				return call_user_func_array( $this->after_all_callback, array_merge( [ $name ], func_get_args() ) );
+			};
+			add_filter( $name, $after_all_callback, $after_all_priority, 2 );
 		}
 	}
 
