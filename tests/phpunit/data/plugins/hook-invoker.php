@@ -20,6 +20,8 @@ namespace Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker;
 function add_hooks() {
 	add_filter( 'language_attributes', __NAMESPACE__ . '\filter_language_attributes' );
 	add_filter( 'hook_invoker_container_attributes', __NAMESPACE__ . '\add_container_id_attribute' );
+	add_filter( 'the_title', __NAMESPACE__ . '\convert_backticks_to_code', 100 );
+	add_filter( 'the_content', __NAMESPACE__ . '\convert_backticks_to_code', 100 );
 	add_action( 'hook_invoker_container_print_extra_attributes', __NAMESPACE__ . '\print_container_attributes' );
 	add_action( 'hook_invoker_body', __NAMESPACE__ . '\print_body' );
 	add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_scripts' );
@@ -39,6 +41,16 @@ function add_hooks() {
 function filter_language_attributes( $attributes ) {
 	$attributes .= ' data-lang="test"';
 	return $attributes;
+}
+
+/**
+ * Convert backticks to <code> elements.
+ *
+ * @param string $value Value.
+ * @return string Value.
+ */
+function convert_backticks_to_code( $value ) {
+	return preg_replace( '/`(.+?)`/', '<code>$1</code>', $value );
 }
 
 /**

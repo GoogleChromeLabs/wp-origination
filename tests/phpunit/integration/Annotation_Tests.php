@@ -82,7 +82,7 @@ class Annotation_Tests extends Integration_Test_Case {
 
 		self::$post_ids['test_core_filters'] = self::factory()->post->create(
 			[
-				'post_title'   => 'Test Core Filters',
+				'post_title'   => 'Test Filters: Wordpress `code` is...beautiful', // Three filters will apply.
 				'post_excerpt' => 'Test... "texturize".',
 				'post_content' => 'Test Wordpress', // Test capital_P_dangit.
 			]
@@ -307,6 +307,76 @@ class Annotation_Tests extends Integration_Test_Case {
 
 		$this->assertArrayHasKey( 'enqueued_styles', $source_invocation );
 		$this->assertContains( 'wp-mediaelement', $source_invocation['enqueued_styles'] );
+	}
+
+	/**
+	 * Test that callbacks for the the_content filter which actually mutated the value get wrapping annotations.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function test_the_title_has_annotations_for_mutating_filters() {
+		$this->assertContains( '<p>Test WordPress</p>', self::$output );
+
+		$h1 = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_core_filters'] . '"]//h1[ @class = "entry-title" ] ' )->item( 0 );
+		$this->assertInstanceOf( 'DOMElement', $h1 );
+		$this->assertContains( 'Test Filters: WordPress <code>code</code> is…beautiful', self::$document->saveHTML( $h1 ) );
+		$code = $h1->getElementsByTagName( 'code' )->item( 0 );
+
+		$annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $code );
+
+		$this->assertCount( 3, $annotation_stack );
+
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'the_title',
+				'priority'       => 100,
+				'function'       => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Hook_Invoker\\convert_backticks_to_code',
+				'source'         => [
+					'file' => dirname( WP_SOURCERY_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
+					'type' => 'plugin',
+					'name' => 'hook-invoker.php',
+				],
+				'parent'         => null,
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$annotation_stack[0]
+		);
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'the_title',
+				'priority'       => 11,
+				'function'       => 'capital_P_dangit',
+				'source'         => [
+					'file' => ABSPATH . 'wp-includes/formatting.php',
+					'type' => 'core',
+					'name' => 'wp-includes',
+				],
+				'parent'         => null,
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$annotation_stack[1]
+		);
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'the_title',
+				'priority'       => 10,
+				'function'       => 'wptexturize',
+				'source'         => [
+					'file' => ABSPATH . 'wp-includes/formatting.php',
+					'type' => 'core',
+					'name' => 'wp-includes',
+				],
+				'parent'         => null,
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$annotation_stack[2]
+		);
 	}
 
 	/**
