@@ -70,6 +70,8 @@ class Annotation_Tests extends Integration_Test_Case {
 		self::$plugin = new Plugin( WP_SOURCERY_PLUGIN_FILE );
 		self::$plugin->init();
 
+		self::$plugin->invocation_watcher->annotatable_filters[] = 'paragraph_contents';
+
 		array_unshift(
 			self::$plugin->file_locator->plugins_directories,
 			dirname( __DIR__ ) . '/data/plugins/'
@@ -80,11 +82,11 @@ class Annotation_Tests extends Integration_Test_Case {
 		require_once __DIR__ . '/../data/plugins/shortcode-adder.php';
 		require_once __DIR__ . '/../data/plugins/block-registerer.php';
 
-		self::$post_ids['test_core_filters'] = self::factory()->post->create(
+		self::$post_ids['test_filters'] = self::factory()->post->create(
 			[
 				'post_title'   => 'Test Filters: Wordpress `code` is...beautiful', // Three filters will apply.
 				'post_excerpt' => 'Test... "texturize".',
-				'post_content' => 'Test Wordpress', // Test capital_P_dangit.
+				'post_content' => 'Test Wordpress and this is more text that will lead to being greater than 100 characters. This is surely greater than 150 chars, correct? Yes, I think that it is now greater than.', // Test capital_P_dangit.
 			]
 		);
 
@@ -315,9 +317,8 @@ class Annotation_Tests extends Integration_Test_Case {
 	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_the_title_has_annotations_for_mutating_filters() {
-		$this->assertContains( '<p>Test WordPress</p>', self::$output );
+		$h1 = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_filters'] . '"]//h1[ @class = "entry-title" ] ' )->item( 0 );
 
-		$h1 = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_core_filters'] . '"]//h1[ @class = "entry-title" ] ' )->item( 0 );
 		$this->assertInstanceOf( 'DOMElement', $h1 );
 		$this->assertContains( 'Test Filters: WordPress <code>code</code> is…beautiful', self::$document->saveHTML( $h1 ) );
 		$code = $h1->getElementsByTagName( 'code' )->item( 0 );
@@ -385,20 +386,24 @@ class Annotation_Tests extends Integration_Test_Case {
 	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_the_content_has_annotations_for_mutating_filters() {
-		$this->assertContains( '<p>Test WordPress</p>', self::$output );
-
-		$p = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_core_filters'] . '"]//div[ @class = "entry-content" ]/p[ text() = "Test WordPress"]' )->item( 0 );
+		$p = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_filters'] . '"]//div[ @class = "entry-content" ]/p' )->item( 0 );
 		$this->assertInstanceOf( 'DOMElement', $p );
 
 		$this->assertInstanceOf( 'DOMComment', $p->previousSibling );
 		$this->assertInstanceOf( 'DOMComment', $p->previousSibling->previousSibling );
-		$this->assertNotInstanceOf( 'DOMComment', $p->previousSibling->previousSibling->previousSibling, 'Expected there to not be a comment 3 nodes behind.' );
+		$this->assertInstanceOf( 'DOMComment', $p->previousSibling->previousSibling->previousSibling );
+		$this->assertNotInstanceOf( 'DOMComment', $p->previousSibling->previousSibling->previousSibling->previousSibling, 'Expected there to not be a comment 4 nodes behind.' );
 		$this->assertInstanceOf( 'DOMText', $p->nextSibling, 'Expected newline whitespace due to wpautop.' );
 		$this->assertRegExp( '/^\s+$/', $p->nextSibling->nodeValue, 'Expected newline whitespace due to wpautop.' );
 		$this->assertInstanceOf( 'DOMComment', $p->nextSibling->nextSibling );
 		$this->assertInstanceOf( 'DOMComment', $p->nextSibling->nextSibling->nextSibling );
-		$this->assertNotInstanceOf( 'DOMComment', $p->nextSibling->nextSibling->nextSibling->nextSibling, 'Expected there to not be a comment node 3 nodes ahead of the wpautop whitespace.' );
+		$this->assertInstanceOf( 'DOMComment', $p->nextSibling->nextSibling->nextSibling->nextSibling );
+		$this->assertNotInstanceOf( 'DOMComment', $p->nextSibling->nextSibling->nextSibling->nextSibling->nextSibling, 'Expected there to not be a comment node 4 nodes ahead of the wpautop whitespace.' );
 		$expected_pairs = [
+			[
+				$p->previousSibling->previousSibling->previousSibling,
+				$p->nextSibling->nextSibling->nextSibling->nextSibling,
+			],
 			[
 				$p->previousSibling->previousSibling,
 				$p->nextSibling->nextSibling->nextSibling,
@@ -429,6 +434,64 @@ class Annotation_Tests extends Integration_Test_Case {
 			[
 				'type'           => 'filter',
 				'name'           => 'the_content',
+				'priority'       => 100,
+				'function'       => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Hook_Invoker\\filter_paragraph_contents',
+				'source'         => [
+					'file' => dirname( WP_SOURCERY_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
+					'type' => 'plugin',
+					'name' => 'hook-invoker.php',
+				],
+				'parent'         => null,
+				'value_modified' => true,
+			],
+			$annotation_stack[0]
+		);
+		$this->assertCount( 2, $annotation_stack[0]['children'] );
+		$child_anchor_element   = $p->getElementsByTagName( 'a' )->item( 0 );
+		$child_annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $child_anchor_element );
+		$this->assertCount( 5, $child_annotation_stack );
+		$this->assertEquals( $annotation_stack[0], $child_annotation_stack[0] );
+		$this->assertEquals( $annotation_stack[1], $child_annotation_stack[1] );
+		$this->assertEquals( $annotation_stack[2], $child_annotation_stack[2] );
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'paragraph_contents',
+				'priority'       => 13,
+				'function'       => 'Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\prepend_paragraph_anchor',
+				'source'         => [
+					'file' => dirname( WP_SOURCERY_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
+					'type' => 'plugin',
+					'name' => 'hook-invoker.php',
+				],
+				'parent'         => $annotation_stack[0]['index'],
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$child_annotation_stack[3]
+		);
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'paragraph_contents',
+				'priority'       => 12,
+				'function'       => 'Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\append_paragraph_word_count',
+				'source'         => [
+					'file' => dirname( WP_SOURCERY_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
+					'type' => 'plugin',
+					'name' => 'hook-invoker.php',
+				],
+				'parent'         => $annotation_stack[0]['index'],
+				'children'       => [],
+				'value_modified' => true,
+			],
+			$child_annotation_stack[4]
+		);
+
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'the_content',
 				'priority'       => 11,
 				'function'       => 'capital_P_dangit',
 				'source'         => [
@@ -440,7 +503,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'children'       => [],
 				'value_modified' => true,
 			],
-			$annotation_stack[0]
+			$annotation_stack[1]
 		);
 		$this->assertArraySubset(
 			[
@@ -457,7 +520,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'children'       => [],
 				'value_modified' => true,
 			],
-			$annotation_stack[1]
+			$annotation_stack[2]
 		);
 	}
 
@@ -467,7 +530,7 @@ class Annotation_Tests extends Integration_Test_Case {
 	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_the_excerpt_has_annotations_for_mutating_filters() {
-		$text_node = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_core_filters'] . '"]//div[ @class = "entry-excerpt" ]/p/text()' )->item( 0 );
+		$text_node = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_filters'] . '"]//div[ @class = "entry-excerpt" ]/p/text()' )->item( 0 );
 
 		$this->assertInstanceOf( 'DOMText', $text_node );
 
