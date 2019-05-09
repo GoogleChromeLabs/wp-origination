@@ -264,14 +264,17 @@ class Invocation_Watcher {
 	 * @return mixed Filtered value, with wrapped annotations if filter is annotatable.
 	 */
 	public function after_all_hook_callbacks( $name, $value = null ) {
-		if ( $this->is_filter( $name ) && is_string( $value ) ) {
-			$pending_invocations = array_pop( $this->pending_filter_invocations_stack );
-			foreach ( $pending_invocations as $invocation ) {
-				assert( $invocation instanceof Hook_Invocation );
-				assert( ! $invocation->is_action() );
-				if ( $invocation->value_modified && in_array( $name, $this->annotatable_filters, true ) ) {
-					$value = $this->output_annotator->get_before_annotation( $invocation ) . $value . $this->output_annotator->get_after_annotation( $invocation );
-				}
+		if ( ! $this->is_filter( $name ) ) {
+			return $value;
+		}
+		$pending_invocations = array_pop( $this->pending_filter_invocations_stack );
+		assert( is_array( $pending_invocations ) );
+		foreach ( $pending_invocations as $invocation ) {
+			assert( $invocation instanceof Hook_Invocation );
+			assert( ! $invocation->is_action() );
+			assert( $name === $invocation->name );
+			if ( $invocation->value_modified && in_array( $name, $this->annotatable_filters, true ) ) {
+				$value = $this->output_annotator->get_before_annotation( $invocation ) . $value . $this->output_annotator->get_after_annotation( $invocation );
 			}
 		}
 		return $value;
