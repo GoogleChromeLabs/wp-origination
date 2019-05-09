@@ -102,6 +102,7 @@ class Invocation_Watcher {
 		'walker_nav_menu_start_el',
 		'widget_text',
 		'widget_text_content',
+		'widget_title',
 		'wp_nav_menu',
 	];
 
@@ -136,6 +137,7 @@ class Invocation_Watcher {
 
 		add_action( 'template_redirect', [ $this, 'wrap_shortcode_callbacks' ] );
 		add_action( 'template_redirect', [ $this, 'wrap_block_render_callbacks' ] );
+		add_action( 'template_redirect', [ $this, 'wrap_widget_callbacks' ] );
 	}
 
 	/**
@@ -365,6 +367,76 @@ class Invocation_Watcher {
 				$invocation->finalize();
 
 				return $this->output_annotator->get_before_annotation( $invocation ) . $return . $this->output_annotator->get_after_annotation( $invocation );
+			};
+		}
+	}
+
+	/**
+	 * Wrap each widget render callback to capture the invocation.
+	 *
+	 * @global array $wp_registered_widgets
+	 */
+	public function wrap_widget_callbacks() {
+		global $wp_registered_widgets;
+		foreach ( $wp_registered_widgets as $widget_id => &$registered_widget ) {
+			$function = $registered_widget['callback'];
+
+			/**
+			 * Wrapped callback.
+			 *
+			 * @see dynamic_sidebar()
+			 *
+			 * @param array $args        An array of widget display arguments.
+			 * @param array $widget_args An array of multi-widget arguments.
+			 * @return mixed
+			 */
+			$registered_widget['callback'] = function( $args = array(), $widget_args = array() ) use ( $registered_widget, $function ) {
+				$parent = $this->get_parent_invocation();
+				$source = $this->hook_wrapper::get_source( $function );
+
+				$invocation_args = compact( 'parent', 'function' );
+
+				$invocation_args['source_file']   = $source['file'];
+				$invocation_args['reflection']    = $source['reflection'];
+				$invocation_args['function_name'] = $source['function'];
+
+				$widget = null;
+				if ( is_array( $function ) && isset( $function[0] ) && $function[0] instanceof \WP_Widget ) {
+					$widget = $function[0];
+				}
+				$number = isset( $widget_args['number'] ) ? $widget_args['number'] : null;
+
+				/*
+				 * Note that $widget_args should only contain 'number' if it is a multi-widget.
+				 * There is also a possibility that additional params could be registered for non-multi widgets
+				 * when more than 4 arguments to wp_register_sidebar_widget(), but this is probably unlikely
+				 * and it is even less likely to be necessary for our purposes here.
+				 */
+				$invocation_args = array_merge(
+					$invocation_args,
+					compact( 'widget', 'number' ),
+					array(
+						'id'   => $args['widget_id'],
+						'name' => $args['widget_name'],
+					)
+				);
+
+				$invocation = new Widget_Invocation( $this, $this->incrementor, $this->database, $this->file_locator, $this->dependencies, $invocation_args );
+				if ( $parent ) {
+					$parent->children[] = $invocation;
+				}
+
+				$this->invocation_stack[]                = $invocation;
+				$this->invocations[ $invocation->index ] = $invocation;
+
+				echo $this->output_annotator->get_before_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				$return = call_user_func_array( $function, func_get_args() ); // phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue.NeedsInspection
+				echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+				array_pop( $this->invocation_stack );
+				$invocation->finalize();
+
+				return $return;
 			};
 		}
 	}
