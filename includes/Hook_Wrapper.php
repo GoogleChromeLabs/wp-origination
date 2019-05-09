@@ -44,6 +44,13 @@ class Hook_Wrapper {
 	public $after_all_callback;
 
 	/**
+	 * List of namespaces to ignore wrapping.
+	 *
+	 * @var string[]
+	 */
+	public $ignored_callback_namespaces = [ __NAMESPACE__ ];
+
+	/**
 	 * Hook_Wrapper constructor.
 	 *
 	 * @param callable|string $before_each_callback Function which is called before the original callback function is invoked.
@@ -99,6 +106,7 @@ class Hook_Wrapper {
 
 		$priorities = array_keys( $wp_filter[ $name ]->callbacks );
 		foreach ( $priorities as $priority ) {
+			// @todo If $priority is PHP_INT_MAX, consider moving/merging them to PHP_INT_MAX - 1.
 			foreach ( $wp_filter[ $name ]->callbacks[ $priority ] as &$callback ) {
 				$function = $callback['function'];
 
@@ -116,7 +124,7 @@ class Hook_Wrapper {
 				 */
 				$reflection = $source['reflection'];
 				$namespace  = ( $reflection instanceof \ReflectionMethod ? $reflection->getDeclaringClass() : $reflection )->getNamespaceName();
-				if ( __NAMESPACE__ === $namespace ) {
+				if ( in_array( $namespace, $this->ignored_callback_namespaces, true ) ) {
 					continue;
 				}
 

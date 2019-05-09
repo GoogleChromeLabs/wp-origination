@@ -277,7 +277,7 @@ class Output_Annotator {
 		unset( $block['innerHTML'], $block['innerBlocks'], $block['innerContent'] );
 		$this->pending_block_annotations[ $index ] = $block;
 
-		// @todo How do we determine the source for static blocks that lack render callbacks?
+		// @todo How do we determine the source for static blocks that lack render callbacks? Try using the namespace to see if it matches a plugin slug?
 		return (
 			sprintf( '<!-- %s %d -->', static::BLOCK_ANNOTATION_PLACEHOLDER_TAG, $index )
 			. $block_content
