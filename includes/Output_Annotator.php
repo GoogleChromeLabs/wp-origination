@@ -44,6 +44,13 @@ class Output_Annotator {
 	const BLOCK_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_block';
 
 	/**
+	 * Identifier used to signify oEmbed annotation comments.
+	 *
+	 * @var string
+	 */
+	const OEMBED_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_oembed';
+
+	/**
 	 * Opening annotation type (start tag).
 	 */
 	const OPEN_ANNOTATION = 0;
@@ -110,6 +117,13 @@ class Output_Annotator {
 	protected $pending_block_annotations = [];
 
 	/**
+	 * Pending oEmbed annotations.
+	 *
+	 * @var array
+	 */
+	protected $pending_oembed_annotations = [];
+
+	/**
 	 * Output_Annotator constructor.
 	 *
 	 * @param Dependencies $dependencies Dependencies.
@@ -146,7 +160,7 @@ class Output_Annotator {
 	public function get_placeholder_annotation_pattern() {
 		return sprintf(
 			'<!-- (?P<closing>/)?(?P<type>%s) (?P<index>\d+) -->',
-			static::INVOCATION_ANNOTATION_PLACEHOLDER_TAG . '|' . static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG . '|' . static::BLOCK_ANNOTATION_PLACEHOLDER_TAG
+			static::INVOCATION_ANNOTATION_PLACEHOLDER_TAG . '|' . static::DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG . '|' . static::BLOCK_ANNOTATION_PLACEHOLDER_TAG . '|' . static::OEMBED_ANNOTATION_PLACEHOLDER_TAG
 		);
 	}
 
@@ -175,6 +189,8 @@ class Output_Annotator {
 		add_filter( 'script_loader_tag', [ $this, 'add_enqueued_script_annotation' ], $priority, 2 );
 		add_filter( 'style_loader_tag', [ $this, 'add_enqueued_style_annotation' ], $priority, 2 );
 		add_filter( 'render_block', [ $this, 'add_static_block_annotation' ], $priority, 2 );
+		add_filter( 'embed_handler_html', [ $this, 'add_oembed_annotation' ], $priority, 3 );
+		add_filter( 'embed_oembed_html', [ $this, 'add_oembed_annotation' ], $priority, 3 );
 	}
 
 	/**
@@ -291,6 +307,32 @@ class Output_Annotator {
 	}
 
 	/**
+	 * Annotate oEmbed responses.
+	 *
+	 * @param string $output     Embed output.
+	 * @param string $url        URL.
+	 * @param array  $attributes Attributes.
+	 *
+	 * @return string Output.
+	 */
+	public function add_oembed_annotation( $output, $url, $attributes ) {
+		$index = $this->incrementor->next();
+
+		$this->pending_oembed_annotations[ $index ] = array_merge(
+			compact( 'url', 'attributes' ),
+			[
+				'internal' => current_filter() === 'embed_handler_html',
+			]
+		);
+
+		return (
+			sprintf( '<!-- %s %d -->', static::OEMBED_ANNOTATION_PLACEHOLDER_TAG, $index )
+			. $output
+			. sprintf( '<!-- /%s %d -->', static::OEMBED_ANNOTATION_PLACEHOLDER_TAG, $index )
+		);
+	}
+
+	/**
 	 * Purge annotations in start tag.
 	 *
 	 * @param array $start_tag_matches Start tag matches.
@@ -321,6 +363,8 @@ class Output_Annotator {
 			return $this->hydrate_invocation_placeholder_annotation( $index, $closing );
 		} elseif ( self::BLOCK_ANNOTATION_PLACEHOLDER_TAG === $type ) {
 			return $this->hydrate_block_placeholder_annotation( $index, $closing );
+		} elseif ( self::OEMBED_ANNOTATION_PLACEHOLDER_TAG === $type ) {
+			return $this->hydrate_oembed_placeholder_annotation( $index, $closing );
 		}
 		return '';
 	}
@@ -396,6 +440,30 @@ class Output_Annotator {
 			if ( ! empty( $block['attrs'] ) ) {
 				$data['attributes'] = $block['attrs'];
 			}
+		}
+
+		return $this->get_annotation_comment( $data, $closing ? self::CLOSE_ANNOTATION : self::OPEN_ANNOTATION );
+	}
+
+	/**
+	 * Hydrate an oEmbed placeholder annotation.
+	 *
+	 * @param int  $index   Index.
+	 * @param bool $closing Closing.
+	 * @return string Hydrated annotation.
+	 */
+	protected function hydrate_oembed_placeholder_annotation( $index, $closing ) {
+		if ( ! isset( $this->pending_oembed_annotations[ $index ] ) ) {
+			return '';
+		}
+
+		$data = compact( 'index' );
+		if ( ! $closing ) {
+			$data = array_merge(
+				$data,
+				[ 'type' => 'oembed' ],
+				$this->pending_oembed_annotations[ $index ]
+			);
 		}
 
 		return $this->get_annotation_comment( $data, $closing ? self::CLOSE_ANNOTATION : self::OPEN_ANNOTATION );

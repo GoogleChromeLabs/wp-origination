@@ -113,6 +113,61 @@ class Annotation_Tests extends Integration_Test_Case {
 			]
 		);
 
+		// Mock the oEmbed responses.
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $r, $url ) {
+				unset( $r );
+				if ( false !== strpos( $url, 'youtube' ) ) {
+					return [
+						'body'     => "{\"thumbnail_width\":480,\"title\":\"AMP in WordPress, the WordPress Way (AMP Conf '19)\",\"author_url\":\"https:\\/\\/www.youtube.com\\/channel\\/UCXPBsjgKKG2HqsKBhWA4uQw\",\"provider_name\":\"YouTube\",\"width\":500,\"author_name\":\"The AMP Channel\",\"height\":281,\"version\":\"1.0\",\"html\":\"\\u003ciframe width=\\\"500\\\" height=\\\"281\\\" src=\\\"https:\\/\\/www.youtube.com\\/embed\\/4mavA1xow1M?feature=oembed\\\" frameborder=\\\"0\\\" allow=\\\"accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture\\\" allowfullscreen\\u003e\\u003c\\/iframe\\u003e\",\"type\":\"video\",\"thumbnail_height\":360,\"thumbnail_url\":\"https:\\/\\/i.ytimg.com\\/vi\\/4mavA1xow1M\\/hqdefault.jpg\",\"provider_url\":\"https:\\/\\/www.youtube.com\\/\"}",
+						'response' => [
+							'code'    => 200,
+							'message' => 'OK',
+						],
+					];
+				} elseif ( false !== strpos( $url, 'twitter' ) ) {
+					return array(
+						'body'     => '{"url":"https:\\/\\/twitter.com\\/iAlbMedina\\/status\\/1123397949361274880","author_name":"Alberto Medina","author_url":"https:\\/\\/twitter.com\\/iAlbMedina","html":"\\u003Cblockquote class=\\"twitter-tweet\\" data-width=\\"500\\" data-dnt=\\"true\\"\\u003E\\u003Cp lang=\\"en\\" dir=\\"ltr\\"\\u003EAMP in WordPress, the WordPress Way! This post is a summary of our recent \\u003Ca href=\\"https:\\/\\/twitter.com\\/hashtag\\/AMPConf?src=hash&amp;ref_src=twsrc%5Etfw\\"\\u003E#AMPConf\\u003C\\/a\\u003E talk. Check it out! \\u003Ca href=\\"https:\\/\\/t.co\\/1oXpeOFLtt\\"\\u003Ehttps:\\/\\/t.co\\/1oXpeOFLtt\\u003C\\/a\\u003E\\u003C\\/p\\u003E&mdash; Alberto Medina (@iAlbMedina) \\u003Ca href=\\"https:\\/\\/twitter.com\\/iAlbMedina\\/status\\/1123397949361274880?ref_src=twsrc%5Etfw\\"\\u003EMay 1, 2019\\u003C\\/a\\u003E\\u003C\\/blockquote\\u003E\\n\\u003Cscript async src=\\"https:\\/\\/platform.twitter.com\\/widgets.js\\" charset=\\"utf-8\\"\\u003E\\u003C\\/script\\u003E\\n","width":500,"height":null,"type":"rich","cache_age":"3153600000","provider_name":"Twitter","provider_url":"https:\\/\\/twitter.com","version":"1.0"}',
+						'response' => [
+							'code'    => 200,
+							'message' => 'OK',
+						],
+					);
+				}
+				return $pre;
+			},
+			10,
+			3
+		);
+		self::$post_ids['test_oembeds'] = self::factory()->post->create(
+			[
+				'post_title'   => 'Test oEmbeds',
+				'post_content' => implode(
+					"\n",
+					[
+						'<!-- wp:core-embed/youtube {"url":"https://www.youtube.com/embed/4mavA1xow1M","type":"rich","providerNameSlug":"embed-handler","className":"wp-embed-aspect-16-9 wp-has-aspect-ratio"} -->',
+						'<figure class="wp-block-embed-youtube wp-block-embed is-type-rich is-provider-embed-handler wp-embed-aspect-16-9 wp-has-aspect-ratio"><div class="wp-block-embed__wrapper">',
+						'https://www.youtube.com/embed/4mavA1xow1M',
+						'</div></figure>',
+						'<!-- /wp:core-embed/youtube -->',
+						'',
+						'<!-- wp:core-embed/twitter {"url":"https://twitter.com/iAlbMedina/status/1123397949361274880","type":"rich","providerNameSlug":"twitter","className":""} -->',
+						'<figure class="wp-block-embed-twitter wp-block-embed is-type-rich is-provider-twitter"><div class="wp-block-embed__wrapper">',
+						'https://twitter.com/iAlbMedina/status/1123397949361274880',
+						'</div></figure>',
+						'<!-- /wp:core-embed/twitter -->',
+						'',
+						'<!-- wp:embed {"url":"https://example.com/podcast.mp3","type":"rich","providerNameSlug":"embed-handler","className":""} -->',
+						'<figure class="wp-block-embed is-type-rich is-provider-embed-handler"><div class="wp-block-embed__wrapper">',
+						'https://example.com/podcast.mp3',
+						'</div></figure>',
+						'<!-- /wp:embed -->',
+					]
+				),
+			]
+		);
+
 		// Start workaround output buffering to deal with inability of ob_start() to manipulate buffer when calling ob_get_clean(). See <>https://stackoverflow.com/a/12392694>.
 		ob_start();
 
@@ -266,11 +321,12 @@ class Annotation_Tests extends Integration_Test_Case {
 		$this->assertStringEndsWith( 'wp-includes/script-loader.php', $stack[0]['source']['file'] );
 
 		$this->assertEquals( 'enqueued_script', $stack[1]['type'] );
-		$this->assertCount( 2, $stack[1]['invocations'] );
+		$this->assertCount( 3, $stack[1]['invocations'] );
 
 		$expected_source_enqueues = array(
 			[ 'wp-a11y' ],
 			[ 'jquery-ui-widget' ],
+			[ 'wp-mediaelement' ],
 		);
 
 		foreach ( $stack[1]['invocations'] as $i => $source_invocation_id ) {
@@ -803,6 +859,137 @@ class Annotation_Tests extends Integration_Test_Case {
 			$block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][5]
 		);
 		$this->assertContains( gmdate( 'Y' ), $block_elements[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ]->textContent );
+	}
+
+	/**
+	 * Test that annotations for oEmbeds are added.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function test_the_content_has_annotations_for_oembeds() {
+		$oembeds = [
+			[
+				'selector'             => 'iframe',
+				'url'                  => 'https://www.youtube.com/embed/4mavA1xow1M',
+				'actual_annotations'   => [],
+				'expected_annotations' => [
+					/* ... */
+					[
+						'type'       => 'block',
+						'name'       => 'core-embed/youtube',
+						'dynamic'    => false,
+						'attributes' => [
+							'url'              => 'https://www.youtube.com/embed/4mavA1xow1M',
+							'type'             => 'rich',
+							'providerNameSlug' => 'embed-handler',
+							'className'        => 'wp-embed-aspect-16-9 wp-has-aspect-ratio',
+						],
+					],
+					[
+						'type'       => 'oembed',
+						'url'        => 'https://www.youtube.com/embed/4mavA1xow1M',
+						'attributes' => [
+							'width'  => 500,
+							'height' => 750,
+						],
+						'internal'   => true,
+					],
+					[
+						'type'       => 'oembed',
+						'url'        => 'https://youtube.com/watch?v=4mavA1xow1M',
+						'attributes' => [
+							'width'    => 500,
+							'height'   => 750,
+							'discover' => true,
+						],
+						'internal'   => false,
+					],
+				],
+			],
+			[
+				'selector'             => 'script',
+				'url'                  => 'https://twitter.com/iAlbMedina/status/1123397949361274880',
+				'actual_annotations'   => [],
+				'expected_annotations' => [
+					/* ... */
+					[
+						'type'       => 'block',
+						'name'       => 'core-embed/twitter',
+						'dynamic'    => false,
+						'attributes' => [
+							'url'              => 'https://twitter.com/iAlbMedina/status/1123397949361274880',
+							'type'             => 'rich',
+							'providerNameSlug' => 'twitter',
+							'className'        => '',
+						],
+					],
+					[
+						'type'       => 'oembed',
+						'url'        => 'https://twitter.com/iAlbMedina/status/1123397949361274880',
+						'attributes' => [
+							'width'    => 500,
+							'height'   => 750,
+							'discover' => true,
+						],
+						'internal'   => false,
+					],
+				],
+			],
+			[
+				'selector'             => 'audio',
+				'url'                  => 'https://example.com/podcast.mp3',
+				'actual_annotations'   => [],
+				'expected_annotations' => [
+					[
+						'type'       => 'block',
+						'name'       => 'core-embed/twitter',
+						'dynamic'    => false,
+						'attributes' => [
+							'url'              => 'https://twitter.com/iAlbMedina/status/1123397949361274880',
+							'type'             => 'rich',
+							'providerNameSlug' => 'twitter',
+							'className'        => '',
+						],
+					],
+					[
+						'type'       => 'oembed',
+						'url'        => 'https://twitter.com/iAlbMedina/status/1123397949361274880',
+						'attributes' => [
+							'width'    => 500,
+							'height'   => 750,
+							'discover' => true,
+						],
+						'internal'   => false,
+					],
+				],
+			],
+		];
+
+		$common_base_annotation_count = 3;
+
+		foreach ( $oembeds as &$oembed ) {
+			$element = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_oembeds'] . '"]//div[ @class = "entry-content" ]//' . $oembed['selector'] )->item( 0 );
+			$this->assertInstanceOf( 'DOMElement', $element );
+			$oembed['actual_annotations'] = self::$plugin->output_annotator->get_node_annotation_stack( $element );
+		}
+
+		// Make sure each oEmbed shares the same base annotation stack.
+		$initial_annotations = array_slice( $oembeds[0]['actual_annotations'], 0, $common_base_annotation_count );
+		for ( $i = 1, $len = count( $oembeds ); $i < $len; $i++ ) {
+			$this->assertEquals(
+				$initial_annotations,
+				array_slice( $oembeds[ $i ]['actual_annotations'], 0, $common_base_annotation_count )
+			);
+		}
+
+		foreach ( $oembeds as $oembed ) {
+			foreach ( $oembed['expected_annotations'] as $i => $expected_subset_annotation ) {
+				$this->assertArraySubset(
+					$expected_subset_annotation,
+					$oembed['actual_annotations'][ $common_base_annotation_count + $i ]
+				);
+			}
+		}
 	}
 
 	/**

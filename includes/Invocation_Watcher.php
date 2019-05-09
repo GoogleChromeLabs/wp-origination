@@ -91,6 +91,8 @@ class Invocation_Watcher {
 	 */
 	public $annotatable_filters = [
 		'comment_text',
+		'embed_handler_html',
+		'embed_oembed_html',
 		'post_gallery',
 		'pre_wp_nav_menu',
 		'render_block',
