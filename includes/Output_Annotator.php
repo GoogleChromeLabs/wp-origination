@@ -167,9 +167,14 @@ class Output_Annotator {
 		// Prevent PHP Notice: ob_end_flush(): failed to send buffer.
 		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
 
-		add_filter( 'script_loader_tag', [ $this, 'add_enqueued_script_annotation' ], PHP_INT_MAX, 2 );
-		add_filter( 'style_loader_tag', [ $this, 'add_enqueued_style_annotation' ], PHP_INT_MAX, 2 );
-		add_filter( 'render_block', [ $this, 'add_static_block_annotation' ], PHP_INT_MAX, 2 );
+		/*
+		 * Note that the PHP_INT_MAX-1 priority is used to prevent type annotations from being corrupted by user filters.
+		 * The filter annotations will still appear inside of any filter annotations because they get added at PHP_INT_MAX.
+		 */
+		$priority = PHP_INT_MAX - 1; // One less than max so that \Google\WP_Sourcery\Invocation_Watcher::after_all_hook_callbacks() can run after.
+		add_filter( 'script_loader_tag', [ $this, 'add_enqueued_script_annotation' ], $priority, 2 );
+		add_filter( 'style_loader_tag', [ $this, 'add_enqueued_style_annotation' ], $priority, 2 );
+		add_filter( 'render_block', [ $this, 'add_static_block_annotation' ], $priority, 2 );
 	}
 
 	/**
@@ -365,7 +370,7 @@ class Output_Annotator {
 	}
 
 	/**
-	 * Hydrate an block placeholder annotation.
+	 * Hydrate a block placeholder annotation.
 	 *
 	 * @param int  $index   Index.
 	 * @param bool $closing Closing.

@@ -321,6 +321,65 @@ class Annotation_Tests extends Integration_Test_Case {
 	}
 
 	/**
+	 * Test that comment-reply script with async tag injected has the expected annotation stack.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function test_filtered_script_loader_tag_has_expected_annotations() {
+		$script = self::$xpath->query( '//script[ contains( @src, "comment-reply.js" ) ]' )->item( 0 );
+		$this->assertInstanceOf( 'DOMElement', $script );
+
+		$annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $script );
+		$this->assertCount( 4, $annotation_stack );
+
+		$this->assertArraySubset(
+			[
+				'type'     => 'action',
+				'name'     => 'wp_footer',
+				'function' => 'wp_print_footer_scripts',
+				'parent'   => null,
+			],
+			$annotation_stack[0]
+		);
+		$this->assertArraySubset(
+			[
+				'type'     => 'action',
+				'name'     => 'wp_print_footer_scripts',
+				'function' => '_wp_footer_scripts',
+				'parent'   => $annotation_stack[0]['index'],
+			],
+			$annotation_stack[1]
+		);
+		$this->assertArraySubset(
+			[
+				'type'           => 'filter',
+				'name'           => 'script_loader_tag',
+				'function'       => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Hook_Invoker\\{closure}',
+				'value_modified' => true,
+				'parent'         => $annotation_stack[1]['index'],
+			],
+			$annotation_stack[2]
+		);
+		$this->assertArraySubset(
+			[
+				'type' => 'enqueued_script',
+			],
+			$annotation_stack[3]
+		);
+
+		$this->assertNotEmpty( $annotation_stack[3]['invocations'] );
+		$this->assertArraySubset(
+			[
+				'type'             => 'action',
+				'name'             => 'wp_enqueue_scripts',
+				'function'         => 'Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\enqueue_comment_reply_async',
+				'enqueued_scripts' => [ 'comment-reply' ],
+			],
+			self::$annotations[ $annotation_stack[3]['invocations'][0] ]
+		);
+	}
+
+	/**
 	 * Test that callbacks for the the_content filter which actually mutated the value get wrapping annotations.
 	 *
 	 * @throws \Exception If comments are found to be malformed.

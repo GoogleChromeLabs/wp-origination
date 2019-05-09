@@ -31,6 +31,7 @@ function add_hooks() {
 	add_filter( 'the_content', __NAMESPACE__ . '\filter_paragraph_contents', 100 );
 	add_filter( 'paragraph_contents', __NAMESPACE__ . '\append_paragraph_word_count', 12 );
 	add_filter( 'paragraph_contents', __NAMESPACE__ . '\prepend_paragraph_anchor', 13 );
+	add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_comment_reply_async' );
 }
 
 /**
@@ -195,4 +196,22 @@ function append_paragraph_word_count( $content ) {
  */
 function prepend_paragraph_anchor( $content ) {
 	return sprintf( '<a name="%s"></a>', esc_attr( md5( $content ) ) ) . $content;
+}
+
+/**
+ * Enqueue comment-reply with async.
+ */
+function enqueue_comment_reply_async() {
+	wp_enqueue_script( 'comment-reply' );
+	add_filter(
+		'script_loader_tag',
+		function ( $tag, $handle ) {
+			if ( 'comment-reply' === $handle ) {
+				$tag = preg_replace( '/(?<=<script\s)/', ' async ', $tag );
+			}
+			return $tag;
+		},
+		10,
+		2
+	);
 }
