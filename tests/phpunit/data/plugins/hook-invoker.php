@@ -14,6 +14,8 @@
 
 namespace Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker;
 
+const SIDEBAR_ID = 'sidebar-1';
+
 /**
  * Add hooks.
  */
@@ -29,8 +31,6 @@ function add_hooks() {
 	add_filter( 'the_content', __NAMESPACE__ . '\filter_paragraph_contents', 100 );
 	add_filter( 'paragraph_contents', __NAMESPACE__ . '\append_paragraph_word_count', 12 );
 	add_filter( 'paragraph_contents', __NAMESPACE__ . '\prepend_paragraph_anchor', 13 );
-
-	// @todo Add widget.
 }
 
 /**
@@ -120,6 +120,10 @@ function print_template( $query_args ) {
 				</article>
 			<?php endwhile; ?>
 			<?php wp_reset_postdata(); ?>
+
+			<ul id="sidebar">
+				<?php dynamic_sidebar( 'sidebar-1' ); ?>
+			</ul>
 
 			<?php wp_footer(); ?>
 		</body>

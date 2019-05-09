@@ -13,6 +13,11 @@ namespace Google\WP_Sourcery\Tests\PHPUnit\Unit;
 use Google\WP_Sourcery\Plugin;
 use Google\WP_Sourcery\Tests\PHPUnit\Framework\Integration_Test_Case;
 use Google\WP_Sourcery\Tests\Data\Plugins\Block_Registerer;
+use Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker;
+use Google\WP_Sourcery\Tests\Data\Plugins\Shortcode_Adder;
+use Google\WP_Sourcery\Tests\Data\Plugins\Dependency_Enqueuer;
+use Google\WP_Sourcery\Tests\Data\Plugins\Widget_Registerer;
+use Google\WP_Sourcery\Output_Annotator;
 
 /**
  * Testing annotations.
@@ -81,6 +86,7 @@ class Annotation_Tests extends Integration_Test_Case {
 		require_once __DIR__ . '/../data/plugins/dependency-enqueuer.php';
 		require_once __DIR__ . '/../data/plugins/shortcode-adder.php';
 		require_once __DIR__ . '/../data/plugins/block-registerer.php';
+		require_once __DIR__ . '/../data/plugins/widget-registerer.php';
 
 		self::$post_ids['test_filters'] = self::factory()->post->create(
 			[
@@ -102,7 +108,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'post_title'   => 'Test Blocks',
 				'post_content' => implode(
 					"\n\n",
-					\Google\WP_Sourcery\Tests\Data\Plugins\Block_Registerer\get_sample_serialized_blocks()
+					Block_Registerer\get_sample_serialized_blocks()
 				),
 			]
 		);
@@ -113,16 +119,19 @@ class Annotation_Tests extends Integration_Test_Case {
 		self::$plugin->invocation_watcher->start();
 		self::$plugin->output_annotator->start( false );
 
-		// @todo Add Widget_Registerer.
-		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\add_hooks();
-		\Google\WP_Sourcery\Tests\Data\Plugins\Shortcode_Adder\add_shortcode();
-		\Google\WP_Sourcery\Tests\Data\Plugins\Dependency_Enqueuer\add_hooks();
-		\Google\WP_Sourcery\Tests\Data\Plugins\Block_Registerer\register_blocks();
+		Hook_Invoker\add_hooks();
+		Shortcode_Adder\add_shortcode();
+		Dependency_Enqueuer\add_hooks();
+		Block_Registerer\register_blocks();
+		Widget_Registerer\register_populated_widgets_sidebar(
+			Hook_Invoker\SIDEBAR_ID
+		);
 
 		self::$plugin->invocation_watcher->wrap_shortcode_callbacks();
 		self::$plugin->invocation_watcher->wrap_block_render_callbacks();
+		self::$plugin->invocation_watcher->wrap_widget_callbacks();
 
-		\Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_template( [ 'p' => array_values( self::$post_ids ) ] );
+		Hook_Invoker\print_template( [ 'p' => array_values( self::$post_ids ) ] );
 
 		ob_end_flush(); // End workaround buffer.
 		self::$output = ob_get_clean();
@@ -133,7 +142,7 @@ class Annotation_Tests extends Integration_Test_Case {
 		libxml_use_internal_errors( $libxml_previous_state );
 		self::$xpath = new \DOMXPath( self::$document );
 
-		$start_comments = self::$xpath->query( sprintf( '//comment()[ starts-with( ., " %s " ) ]', \Google\WP_Sourcery\Output_Annotator::ANNOTATION_TAG ) );
+		$start_comments = self::$xpath->query( sprintf( '//comment()[ starts-with( ., " %s " ) ]', Output_Annotator::ANNOTATION_TAG ) );
 		foreach ( $start_comments as $start_comment ) {
 			$parsed_comment = self::$plugin->output_annotator->parse_annotation_comment( $start_comment );
 			if ( isset( $parsed_comment['data']['index'] ) ) {
@@ -147,8 +156,8 @@ class Annotation_Tests extends Integration_Test_Case {
 	 */
 	public function test_expected_well_formed_annotations() {
 		$predicates = [
-			sprintf( 'starts-with( ., " %s " )', \Google\WP_Sourcery\Output_Annotator::ANNOTATION_TAG ),
-			sprintf( 'starts-with( ., " /%s " )', \Google\WP_Sourcery\Output_Annotator::ANNOTATION_TAG ),
+			sprintf( 'starts-with( ., " %s " )', output_Annotator::ANNOTATION_TAG ),
+			sprintf( 'starts-with( ., " /%s " )', output_Annotator::ANNOTATION_TAG ),
 		];
 		$expression = sprintf( '//comment()[ %s ]', implode( ' or ', $predicates ) );
 		$comments   = self::$xpath->query( $expression );
@@ -738,10 +747,81 @@ class Annotation_Tests extends Integration_Test_Case {
 	}
 
 	/**
+	 * Test that annotations for widgets are added.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function test_the_content_has_annotations_for_widgets() {
+		$sidebar_element = self::$document->getElementById( 'sidebar' );
+		$this->assertInstanceOf( 'DOMElement', $sidebar_element );
+
+		$widget_elements = $sidebar_element->getElementsByTagName( 'li' );
+		$this->assertEquals( 3, $widget_elements->count() );
+
+		$expected_annotations = [
+			[
+				'type'     => 'widget',
+				'id_base'  => null,
+				'number'   => null,
+				'id'       => Widget_Registerer\SINGLE_WIDGET_ID,
+				'name'     => 'Single',
+				'function' => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Widget_Registerer\\display_single_widget',
+				'source'   => [
+					'file' => dirname( __DIR__ ) . '/data/plugins/widget-registerer.php',
+					'type' => 'plugin',
+					'name' => 'widget-registerer.php',
+				],
+				'parent'   => null,
+			],
+			[
+				'type'     => 'widget',
+				'id_base'  => Widget_Registerer\MULTI_WIDGET_ID_BASE,
+				'number'   => 2,
+				'id'       => Widget_Registerer\MULTI_WIDGET_ID_BASE . '-2',
+				'name'     => 'Multi',
+				'function' => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Widget_Registerer\\Multi_Widget::display_callback',
+				'source'   => [
+					'file' => dirname( __DIR__ ) . '/data/plugins/widget-registerer.php',
+					'type' => 'plugin',
+					'name' => 'widget-registerer.php',
+				],
+				'parent'   => null,
+				'instance' => [
+					'title' => 'Multiple',
+				],
+			],
+			[
+				'type'     => 'widget',
+				'id_base'  => 'search',
+				'number'   => 3,
+				'id'       => 'search-3',
+				'name'     => 'Search',
+				'function' => 'WP_Widget_Search::display_callback',
+				'source'   =>
+					array(
+						'file' => ABSPATH . 'wp-includes/widgets/class-wp-widget-search.php',
+						'type' => 'core',
+						'name' => 'wp-includes',
+					),
+				'parent'   => null,
+				'instance' => [
+					'title' => 'Not Google!',
+				],
+			],
+		];
+
+		foreach ( $widget_elements as $i => $widget_element ) {
+			$annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $widget_element );
+			$this->assertCount( 1, $annotation_stack );
+			$this->assertArraySubset( $expected_annotations[ $i ], $annotation_stack[0], "Expected annotation (i=$i) to be a subset." );
+		}
+	}
+
+	/**
 	 * Tear down after class.
 	 */
 	public static function tearDownAfterClass() {
-		\Google\WP_Sourcery\Tests\Data\Plugins\Block_Registerer\unregister_blocks();
+		Block_Registerer\unregister_blocks();
 		parent::tearDownAfterClass();
 		self::$xpath    = null;
 		self::$document = null;
