@@ -170,8 +170,6 @@ class Dependencies {
 	/**
 	 * Identify the styles that were enqueued during the hook's invocation.
 	 *
-	 * @todo This needs to apply to widgets, shortcodes, and blocks as well.
-	 *
 	 * @param Invocation $invocation Invocation.
 	 *
 	 * @return string[] Style handles.

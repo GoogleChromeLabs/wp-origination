@@ -34,7 +34,7 @@ function enqueue_scripts() {
  */
 function enqueue_scripts_for_hook_invoker() {
 	wp_enqueue_script( 'wp-a11y' );
-	wp_enqueue_style( 'wp-mediaelement' );
+	wp_enqueue_style( 'code-editor' );
 
 	wp_enqueue_style( 'dependency-enqueuer-ie', 'https://example.com/ie.css', array(), '1' );
 	wp_style_add_data( 'dependency-enqueuer-ie', 'conditional', 'lt IE 9' );
