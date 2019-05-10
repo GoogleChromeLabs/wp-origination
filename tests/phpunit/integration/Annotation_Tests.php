@@ -81,6 +81,10 @@ class Annotation_Tests extends Integration_Test_Case {
 			self::$plugin->file_locator->plugins_directories,
 			dirname( __DIR__ ) . '/data/plugins/'
 		);
+		self::$plugin->block_recognizer->plugin_folder = substr(
+			dirname( __DIR__ ) . '/data/plugins/',
+			strlen( dirname( dirname( WP_SOURCERY_PLUGIN_FILE ) ) )
+		);
 
 		require_once __DIR__ . '/../data/plugins/hook-invoker.php';
 		require_once __DIR__ . '/../data/plugins/dependency-enqueuer.php';
@@ -802,12 +806,12 @@ class Annotation_Tests extends Integration_Test_Case {
 	public function test_the_content_has_annotations_for_blocks() {
 		$block_elements = [];
 		$block_stacks   = [];
-		foreach ( [ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME, Block_Registerer\TEXT_TRANSFORM_BLOCK_NAME, Block_Registerer\CURRENT_TIME_BLOCK_NAME ] as $block_name ) {
+		foreach ( [ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME, Block_Registerer\TEXT_TRANSFORM_BLOCK_NAME, Block_Registerer\CURRENT_TIME_BLOCK_NAME, 'paragraph' ] as $block_name ) {
 			$block_elements[ $block_name ] = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_blocks'] . '"]//*[ @data-block-name = "' . $block_name . '" ]' )->item( 0 );
 			$block_stacks[ $block_name ]   = self::$plugin->output_annotator->get_node_annotation_stack( $block_elements[ $block_name ] );
 		}
 
-		$this->assertCount( 3, array_filter( $block_elements ) );
+		$this->assertCount( 4, array_filter( $block_elements ) );
 
 		// Foreign text block: a static block.
 		$this->assertCount( 2, $block_stacks[ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME ] );
@@ -819,13 +823,17 @@ class Annotation_Tests extends Integration_Test_Case {
 			],
 			$block_stacks[ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME ][0]
 		);
+
 		$this->assertArraySubset(
 			[
 				'type'       => 'block',
 				'name'       => Block_Registerer\FOREIGN_TEXT_BLOCK_NAME,
 				'dynamic'    => false,
-				// @todo Need to guess the source based on the block namespace.
 				'attributes' => [ 'voice' => 'Juan' ],
+				'source'     => [
+					'type' => 'plugin',
+					'name' => 'block-registerer.php',
+				],
 			],
 			$block_stacks[ Block_Registerer\FOREIGN_TEXT_BLOCK_NAME ][1]
 		);
@@ -877,6 +885,9 @@ class Annotation_Tests extends Integration_Test_Case {
 			$block_stacks[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ][5]
 		);
 		$this->assertContains( gmdate( 'Y' ), $block_elements[ Block_Registerer\CURRENT_TIME_BLOCK_NAME ]->textContent );
+
+		// Make sure the paragraph block is attributed to core.
+		$this->assertEquals( 'core', $block_stacks['paragraph'][1]['source']['type'] );
 	}
 
 	/**
@@ -901,6 +912,9 @@ class Annotation_Tests extends Integration_Test_Case {
 							'type'             => 'rich',
 							'providerNameSlug' => 'embed-handler',
 							'className'        => 'wp-embed-aspect-16-9 wp-has-aspect-ratio',
+						],
+						'source'     => [
+							'type' => 'core',
 						],
 					],
 					[
@@ -940,6 +954,9 @@ class Annotation_Tests extends Integration_Test_Case {
 							'providerNameSlug' => 'twitter',
 							'className'        => '',
 						],
+						'source'     => [
+							'type' => 'core',
+						],
 					],
 					[
 						'type'       => 'oembed',
@@ -967,6 +984,9 @@ class Annotation_Tests extends Integration_Test_Case {
 							'type'             => 'rich',
 							'providerNameSlug' => 'twitter',
 							'className'        => '',
+						],
+						'source'     => [
+							'type' => 'core',
 						],
 					],
 					[

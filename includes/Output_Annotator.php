@@ -87,6 +87,13 @@ class Output_Annotator {
 	public $incrementor;
 
 	/**
+	 * Instance of Block_Recognizer.
+	 *
+	 * @var Block_Recognizer
+	 */
+	public $block_recognizer;
+
+	/**
 	 * Callback to determine whether to show queries.
 	 *
 	 * This is called once at shutdown to populate `$show_queries`.
@@ -110,7 +117,7 @@ class Output_Annotator {
 	protected $pending_dependency_annotations = [];
 
 	/**
-	 * Pending block annotations.
+	 * Pending (static) block annotations.
 	 *
 	 * @var array
 	 */
@@ -126,16 +133,18 @@ class Output_Annotator {
 	/**
 	 * Output_Annotator constructor.
 	 *
-	 * @param Dependencies $dependencies Dependencies.
-	 * @param Incrementor  $incrementor  Incrementor.
-	 * @param array        $options      Options.
+	 * @param Dependencies     $dependencies     Dependencies.
+	 * @param Incrementor      $incrementor      Incrementor.
+	 * @param Block_Recognizer $block_recognizer Block recognizer.
+	 * @param array            $options          Options.
 	 */
-	public function __construct( Dependencies $dependencies, Incrementor $incrementor, $options ) {
+	public function __construct( Dependencies $dependencies, Incrementor $incrementor, Block_Recognizer $block_recognizer, $options ) {
 		foreach ( $options as $key => $value ) {
 			$this->$key = $value;
 		}
-		$this->dependencies = $dependencies;
-		$this->incrementor  = $incrementor;
+		$this->dependencies     = $dependencies;
+		$this->incrementor      = $incrementor;
+		$this->block_recognizer = $block_recognizer;
 	}
 
 	/**
@@ -414,7 +423,9 @@ class Output_Annotator {
 	}
 
 	/**
-	 * Hydrate a block placeholder annotation.
+	 * Hydrate a (static) block placeholder annotation.
+	 *
+	 * Note that dynamic blocks are annotated as invocations.
 	 *
 	 * @param int  $index   Index.
 	 * @param bool $closing Closing.
@@ -439,6 +450,11 @@ class Output_Annotator {
 			);
 			if ( ! empty( $block['attrs'] ) ) {
 				$data['attributes'] = $block['attrs'];
+			}
+
+			$source = $this->block_recognizer->identify( strtok( $block['blockName'], '/' ) );
+			if ( $source ) {
+				$data['source'] = $source;
 			}
 		}
 

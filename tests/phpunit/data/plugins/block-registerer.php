@@ -110,6 +110,10 @@ function get_sample_serialized_blocks() {
 			wp_json_encode( [ 'transform' => 'strtoupper' ] )
 		),
 		$nested_columns_block,
+		sprintf(
+			'<!-- wp:%1$s --><p data-block-name="%1$s">This is a paragraph.</p><!-- /wp:%1$s -->',
+			'paragraph'
+		),
 	];
 }
 

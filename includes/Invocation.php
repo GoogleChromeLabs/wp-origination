@@ -12,8 +12,6 @@ namespace Google\WP_Sourcery;
 
 /**
  * Class Invocation.
- *
- * @todo Subclass for widgets, embeds, and blocks.
  */
 class Invocation {
 

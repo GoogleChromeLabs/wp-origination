@@ -74,6 +74,13 @@ class Plugin {
 	public $file_locator;
 
 	/**
+	 * Instance of Block_Recognizer.
+	 *
+	 * @var Block_Recognizer
+	 */
+	public $block_recognizer;
+
+	/**
 	 * Instance of Incrementor.
 	 *
 	 * @var Incrementor
@@ -197,12 +204,15 @@ class Plugin {
 
 		$this->file_locator = new File_Locator();
 
+		$this->block_recognizer = new Block_Recognizer();
+
 		$this->dependencies = new Dependencies();
 
 		// @todo Pass options for verbosity, which filters to wrap, whether to output annotations that have no output, etc.
 		$this->output_annotator = new Output_Annotator(
 			$this->dependencies,
 			$this->incrementor,
+			$this->block_recognizer,
 			[
 				'can_show_queries_callback' => function() {
 					return current_user_can( $this->show_queries_cap );
