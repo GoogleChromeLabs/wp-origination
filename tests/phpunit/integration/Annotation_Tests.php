@@ -175,8 +175,19 @@ class Annotation_Tests extends Integration_Test_Case {
 		// Start workaround output buffering to deal with inability of ob_start() to manipulate buffer when calling ob_get_clean(). See <>https://stackoverflow.com/a/12392694>.
 		ob_start();
 
+		register_theme_directory( dirname( __DIR__ ) . '/data/themes' );
+		search_theme_directories( true ); // Regenerate the transient.
+
+		switch_theme( 'child' );
+
 		self::$plugin->invocation_watcher->start();
 		self::$plugin->output_annotator->start( false );
+
+		require_once get_template_directory() . '/functions.php';
+		unset( $GLOBALS['wp_actions']['wp_loaded'] );
+		do_action( 'after_setup_theme' );
+
+		wp();
 
 		Hook_Invoker\add_hooks();
 		Shortcode_Adder\add_shortcode();
@@ -190,7 +201,8 @@ class Annotation_Tests extends Integration_Test_Case {
 		self::$plugin->invocation_watcher->wrap_block_render_callbacks();
 		self::$plugin->invocation_watcher->wrap_widget_callbacks();
 
-		Hook_Invoker\print_template( [ 'p' => array_values( self::$post_ids ) ] );
+		// We can't use locate_template() to load since it uses TEMPLATEPATH.
+		require get_template_directory() . '/index.php';
 
 		ob_end_flush(); // End workaround buffer.
 		self::$output = ob_get_clean();

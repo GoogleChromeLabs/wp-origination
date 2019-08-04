@@ -32,6 +32,12 @@ function add_hooks() {
 	add_filter( 'paragraph_contents', __NAMESPACE__ . '\append_paragraph_word_count', 12 );
 	add_filter( 'paragraph_contents', __NAMESPACE__ . '\prepend_paragraph_anchor', 13 );
 	add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_comment_reply_async' );
+	add_action(
+		'wp_body_open',
+		function() {
+			do_action( 'hook_invoker_body' );
+		}
+	);
 }
 
 /**
@@ -87,49 +93,6 @@ function print_container_attributes() {
  */
 function print_document_write() {
 	echo '<script id="document-write-script">document.write("This is a bad function call.");</script>';
-}
-
-/**
- * Print template.
- *
- * @param array $query_args Query args.
- */
-function print_template( $query_args ) {
-	$query = new \WP_Query( $query_args );
-
-	?>
-	<!DOCTYPE html>
-	<html <?php language_attributes(); ?> class="no-js no-svg">
-		<head>
-			<meta charset="utf-8">
-			<title>Test template</title>
-			<?php wp_head(); ?>
-		</head>
-		<body <?php body_class(); ?>>
-			<?php do_action( 'hook_invoker_body' ); ?>
-
-			<?php while ( $query->have_posts() ) : ?>
-				<?php $query->the_post(); ?>
-				<article id="post-<?php the_ID(); ?>">
-					<h1 class="entry-title"><?php the_title(); ?></h1>
-					<div class="entry-excerpt">
-						<?php the_excerpt(); ?>
-					</div>
-					<div class="entry-content">
-						<?php the_content(); ?>
-					</div>
-				</article>
-			<?php endwhile; ?>
-			<?php wp_reset_postdata(); ?>
-
-			<ul id="sidebar">
-				<?php dynamic_sidebar( 'sidebar-1' ); ?>
-			</ul>
-
-			<?php wp_footer(); ?>
-		</body>
-	</html>
-	<?php
 }
 
 /**
