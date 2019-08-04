@@ -37,11 +37,11 @@ class File_Locator {
 	public $mu_plugins_directory;
 
 	/**
-	 * Directories for themes.
+	 * Current theme.
 	 *
-	 * @var string[]
+	 * @var \WP_Theme
 	 */
-	public $themes_directories = [];
+	public $current_theme;
 
 	/**
 	 * Cached file locations.
@@ -56,18 +56,9 @@ class File_Locator {
 	 */
 	public function __construct() {
 		$this->core_directory        = trailingslashit( wp_normalize_path( ABSPATH ) );
+		$this->current_theme         = wp_get_theme();
 		$this->plugins_directories[] = trailingslashit( wp_normalize_path( WP_PLUGIN_DIR ) );
 		$this->mu_plugins_directory  = trailingslashit( wp_normalize_path( WPMU_PLUGIN_DIR ) );
-
-		$theme_roots = array_unique(
-			array_merge(
-				(array) get_theme_roots(),
-				[ get_theme_root() ] // Because this one has a filter that applies.
-			)
-		);
-		foreach ( $theme_roots as $theme_root ) {
-			$this->themes_directories[] = trailingslashit( wp_normalize_path( $theme_root ) );
-		}
 	}
 
 	/**
@@ -100,15 +91,24 @@ class File_Locator {
 			return $this->cached_file_locations[ $file ];
 		}
 
-		foreach ( $this->themes_directories as $themes_directory ) {
-			if ( preg_match( ':' . preg_quote( $themes_directory, ':' ) . $slug_pattern . ':s', $file, $matches ) ) {
-				$this->cached_file_locations[ $file ] = [
-					'type' => 'theme',
-					'name' => $matches['root_slug'],
-					'data' => wp_get_theme( $matches['root_slug'] ),
-				];
-				return $this->cached_file_locations[ $file ];
-			}
+		// Identify child theme file.
+		if ( $this->current_theme->exists() && preg_match( ':' . preg_quote( $this->current_theme->get_stylesheet_directory(), ':' ) . '/:s', $file ) ) {
+			$this->cached_file_locations[ $file ] = [
+				'type' => 'theme',
+				'name' => $this->current_theme->get_stylesheet(),
+				'data' => $this->current_theme,
+			];
+			return $this->cached_file_locations[ $file ];
+		}
+
+		// Identify parent theme file.
+		if ( $this->current_theme->parent() && preg_match( ':' . preg_quote( $this->current_theme->get_template_directory(), ':' ) . '/:s', $file ) ) {
+			$this->cached_file_locations[ $file ] = [
+				'type' => 'theme',
+				'name' => $this->current_theme->get_template(),
+				'data' => $this->current_theme->parent(),
+			];
+			return $this->cached_file_locations[ $file ];
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
