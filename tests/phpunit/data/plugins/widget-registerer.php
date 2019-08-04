@@ -39,13 +39,6 @@ function register_widgets() {
 function register_populated_widgets_sidebar( $sidebar_id = 'sidebar-1' ) {
 	global $wp_widget_factory, $wp_registered_sidebars, $wp_registered_widgets, $wp_registered_widget_controls, $wp_registered_widget_updates;
 
-	register_sidebar(
-		[
-			'name' => 'Sidebar',
-			'id'   => $sidebar_id,
-		]
-	);
-
 	update_option(
 		'option_' . SINGLE_WIDGET_ID,
 		[

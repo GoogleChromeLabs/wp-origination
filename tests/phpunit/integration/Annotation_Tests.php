@@ -72,6 +72,11 @@ class Annotation_Tests extends Integration_Test_Case {
 	public static function setUpBeforeClass() {
 		parent::setUpBeforeClass();
 
+		// Switch to the test child theme.
+		register_theme_directory( dirname( __DIR__ ) . '/data/themes' );
+		search_theme_directories( true ); // Regenerate the transient.
+		switch_theme( 'child' );
+
 		self::$plugin = new Plugin( WP_SOURCERY_PLUGIN_FILE );
 		self::$plugin->init();
 
@@ -175,15 +180,11 @@ class Annotation_Tests extends Integration_Test_Case {
 		// Start workaround output buffering to deal with inability of ob_start() to manipulate buffer when calling ob_get_clean(). See <>https://stackoverflow.com/a/12392694>.
 		ob_start();
 
-		register_theme_directory( dirname( __DIR__ ) . '/data/themes' );
-		search_theme_directories( true ); // Regenerate the transient.
-
-		switch_theme( 'child' );
-
 		self::$plugin->invocation_watcher->start();
 		self::$plugin->output_annotator->start( false );
 
-		require_once get_template_directory() . '/functions.php';
+		require get_stylesheet_directory() . '/functions.php';
+		require get_template_directory() . '/functions.php';
 		unset( $GLOBALS['wp_actions']['wp_loaded'] );
 		do_action( 'after_setup_theme' );
 
@@ -1111,6 +1112,54 @@ class Annotation_Tests extends Integration_Test_Case {
 			$this->assertCount( 1, $annotation_stack );
 			$this->assertArraySubset( $expected_annotations[ $i ], $annotation_stack[0], "Expected annotation (i=$i) to be a subset." );
 		}
+	}
+
+	/**
+	 * Test proper sourcing of hooks in parent and child themes.
+	 *
+	 * @covers \Google\WP_Sourcery\File_Locator::identify()
+	 */
+	public function test_footer_has_theme_credits() {
+		$parent_theme_credits = self::$document->getElementById( 'parent-theme-credits' );
+		$this->assertInstanceOf( 'DOMElement', $parent_theme_credits );
+		$annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $parent_theme_credits );
+		$this->assertCount( 1, $annotation_stack );
+		$this->assertArraySubset(
+			[
+				'type'     => 'action',
+				'name'     => 'wp_footer',
+				'priority' => 10,
+				'function' => 'Google\WP_Sourcery\Tests\Data\Themes\Parent\add_parent_theme_credits',
+				'source'   => [
+					'file' => dirname( __DIR__ ) . '/data/themes/parent/functions.php',
+					'type' => 'theme',
+					'name' => 'parent',
+				],
+				'parent'   => null,
+			],
+			$annotation_stack[0]
+		);
+
+		$child_theme_credits = self::$document->getElementById( 'child-theme-credits' );
+		$this->assertInstanceOf( 'DOMElement', $child_theme_credits );
+		$annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $child_theme_credits );
+		$this->assertCount( 1, $annotation_stack );
+		$this->assertArraySubset(
+			[
+				'type'     => 'action',
+				'name'     => 'wp_footer',
+				'priority' => 10,
+				'function' => 'Google\WP_Sourcery\Tests\Data\Themes\Child\add_child_theme_credits',
+				'source'   => [
+					'file' => dirname( __DIR__ ) . '/data/themes/child/functions.php',
+					'type' => 'theme',
+					'name' => 'child',
+				],
+				'parent'   => null,
+			],
+			$annotation_stack[0]
+		);
+
 	}
 
 	/**
