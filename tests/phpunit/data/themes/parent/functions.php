@@ -95,6 +95,18 @@ if ( ! function_exists( __NAMESPACE__ . '\setup' ) ) {
 }
 add_action( 'after_setup_theme', __NAMESPACE__ . '\setup' );
 
+if ( ! function_exists( __NAMESPACE__ . '\enqueue_scripts' ) ) {
+	/**
+	 * Enqueue scripts.
+	 *
+	 * @todo Add enqueued script for some navigation thing which depends on jQuery.
+	 */
+	function enqueue_scripts() {
+		wp_enqueue_style( 'parent-style', get_template_directory_uri() . '/style.css', array(), '1.0' );
+	}
+}
+add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_scripts' );
+
 if ( ! function_exists( __NAMESPACE__ . '\add_parent_theme_credits' ) ) {
 
 	/**

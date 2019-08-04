@@ -476,6 +476,12 @@ class Annotation_Tests extends Integration_Test_Case {
 	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_the_title_has_annotations_for_mutating_filters() {
+		/**
+		 * Elements
+		 *
+		 * @var \DOMElement $h1
+		 * @var \DOMElement $code
+		 */
 		$h1 = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_filters'] . '"]//h1[ @class = "entry-title" ] ' )->item( 0 );
 
 		$this->assertInstanceOf( 'DOMElement', $h1 );
@@ -545,6 +551,11 @@ class Annotation_Tests extends Integration_Test_Case {
 	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_the_content_has_annotations_for_mutating_filters() {
+		/**
+		 * Paragraph.
+		 *
+		 * @var \DOMElement $p
+		 */
 		$p = self::$xpath->query( '//article[@id = "post-' . self::$post_ids['test_filters'] . '"]//div[ @class = "entry-content" ]/p' )->item( 0 );
 		$this->assertInstanceOf( 'DOMElement', $p );
 
@@ -1118,6 +1129,7 @@ class Annotation_Tests extends Integration_Test_Case {
 	 * Test proper sourcing of hooks in parent and child themes.
 	 *
 	 * @covers \Google\WP_Sourcery\File_Locator::identify()
+	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_footer_has_theme_credits() {
 		$parent_theme_credits = self::$document->getElementById( 'parent-theme-credits' );
@@ -1160,6 +1172,82 @@ class Annotation_Tests extends Integration_Test_Case {
 			$annotation_stack[0]
 		);
 
+	}
+
+	/**
+	 * Test that styles enqueued by themes have expected annotations.
+	 *
+	 * @covers \Google\WP_Sourcery\File_Locator::identify()
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function test_theme_enqueued_styles() {
+		$parent_style_element = self::$document->getElementById( 'parent-style-css' );
+		$child_style_element  = self::$document->getElementById( 'child-style-css' );
+		$this->assertInstanceOf( 'DOMElement', $parent_style_element );
+		$this->assertInstanceOf( 'DOMElement', $child_style_element );
+
+		$parent_annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $parent_style_element );
+		$child_annotation_stack  = self::$plugin->output_annotator->get_node_annotation_stack( $child_style_element );
+		$this->assertCount( 2, $parent_annotation_stack );
+		$this->assertCount( 2, $child_annotation_stack );
+		$this->assertArraySubset(
+			[
+				'type'     => 'action',
+				'name'     => 'wp_head',
+				'priority' => 8,
+				'function' => 'wp_print_styles',
+				'source'   => [
+					'file' => ABSPATH . WPINC . '/functions.wp-styles.php',
+					'type' => 'core',
+					'name' => 'wp-includes',
+				],
+				'parent'   => null,
+			],
+			$parent_annotation_stack[0]
+		);
+		$this->assertEquals( $parent_annotation_stack[0], $child_annotation_stack[0] );
+
+		$this->assertEquals( 'enqueued_style', $parent_annotation_stack[1]['type'] );
+		$this->assertEquals( 'enqueued_style', $child_annotation_stack[1]['type'] );
+		$this->assertCount( 2, $parent_annotation_stack[1]['invocations'], 'Expected 2 because the parent enqueues the parent style, and the child enqueues a style that depends on the parent style.' );
+		$this->assertCount( 1, $child_annotation_stack[1]['invocations'] );
+
+		// Check that the enqueued_style annotation for parent-style was invoked by both the parent theme and the child theme.
+		$this->assertArraySubset(
+			[
+				'type'            => 'action',
+				'name'            => 'wp_enqueue_scripts',
+				'priority'        => 10,
+				'function'        => 'Google\WP_Sourcery\Tests\Data\Themes\Child\enqueue_scripts',
+				'enqueued_styles' => [ 'child-style' ],
+				'source'          => [
+					'file' => dirname( __DIR__ ) . '/data/themes/child/functions.php',
+					'type' => 'theme',
+					'name' => 'child',
+				],
+			],
+			self::$annotations[ $parent_annotation_stack[1]['invocations'][0] ]
+		);
+		$this->assertArraySubset(
+			[
+				'type'            => 'action',
+				'name'            => 'wp_enqueue_scripts',
+				'priority'        => 10,
+				'function'        => 'Google\WP_Sourcery\Tests\Data\Themes\Parent\enqueue_scripts',
+				'enqueued_styles' => [ 'parent-style' ],
+				'source'          => [
+					'file' => dirname( __DIR__ ) . '/data/themes/parent/functions.php',
+					'type' => 'theme',
+					'name' => 'parent',
+				],
+			],
+			self::$annotations[ $parent_annotation_stack[1]['invocations'][1] ]
+		);
+
+		$this->assertEquals(
+			$parent_annotation_stack[1]['invocations'][0],
+			$child_annotation_stack[1]['invocations'][0]
+		);
 	}
 
 	/**
