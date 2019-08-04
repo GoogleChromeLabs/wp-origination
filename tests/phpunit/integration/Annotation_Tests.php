@@ -1251,6 +1251,73 @@ class Annotation_Tests extends Integration_Test_Case {
 	}
 
 	/**
+	 * Test that script enqueued by theme has expected annotations.
+	 *
+	 * @throws \Exception If comments are found to be malformed.
+	 */
+	public function test_theme_enqueued_script() {
+		/**
+		 * Elements
+		 *
+		 * @var \DOMElement $script
+		 */
+		$script = self::$xpath->query( '//script[ contains( @src, "js/navigation.js" ) ]' )->item( 0 );
+		$this->assertInstanceOf( 'DOMElement', $script );
+
+		$annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $script );
+		$this->assertCount( 3, $annotation_stack );
+
+		$this->assertArraySubset(
+			[
+				'type'     => 'action',
+				'name'     => 'wp_footer',
+				'priority' => 20,
+				'function' => 'wp_print_footer_scripts',
+				'source'   => [
+					'file' => ABSPATH . WPINC . '/script-loader.php',
+					'type' => 'core',
+					'name' => 'wp-includes',
+				],
+			],
+			self::$annotations[ $annotation_stack[0]['index'] ]
+		);
+
+		$this->assertArraySubset(
+			[
+				'type'     => 'action',
+				'name'     => 'wp_print_footer_scripts',
+				'priority' => 10,
+				'function' => '_wp_footer_scripts',
+				'source'   => [
+					'file' => ABSPATH . WPINC . '/script-loader.php',
+					'type' => 'core',
+					'name' => 'wp-includes',
+				],
+			],
+			self::$annotations[ $annotation_stack[1]['index'] ]
+		);
+
+		$this->assertEquals( 'enqueued_script', self::$annotations[ $annotation_stack[2]['index'] ]['type'] );
+		$this->assertCount( 1, self::$annotations[ $annotation_stack[2]['index'] ]['invocations'] );
+
+		$this->assertArraySubset(
+			[
+				'type'             => 'action',
+				'name'             => 'wp_enqueue_scripts',
+				'priority'         => 10,
+				'function'         => 'Google\WP_Sourcery\Tests\Data\Themes\Parent\enqueue_scripts',
+				'enqueued_scripts' => [ 'parent-navigation' ],
+				'source'           => [
+					'file' => dirname( __DIR__ ) . '/data/themes/parent/functions.php',
+					'type' => 'theme',
+					'name' => 'parent',
+				],
+			],
+			self::$annotations[ self::$annotations[ $annotation_stack[2]['index'] ]['invocations'][0] ]
+		);
+	}
+
+	/**
 	 * Tear down after class.
 	 */
 	public static function tearDownAfterClass() {
