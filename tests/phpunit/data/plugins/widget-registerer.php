@@ -29,6 +29,8 @@ function register_widgets() {
 	);
 
 	register_widget( __NAMESPACE__ . '\Multi_Widget' );
+
+	add_filter( 'dynamic_sidebar_params', __NAMESPACE__ . '\add_option_name_to_before_widget' );
 }
 
 /**
@@ -137,4 +139,42 @@ class Multi_Widget extends \WP_Widget {
 		echo 'I am multi!';
 		echo $args['after_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
+}
+
+/**
+ * Add option_name to each widget.
+ *
+ * This demonstrates the ability to preserve introspection of wrapped array callbacks. The $registered_widget['callback']
+ * below is an instance of Wrapped_Callback and if it were a Closure then accessing $registered_widget['callback'][0]
+ * would be an error. But since Wrapped_Callback implements ArrayAccess and also has an __invoke() method, then this
+ * is able to work the same as when the callbacks are not wrapped.
+ *
+ * @link https://github.com/ampproject/amp-wp/issues/2698
+ * @link https://github.com/ampproject/amp-wp/pull/2739
+ *
+ * @param array $params Widget params.
+ * @return array Params.
+ */
+function add_option_name_to_before_widget( $params ) {
+	global $wp_registered_widgets;
+
+	if ( ! isset( $params[0]['widget_id'] ) ) {
+		return $params;
+	}
+
+	$registered_widget = $wp_registered_widgets[ $params[0]['widget_id'] ];
+
+	// Skip old single widget (not using WP_Widget).
+	if ( ! isset( $registered_widget['params'][0]['number'] ) || ! ( $registered_widget['callback'][0] instanceof \WP_Widget ) ) {
+		return $params;
+	}
+
+	$params[0]['before_widget'] = preg_replace(
+		'/>/',
+		sprintf( ' data-widget-class-name="%s"', esc_attr( $registered_widget['callback'][0]->option_name ) ),
+		$params[0]['before_widget'],
+		1
+	);
+
+	return $params;
 }

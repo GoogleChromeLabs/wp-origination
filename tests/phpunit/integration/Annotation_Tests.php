@@ -1063,6 +1063,11 @@ class Annotation_Tests extends Integration_Test_Case {
 		$sidebar_element = self::$document->getElementById( 'sidebar' );
 		$this->assertInstanceOf( 'DOMElement', $sidebar_element );
 
+		/**
+		 * Widget elements.
+		 *
+		 * @var \DOMNodeList|\DOMElement[] $widget_elements
+		 */
 		$widget_elements = $sidebar_element->getElementsByTagName( 'li' );
 		$this->assertEquals( 3, $widget_elements->count() );
 
@@ -1121,8 +1126,26 @@ class Annotation_Tests extends Integration_Test_Case {
 		foreach ( $widget_elements as $i => $widget_element ) {
 			$annotation_stack = self::$plugin->output_annotator->get_node_annotation_stack( $widget_element );
 			$this->assertCount( 1, $annotation_stack );
-			$this->assertArraySubset( $expected_annotations[ $i ], $annotation_stack[0], "Expected annotation (i=$i) to be a subset." );
+			$this->assertArraySubset( $expected_annotations[ $i ], $annotation_stack[0], false, "Expected annotation (i=$i) to be a subset." );
 		}
+	}
+
+	/**
+	 * Test that wrapped callbacks for registered widgets can be introspected with array accessors.
+	 *
+	 * @see \Google\WP_Sourcery\Tests\Data\Plugins\Widget_Registerer\add_option_name_to_before_widget()
+	 */
+	public function test_introspectable_registered_widget_wrapped_callbacks() {
+		/**
+		 * Widget elements.
+		 *
+		 * @var \DOMNodeList|\DOMElement[] $widget_elements
+		 */
+		$widget_elements = self::$document->getElementById( 'sidebar' )->getElementsByTagName( 'li' );
+
+		$this->assertFalse( $widget_elements[0]->hasAttribute( 'data-widget-class-name' ) );
+		$this->assertSame( 'widget_' . Widget_Registerer\MULTI_WIDGET_ID_BASE, $widget_elements[1]->getAttribute( 'data-widget-class-name' ) );
+		$this->assertSame( 'widget_search', $widget_elements[2]->getAttribute( 'data-widget-class-name' ) );
 	}
 
 	/**

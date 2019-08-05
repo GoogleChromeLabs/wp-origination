@@ -188,6 +188,8 @@ class Invocation_Watcher {
 	/**
 	 * Before hook.
 	 *
+	 * @todo This should use Wrapped_Callback.
+	 *
 	 * @param array $args {
 	 *      Args.
 	 *
@@ -221,6 +223,8 @@ class Invocation_Watcher {
 
 	/**
 	 * After hook.
+	 *
+	 * @todo This should use Wrapped_Callback.
 	 *
 	 * @throws \Exception If the stack was empty, which should not happen.
 	 *
@@ -294,35 +298,34 @@ class Invocation_Watcher {
 	public function wrap_shortcode_callbacks() {
 		global $shortcode_tags;
 
-		foreach ( $shortcode_tags as $tag => &$callback ) {
-			$function = $callback;
+		foreach ( array_keys( $shortcode_tags ) as $tag ) {
+			$callback = $shortcode_tags[ $tag ];
 
-			$callback = function( $attributes, $content ) use ( $tag, $function ) {
-				$parent = $this->get_parent_invocation();
-
-				$source = $this->hook_wrapper::get_source( $function );
-
-				$args = compact( 'tag', 'attributes', 'content', 'parent', 'function' );
-
-				$args['source_file']   = $source['file'];
-				$args['reflection']    = $source['reflection'];
-				$args['function_name'] = $source['function'];
-
-				$invocation = new Shortcode_Invocation( $this, $this->incrementor, $this->database, $this->file_locator, $this->dependencies, $args );
-				if ( $parent ) {
-					$parent->children[] = $invocation;
+			$shortcode_tags[ $tag ] = new Wrapped_Callback( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+				$callback,
+				$this,
+				function( $invocation_args, $func_args ) use ( $tag ) {
+					return new Shortcode_Invocation(
+						$this,
+						$this->incrementor,
+						$this->database,
+						$this->file_locator,
+						$this->dependencies,
+						array_merge(
+							$invocation_args,
+							compact( 'tag' ),
+							[
+								'attributes' => isset( $func_args[0] ) ? $func_args[0] : [],
+								'content'    => isset( $func_args[1] ) ? $func_args[1] : null,
+							]
+						)
+					);
+				},
+				function ( Shortcode_Invocation $invocation, $func_args ) {
+					$return = call_user_func_array( $invocation->function, $func_args );
+					return $this->output_annotator->get_before_annotation( $invocation ) . $return . $this->output_annotator->get_after_annotation( $invocation );
 				}
-
-				$this->invocation_stack[]                = $invocation;
-				$this->invocations[ $invocation->index ] = $invocation;
-
-				$return = call_user_func( $function, $attributes, $content );
-
-				array_pop( $this->invocation_stack );
-				$invocation->finalize();
-
-				return $this->output_annotator->get_before_annotation( $invocation ) . $return . $this->output_annotator->get_after_annotation( $invocation );
-			};
+			);
 		}
 	}
 
@@ -344,35 +347,31 @@ class Invocation_Watcher {
 				continue;
 			}
 
-			$function = $block_type->render_callback;
-
-			$block_type->render_callback = function( $attributes, $content ) use ( $block_type, $function ) {
-				$parent = $this->get_parent_invocation();
-
-				$source = $this->hook_wrapper::get_source( $function );
-				$name   = $block_type->name;
-
-				$args = compact( 'name', 'attributes', 'content', 'parent', 'function' );
-
-				$args['source_file']   = $source['file'];
-				$args['reflection']    = $source['reflection'];
-				$args['function_name'] = $source['function'];
-
-				$invocation = new Block_Invocation( $this, $this->incrementor, $this->database, $this->file_locator, $this->dependencies, $args );
-				if ( $parent ) {
-					$parent->children[] = $invocation;
+			$block_type->render_callback = new Wrapped_Callback( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+				$block_type->render_callback,
+				$this,
+				function( $invocation_args, $func_args ) use ( $block_type ) {
+					return new Block_Invocation(
+						$this,
+						$this->incrementor,
+						$this->database,
+						$this->file_locator,
+						$this->dependencies,
+						array_merge(
+							$invocation_args,
+							[
+								'name'       => $block_type->name,
+								'attributes' => isset( $func_args[0] ) ? $func_args[0] : [],
+								'content'    => isset( $func_args[1] ) ? $func_args[1] : null,
+							]
+						)
+					);
+				},
+				function ( Block_Invocation $invocation, $func_args ) {
+					$return = call_user_func_array( $invocation->function, $func_args );
+					return $this->output_annotator->get_before_annotation( $invocation ) . $return . $this->output_annotator->get_after_annotation( $invocation );
 				}
-
-				$this->invocation_stack[]                = $invocation;
-				$this->invocations[ $invocation->index ] = $invocation;
-
-				$return = call_user_func( $function, $attributes, $content );
-
-				array_pop( $this->invocation_stack );
-				$invocation->finalize();
-
-				return $this->output_annotator->get_before_annotation( $invocation ) . $return . $this->output_annotator->get_after_annotation( $invocation );
-			};
+			);
 		}
 	}
 
@@ -386,63 +385,47 @@ class Invocation_Watcher {
 		foreach ( $wp_registered_widgets as $widget_id => &$registered_widget ) {
 			$function = $registered_widget['callback'];
 
-			/**
-			 * Wrapped callback.
-			 *
-			 * @see dynamic_sidebar()
-			 *
-			 * @param array $args        An array of widget display arguments.
-			 * @param array $widget_args An array of multi-widget arguments.
-			 * @return mixed
-			 */
-			$registered_widget['callback'] = function( $args = array(), $widget_args = array() ) use ( $registered_widget, $function ) {
-				$parent = $this->get_parent_invocation();
-				$source = $this->hook_wrapper::get_source( $function );
+			$registered_widget['callback'] = new Wrapped_Callback( // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+				$function,
+				$this,
+				function( $invocation_args, $func_args ) use ( $function ) {
 
-				$invocation_args = compact( 'parent', 'function' );
+					$widget = null;
+					if ( is_array( $function ) && isset( $function[0] ) && $function[0] instanceof \WP_Widget ) {
+						$widget = $function[0];
+					}
 
-				$invocation_args['source_file']   = $source['file'];
-				$invocation_args['reflection']    = $source['reflection'];
-				$invocation_args['function_name'] = $source['function'];
+					/*
+					 * Note that $widget_args should only contain 'number' if it is a multi-widget.
+					 * There is also a possibility that additional params could be registered for non-multi widgets
+					 * when more than 4 arguments to wp_register_sidebar_widget(), but this is probably unlikely
+					 * and it is even less likely to be necessary for our purposes here.
+					 */
+					$number = isset( $func_args[1]['number'] ) ? $func_args[1]['number'] : null;
 
-				$widget = null;
-				if ( is_array( $function ) && isset( $function[0] ) && $function[0] instanceof \WP_Widget ) {
-					$widget = $function[0];
+					$id   = isset( $func_args[0]['widget_id'] ) ? $func_args[0]['widget_id'] : null;
+					$name = isset( $func_args[0]['widget_name'] ) ? $func_args[0]['widget_name'] : null;
+
+					return new Widget_Invocation(
+						$this,
+						$this->incrementor,
+						$this->database,
+						$this->file_locator,
+						$this->dependencies,
+						array_merge(
+							$invocation_args,
+							compact( 'widget', 'number', 'id', 'name' )
+						)
+					);
+				},
+				function ( Widget_Invocation $invocation, $func_args ) use ( $function ) {
+					// @todo This could also augment the $invocation with the widget $instance data.
+					echo $this->output_annotator->get_before_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					$return = call_user_func_array( $function, $func_args );
+					echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					return $return;
 				}
-				$number = isset( $widget_args['number'] ) ? $widget_args['number'] : null;
-
-				/*
-				 * Note that $widget_args should only contain 'number' if it is a multi-widget.
-				 * There is also a possibility that additional params could be registered for non-multi widgets
-				 * when more than 4 arguments to wp_register_sidebar_widget(), but this is probably unlikely
-				 * and it is even less likely to be necessary for our purposes here.
-				 */
-				$invocation_args = array_merge(
-					$invocation_args,
-					compact( 'widget', 'number' ),
-					array(
-						'id'   => $args['widget_id'],
-						'name' => $args['widget_name'],
-					)
-				);
-
-				$invocation = new Widget_Invocation( $this, $this->incrementor, $this->database, $this->file_locator, $this->dependencies, $invocation_args );
-				if ( $parent ) {
-					$parent->children[] = $invocation;
-				}
-
-				$this->invocation_stack[]                = $invocation;
-				$this->invocations[ $invocation->index ] = $invocation;
-
-				echo $this->output_annotator->get_before_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				$return = call_user_func_array( $function, func_get_args() ); // phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue.NeedsInspection
-				echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-
-				array_pop( $this->invocation_stack );
-				$invocation->finalize();
-
-				return $return;
-			};
+			);
 		}
 	}
 }

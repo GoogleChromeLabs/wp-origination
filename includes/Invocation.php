@@ -12,6 +12,8 @@ namespace Google\WP_Sourcery;
 
 /**
  * Class Invocation.
+ *
+ * @todo Why not let this have the __invoke() method with ArrayAccess?
  */
 class Invocation {
 
