@@ -12,6 +12,8 @@
  * Description: Test plugin for hooks.
  */
 
+// phpcs:disable Generic.Files.OneClassPerFile.MultipleFound
+
 namespace Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker;
 
 const SIDEBAR_ID = 'sidebar-1';
@@ -29,8 +31,9 @@ function add_hooks() {
 	add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_scripts' );
 	add_action( 'wp_print_footer_scripts', __NAMESPACE__ . '\print_document_write' );
 	add_filter( 'the_content', new Paragraph_Contents_Filter(), 100 );
-	add_filter( 'paragraph_contents', __NAMESPACE__ . '\append_paragraph_word_count', 12 );
-	add_filter( 'paragraph_contents', __NAMESPACE__ . '\prepend_paragraph_anchor', 13 );
+	$paragraphs = new Paragraphs();
+	add_filter( 'paragraph_contents', [ $paragraphs, 'append_paragraph_word_count' ], 12 );
+	add_filter( 'paragraph_contents', __NAMESPACE__ . '\Paragraphs::prepend_paragraph_anchor', 13 );
 	add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_comment_reply_async' );
 	add_action(
 		'wp_body_open',
@@ -146,24 +149,30 @@ class Paragraph_Contents_Filter {
 }
 
 /**
- * Append paragraph word count.
- *
- * @param string $content Content with appended word count.
- * @return string Content.
+ * Class Paragraphs
  */
-function append_paragraph_word_count( $content ) {
-	$word_count = preg_match_all( '/\w+/', wp_strip_all_tags( $content ), $matches );
-	return $content . sprintf( ' (Word Count: %d)', esc_html( $word_count ) );
-}
+class Paragraphs {
 
-/**
- * Prepend paragraph anchor.
- *
- * @param string $content Content with prepended anchor.
- * @return string Content.
- */
-function prepend_paragraph_anchor( $content ) {
-	return sprintf( '<a name="%s"></a>', esc_attr( md5( $content ) ) ) . $content;
+	/**
+	 * Append paragraph word count.
+	 *
+	 * @param string $content Content with appended word count.
+	 * @return string Content.
+	 */
+	public function append_paragraph_word_count( $content ) {
+		$word_count = preg_match_all( '/\w+/', wp_strip_all_tags( $content ), $matches );
+		return $content . sprintf( ' (Word Count: %d)', esc_html( $word_count ) );
+	}
+
+	/**
+	 * Prepend paragraph anchor.
+	 *
+	 * @param string $content Content with prepended anchor.
+	 * @return string Content.
+	 */
+	public static function prepend_paragraph_anchor( $content ) {
+		return sprintf( '<a name="%s"></a>', esc_attr( md5( $content ) ) ) . $content;
+	}
 }
 
 /**

@@ -628,7 +628,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'           => 'filter',
 				'name'           => 'paragraph_contents',
 				'priority'       => 13,
-				'function'       => 'Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker\prepend_paragraph_anchor',
+				'function'       => 'Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker\Paragraphs::prepend_paragraph_anchor',
 				'source'         => [
 					'file' => dirname( WP_ORIGINATION_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
 					'type' => 'plugin',
@@ -645,7 +645,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'           => 'filter',
 				'name'           => 'paragraph_contents',
 				'priority'       => 12,
-				'function'       => 'Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker\append_paragraph_word_count',
+				'function'       => 'Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker\Paragraphs::append_paragraph_word_count',
 				'source'         => [
 					'file' => dirname( WP_ORIGINATION_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
 					'type' => 'plugin',
