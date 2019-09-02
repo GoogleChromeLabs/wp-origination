@@ -193,11 +193,10 @@ class Invocation_Watcher {
 	 * @param array $args {
 	 *      Args.
 	 *
-	 *     @var string   $name          Name.
-	 *     @var callable $function      Function.
-	 *     @var int      $accepted_args Accepted argument count.
-	 *     @var int      $priority      Priority.
-	 *     @var array    $hook_args     Hook args.
+	 *     @var string   $name      Name.
+	 *     @var callable $function  Function.
+	 *     @var int      $priority  Priority.
+	 *     @var array    $hook_args Hook args.
 	 * }
 	 */
 	public function before_each_hook_callback( $args ) {
@@ -233,7 +232,6 @@ class Invocation_Watcher {
 	 *
 	 *     @var string   $name           Name.
 	 *     @var callable $function       Function.
-	 *     @var int      $accepted_args  Accepted argument count.
 	 *     @var int      $priority       Priority.
 	 *     @var array    $hook_args      Hook args.
 	 *     @var bool     $value_modified Whether the value was modified.

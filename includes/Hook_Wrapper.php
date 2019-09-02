@@ -144,10 +144,9 @@ class Hook_Wrapper {
 					$reflection     = $source->get_callback_reflection();
 					$source_file    = $source->get_file_name();
 					$function_name  = $source->get_name();
-					$accepted_args  = $callback['accepted_args']; // @todo This is unnecessary.
 					$is_filter      = ! did_action( $name );
 					$value_modified = null;
-					$context        = compact( 'name', 'function', 'function_name', 'reflection', 'source_file', 'accepted_args', 'priority', 'hook_args', 'is_filter' );
+					$context        = compact( 'name', 'function', 'function_name', 'reflection', 'source_file', 'priority', 'hook_args', 'is_filter' );
 					if ( $this->before_each_callback ) {
 						call_user_func( $this->before_each_callback, $context );
 					}
