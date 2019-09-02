@@ -27,7 +27,7 @@
  *
  * This has to be a global for the same of PHP 5.2.
  *
- * @var \WP_Error $_google_wp_origination_load_errors
+ * @var WP_Error $_google_wp_origination_load_errors
  */
 global $_google_wp_origination_load_errors;
 
@@ -103,7 +103,7 @@ function _google_wp_origination_load() {
  * Displays an admin notice about why the plugin is unable to load.
  *
  * @since 0.1.0
- * @global \WP_Error $_google_wp_origination_load_errors
+ * @global WP_Error $_google_wp_origination_load_errors
  */
 function _google_wp_show_dependency_errors_admin_notice() {
 	global $_google_wp_origination_load_errors;

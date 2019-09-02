@@ -70,16 +70,21 @@ class Wrapped_Callback implements \ArrayAccess {
 	public function __invoke() {
 		$parent = $this->invocation_watcher->get_parent_invocation();
 
-		$source = Hook_Wrapper::get_source( $this->callback );
+		try {
+			$source  = new Calling_Reflection( $this->callback );
+			$context = [
+				'source_file'   => $source->get_file_name(),
+				'reflection'    => $source->get_callback_reflection(),
+				'function_name' => $source->get_name(),
+			];
+		} catch ( \Exception $e ) {
+			$context['exception'] = $e->getMessage();
+		}
 
 		$invocation_args = array_merge(
 			compact( 'parent' ),
-			[
-				'source_file'   => $source['file'],
-				'reflection'    => $source['reflection'],
-				'function_name' => $source['function'],
-				'function'      => $this->callback,
-			]
+			[ 'function' => $this->callback ],
+			$context
 		);
 
 		$invocation = call_user_func( $this->invocation_creator, $invocation_args, func_get_args() );
