@@ -605,7 +605,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'           => 'filter',
 				'name'           => 'the_content',
 				'priority'       => 100,
-				'function'       => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Hook_Invoker\\filter_paragraph_contents',
+				'function'       => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Hook_Invoker\\Paragraph_Contents_Filter::__invoke',
 				'source'         => [
 					'file' => dirname( WP_ORIGINATION_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
 					'type' => 'plugin',

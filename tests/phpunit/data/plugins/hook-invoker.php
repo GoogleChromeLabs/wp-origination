@@ -28,7 +28,7 @@ function add_hooks() {
 	add_action( 'hook_invoker_body', __NAMESPACE__ . '\print_body' );
 	add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_scripts' );
 	add_action( 'wp_print_footer_scripts', __NAMESPACE__ . '\print_document_write' );
-	add_filter( 'the_content', __NAMESPACE__ . '\filter_paragraph_contents', 100 );
+	add_filter( 'the_content', new Paragraph_Contents_Filter(), 100 );
 	add_filter( 'paragraph_contents', __NAMESPACE__ . '\append_paragraph_word_count', 12 );
 	add_filter( 'paragraph_contents', __NAMESPACE__ . '\prepend_paragraph_anchor', 13 );
 	add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_comment_reply_async' );
@@ -114,30 +114,35 @@ function print_body() {
 }
 
 /**
- * Filter paragraph contents.
- *
- * Only applies on paragraphs that are at least 150 characters long.
- *
- * @param string $content Content.
- * @return string Content.
+ * Class Paragraph_Contents_Filter
  */
-function filter_paragraph_contents( $content ) {
-	return preg_replace_callback(
-		':(?<=<p>)(.+?)(?=</p>):s',
-		function( $matches ) {
-			if ( strlen( $matches[0] ) < 150 ) {
-				return $matches[0];
-			}
+class Paragraph_Contents_Filter {
+	/**
+	 * Filter paragraph contents.
+	 *
+	 * Only applies on paragraphs that are at least 150 characters long.
+	 *
+	 * @param string $content Content.
+	 * @return string Content.
+	 */
+	public function __invoke( $content ) {
+		return preg_replace_callback(
+			':(?<=<p>)(.+?)(?=</p>):s',
+			function ( $matches ) {
+				if ( strlen( $matches[0] ) < 150 ) {
+					return $matches[0];
+				}
 
-			/**
-			 * Filters paragraph contents.
-			 *
-			 * @param string $paragraph_contents Paragraph contents.
-			 */
-			return apply_filters( 'paragraph_contents', $matches[1] );
-		},
-		$content
-	);
+				/**
+				 * Filters paragraph contents.
+				 *
+				 * @param string $paragraph_contents Paragraph contents.
+				 */
+				return apply_filters( 'paragraph_contents', $matches[1] );
+			},
+			$content
+		);
+	}
 }
 
 /**

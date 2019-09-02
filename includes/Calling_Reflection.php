@@ -59,8 +59,10 @@ class Calling_Reflection {
 			$this->callback_reflection = new ReflectionMethod( $callback[0], $callback[1] );
 		} elseif ( is_object( $callback ) && ( 'Closure' === get_class( $callback ) ) ) {
 			$this->callback_reflection = new ReflectionFunction( $callback );
+		} elseif ( is_object( $callback ) && method_exists( $callback, '__invoke' ) ) {
+			$this->class_reflection    = new ReflectionClass( $callback );
+			$this->callback_reflection = new ReflectionMethod( $callback, '__invoke' );
 		} else {
-			// @todo What about a class which has an __invoke() method?
 			throw new Exception( 'Unrecognized callable.' );
 		}
 	}
