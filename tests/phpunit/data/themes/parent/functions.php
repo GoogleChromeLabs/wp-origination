@@ -3,10 +3,10 @@
  * Parent theme functions.
  *
  * @todo Enqueue scripts and styles.
- * @package Google\WP_Sourcery
+ * @package Google\WP_Origination
  */
 
-namespace Google\WP_Sourcery\Tests\Data\Themes\Parent;
+namespace Google\WP_Origination\Tests\Data\Themes\Parent;
 
 if ( ! function_exists( __NAMESPACE__ . '\setup' ) ) {
 	/**

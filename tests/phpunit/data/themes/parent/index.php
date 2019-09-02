@@ -2,7 +2,7 @@
 /**
  * The main template file
  *
- * @package Google\WP_Sourcery
+ * @package Google\WP_Origination
  */
 
 require __DIR__ . '/header.php'; // Can't use get_header() because TEMPLATEPATH can't be redefined.

@@ -2,7 +2,7 @@
 /**
  * The template for displaying the footer
  *
- * @package Google\WP_Sourcery
+ * @package Google\WP_Origination
  */
 
 ?>

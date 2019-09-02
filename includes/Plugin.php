@@ -1,14 +1,14 @@
 <?php
 /**
- * Class Google\WP_Sourcery\Plugin
+ * Class Google\WP_Origination\Plugin
  *
- * @package   Google\WP_Sourcery
- * @link      https://github.com/westonruter/wp-sourcery
+ * @package   Google\WP_Origination
+ * @link      https://github.com/westonruter/wp-origination
  * @license   GPL-2.0-or-later
  * @copyright 2019 Google Inc.
  */
 
-namespace Google\WP_Sourcery;
+namespace Google\WP_Origination;
 
 /**
  * Class Plugin
@@ -178,7 +178,7 @@ class Plugin {
 	}
 
 	/**
-	 * Determine whether sourcery should run for the current request.
+	 * Determine whether origination should run for the current request.
 	 *
 	 * @return bool
 	 */
@@ -188,7 +188,7 @@ class Plugin {
 			&&
 			WP_DEBUG
 			&&
-			isset( $_GET['sourcery'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.NoNonceVerification
+			isset( $_GET['origination'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.NoNonceVerification
 		);
 	}
 

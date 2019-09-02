@@ -25,7 +25,7 @@ module.exports = function( grunt ) {
 				command: 'php ./vendor/xwp/wp-dev-lib/generate-markdown-readme' // Generate the readme.md.
 			},
 			create_build_zip: {
-				command: 'if [ ! -e build ]; then echo "Run grunt build first."; exit 1; fi; if [ -e sourcery.zip ]; then rm sourcery.zip; fi; cd build; zip -r ../sourcery.zip .; cd ..; echo; echo "ZIP of build: $(pwd)/sourcery.zip"'
+				command: 'if [ ! -e build ]; then echo "Run grunt build first."; exit 1; fi; if [ -e origination.zip ]; then rm origination.zip; fi; cd build; zip -r ../origination.zip .; cd ..; echo; echo "ZIP of build: $(pwd)/origination.zip"'
 			}
 		},
 
@@ -33,7 +33,7 @@ module.exports = function( grunt ) {
 		wp_deploy: {
 			deploy: {
 				options: {
-					plugin_slug: 'sourcery',
+					plugin_slug: 'origination',
 					build_dir: 'build',
 					assets_dir: 'wp-assets'
 				}
@@ -92,17 +92,17 @@ module.exports = function( grunt ) {
 					dest: 'build',
 					expand: true,
 					options: {
-						noProcess: [ '*/**' ], // That is, only process sourcery.php and readme.txt.
+						noProcess: [ '*/**' ], // That is, only process origination.php and readme.txt.
 						process: function( content, srcpath ) {
 							var matches, version, versionRegex;
-							if ( /sourcery\.php$/.test( srcpath ) ) {
+							if ( /origination\.php$/.test( srcpath ) ) {
 								versionRegex = /(\*\s+Version:\s+)(\d+(\.\d+)+-\w+)/;
 
 								// If not a stable build (e.g. 0.7.0-beta), amend the version with the git commit and current timestamp.
 								matches = content.match( versionRegex );
 								if ( matches ) {
 									version = matches[ 2 ] + '-' + versionAppend;
-									console.log( 'Updating version in sourcery.php to ' + version );
+									console.log( 'Updating version in origination.php to ' + version );
 									content = content.replace( versionRegex, '$1' + version );
 								}
 							}

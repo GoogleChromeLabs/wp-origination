@@ -2,13 +2,13 @@
 /**
  * Output_Annotator Class.
  *
- * @package   Google\WP_Sourcery
- * @link      https://github.com/westonruter/wp-sourcery
+ * @package   Google\WP_Origination
+ * @link      https://github.com/westonruter/wp-origination
  * @license   GPL-2.0-or-later
  * @copyright 2019 Google Inc.
  */
 
-namespace Google\WP_Sourcery;
+namespace Google\WP_Origination;
 
 /**
  * Class Output_Annotator.
@@ -20,35 +20,35 @@ class Output_Annotator {
 	 *
 	 * @var string
 	 */
-	const ANNOTATION_TAG = 'sourcery';
+	const ANNOTATION_TAG = 'origination';
 
 	/**
 	 * Identifier used to signify invocation annotation comments.
 	 *
 	 * @var string
 	 */
-	const INVOCATION_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_invocation';
+	const INVOCATION_ANNOTATION_PLACEHOLDER_TAG = 'origination_invocation';
 
 	/**
 	 * Identifier used to signify dependency (scripts & styles) annotation comments.
 	 *
 	 * @var string
 	 */
-	const DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_dependency';
+	const DEPENDENCY_ANNOTATION_PLACEHOLDER_TAG = 'origination_dependency';
 
 	/**
 	 * Identifier used to signify (static) block annotation comments.
 	 *
 	 * @var string
 	 */
-	const BLOCK_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_block';
+	const BLOCK_ANNOTATION_PLACEHOLDER_TAG = 'origination_block';
 
 	/**
 	 * Identifier used to signify oEmbed annotation comments.
 	 *
 	 * @var string
 	 */
-	const OEMBED_ANNOTATION_PLACEHOLDER_TAG = 'sourcery_oembed';
+	const OEMBED_ANNOTATION_PLACEHOLDER_TAG = 'origination_oembed';
 
 	/**
 	 * Opening annotation type (start tag).
@@ -162,7 +162,7 @@ class Output_Annotator {
 	 * Pattern assumes that regex delimiter will be '#'.
 	 *
 	 * Note that placeholder annotations do not include self-closing annotations because those are only added at the end
-	 * in `\Google\WP_Sourcery\Output_Annotator::finish()` if it is determined that they have not already been annotated.
+	 * in `\Google\WP_Origination\Output_Annotator::finish()` if it is determined that they have not already been annotated.
 	 *
 	 * @return string Pattern.
 	 */
@@ -194,7 +194,7 @@ class Output_Annotator {
 		 * Note that the PHP_INT_MAX-1 priority is used to prevent type annotations from being corrupted by user filters.
 		 * The filter annotations will still appear inside of any filter annotations because they get added at PHP_INT_MAX.
 		 */
-		$priority = PHP_INT_MAX - 1; // One less than max so that \Google\WP_Sourcery\Invocation_Watcher::after_all_hook_callbacks() can run after.
+		$priority = PHP_INT_MAX - 1; // One less than max so that \Google\WP_Origination\Invocation_Watcher::after_all_hook_callbacks() can run after.
 		add_filter( 'script_loader_tag', [ $this, 'add_enqueued_script_annotation' ], $priority, 2 );
 		add_filter( 'style_loader_tag', [ $this, 'add_enqueued_style_annotation' ], $priority, 2 );
 		add_filter( 'render_block', [ $this, 'add_static_block_annotation' ], $priority, 2 );
@@ -524,7 +524,7 @@ class Output_Annotator {
 	public function get_annotation_comment( array $data, $type = self::OPEN_ANNOTATION ) {
 
 		if ( ! in_array( $type, [ self::OPEN_ANNOTATION, self::CLOSE_ANNOTATION, self::SELF_CLOSING_ANNOTATION ], true ) ) {
-			_doing_it_wrong( __METHOD__, esc_html__( 'Wrong annotation type.', 'sourcery' ), '0.1' );
+			_doing_it_wrong( __METHOD__, esc_html__( 'Wrong annotation type.', 'origination' ), '0.1' );
 		}
 
 		// Escape double-hyphens in comment content.
@@ -544,7 +544,7 @@ class Output_Annotator {
 	}
 
 	/**
-	 * Parse data out of sourcery annotation comment text.
+	 * Parse data out of origination annotation comment text.
 	 *
 	 * @param string|\DOMComment $comment Comment.
 	 * @return null|array {
@@ -617,7 +617,7 @@ class Output_Annotator {
 	 *
 	 * Given this HTML in the buffer:
 	 *
-	 *     <html data-first="B<A" <!-- sourcery 128 --> data-hello=world <!-- /sourcery 128--> data-second="A>B">.
+	 *     <html data-first="B<A" <!-- origination 128 --> data-hello=world <!-- /origination 128--> data-second="A>B">.
 	 *
 	 * The returned string should be:
 	 *

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<ruleset name="Sourcery WordPress Plugin">
+<ruleset name="Origination WordPress Plugin">
 	<description>Ruleset for WordPress plugin.</description>
 
-	<file>./sourcery.php</file>
+	<file>./origination.php</file>
 	<file>./includes</file>
 	<file>./tests</file>
 
@@ -36,7 +36,7 @@
 	<!-- Selected WordPress Coding Standards tweaks -->
 	<rule ref="WordPress.WP.I18n">
 		<properties>
-			<property name="text_domain" type="string" value="sourcery"/>
+			<property name="text_domain" type="string" value="origination"/>
 		</properties>
 	</rule>
 </ruleset>

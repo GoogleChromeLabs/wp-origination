@@ -2,13 +2,13 @@
 /**
  * Invocation_Watcher Class.
  *
- * @package   Google\WP_Sourcery
- * @link      https://github.com/westonruter/wp-sourcery
+ * @package   Google\WP_Origination
+ * @link      https://github.com/westonruter/wp-origination
  * @license   GPL-2.0-or-later
  * @copyright 2019 Google Inc.
  */
 
-namespace Google\WP_Sourcery;
+namespace Google\WP_Origination;
 
 /**
  * Class Invocation_Watcher.
@@ -339,7 +339,7 @@ class Invocation_Watcher {
 	 * Note that overriding and wrapping the callback is done instead of exclusively using the 'render_block' filter
 	 * because the former method allows us to capture the stylesheets that were enqueued when it was called.
 	 *
-	 * @see \Google\WP_Sourcery\Output_Annotator::add_static_block_annotation()
+	 * @see \Google\WP_Origination\Output_Annotator::add_static_block_annotation()
 	 */
 	public function wrap_block_render_callbacks() {
 		foreach ( \WP_Block_Type_Registry::get_instance()->get_all_registered() as $block_type ) {

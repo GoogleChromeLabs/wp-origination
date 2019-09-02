@@ -2,10 +2,10 @@
 /**
  * Child theme functions.
  *
- * @package   Google\WP_Sourcery
+ * @package   Google\WP_Origination
  */
 
-namespace Google\WP_Sourcery\Tests\Data\Themes\Child;
+namespace Google\WP_Origination\Tests\Data\Themes\Child;
 
 if ( ! function_exists( __NAMESPACE__ . '\enqueue_scripts' ) ) {
 	/**

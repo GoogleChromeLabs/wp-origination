@@ -8,8 +8,8 @@
  * @returns {Object[]} Annotations.
  */
 export default function identifyNodeSources( node ) {
-	const openCommentPrefix = ' sourcery ';
-	const closeCommentPrefix = ' /sourcery ';
+	const openCommentPrefix = ' origination ';
+	const closeCommentPrefix = ' /origination ';
 
 	const invocations = {};
 	const expression = `

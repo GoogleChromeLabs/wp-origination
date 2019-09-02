@@ -2,8 +2,8 @@
 /**
  * Widget registerer.
  *
- * @package   Google\WP_Sourcery
- * @link      https://github.com/westonruter/wp-sourcery
+ * @package   Google\WP_Origination
+ * @link      https://github.com/westonruter/wp-origination
  * @license   GPL-2.0-or-later
  * @copyright 2019 Google Inc.
  *
@@ -12,7 +12,7 @@
  * Description: Test plugin for widgets.
  */
 
-namespace Google\WP_Sourcery\Tests\Data\Plugins\Widget_Registerer;
+namespace Google\WP_Origination\Tests\Data\Plugins\Widget_Registerer;
 
 const SINGLE_WIDGET_ID = 'single';
 

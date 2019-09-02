@@ -2,8 +2,8 @@
 /**
  * Shortcode adder.
  *
- * @package   Google\WP_Sourcery
- * @link      https://github.com/westonruter/wp-sourcery
+ * @package   Google\WP_Origination
+ * @link      https://github.com/westonruter/wp-origination
  * @license   GPL-2.0-or-later
  * @copyright 2019 Google Inc.
  *
@@ -12,7 +12,7 @@
  * Description: Test plugin for shortcodes.
  */
 
-namespace Google\WP_Sourcery\Tests\Data\Plugins\Shortcode_Adder;
+namespace Google\WP_Origination\Tests\Data\Plugins\Shortcode_Adder;
 
 const SHORTCODE_TAG = 'passthru';
 

@@ -1,10 +1,10 @@
 {
- "name": "wp-sourcery",
- "title": "WP Sourcery",
- "homepage": "https://github.com/westonruter/wp-sourcery",
+ "name": "wp-origination",
+ "title": "WP origination",
+ "homepage": "https://github.com/westonruter/wp-origination",
  "repository": {
   "type": "git",
-  "url": "https://github.com/westonruter/wp-sourcery.git"
+  "url": "https://github.com/westonruter/wp-origination.git"
  },
  "license": "GPL-2.0-or-later",
  "private": true,

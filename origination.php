@@ -1,23 +1,23 @@
 <?php
 /**
- * Sourcery plugin initialization file.
+ * Origination plugin initialization file.
  *
- * @package   Google\WP_Sourcery
+ * @package   Google\WP_Origination
  * @author    Weston Ruter
- * @link      https://github.com/westonruter/wp-sourcery
+ * @link      https://github.com/westonruter/wp-origination
  * @license   GPL-2.0-or-later
  * @copyright 2019 Google Inc.
  *
  * @wordpress-plugin
- * Plugin Name: Sourcery
- * Plugin URI:  https://github.com/westonruter/wp-sourcery
+ * Plugin Name: Origination
+ * Plugin URI:  https://github.com/westonruter/wp-origination
  * Description: Determine the source of where things come from in WordPress whether slow code, inefficient queries, or bad markup.
  * Version:     0.1.0-alpha
  * Author:      Weston Ruter
  * Author URI:  https://weston.ruter.net/
  * License:     GNU General Public License v2 (or later)
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: sourcery
+ * Text Domain: origination
  */
 
 /* This file must be parsable by PHP 5.2. */
@@ -27,19 +27,19 @@
  *
  * This has to be a global for the same of PHP 5.2.
  *
- * @var \WP_Error $_google_wp_sourcery_load_errors
+ * @var \WP_Error $_google_wp_origination_load_errors
  */
-global $_google_wp_sourcery_load_errors;
+global $_google_wp_origination_load_errors;
 
-define( 'WP_SOURCERY_PLUGIN_FILE', __FILE__ );
+define( 'WP_ORIGINATION_PLUGIN_FILE', __FILE__ );
 
 /**
  * Load the plugin, making sure the required dependencies are met.
  *
  * @since 0.1.0
  */
-function _google_wp_sourcery_load() {
-	global $_google_wp_sourcery_load_errors;
+function _google_wp_origination_load() {
+	global $_google_wp_origination_load_errors;
 	$load_errors = new WP_Error();
 
 	if ( version_compare( phpversion(), '5.6', '<' ) ) {
@@ -47,7 +47,7 @@ function _google_wp_sourcery_load() {
 			'php_version',
 			sprintf(
 				/* translators: 1: required PHP version, 2: currently used PHP version */
-				__( 'Plugin requires at least PHP version %1$s; your site is currently running on PHP %2$s.', 'sourcery' ),
+				__( 'Plugin requires at least PHP version %1$s; your site is currently running on PHP %2$s.', 'origination' ),
 				'5.6',
 				phpversion()
 			)
@@ -59,7 +59,7 @@ function _google_wp_sourcery_load() {
 			'wp_version',
 			sprintf(
 				/* translators: 1: required WordPress version, 2: currently used WordPress version */
-				__( 'Plugin requires at least WordPress version %1$s; your site is currently running on WordPress %2$s.', 'sourcery' ),
+				__( 'Plugin requires at least WordPress version %1$s; your site is currently running on WordPress %2$s.', 'origination' ),
 				'4.9',
 				get_bloginfo( 'version' )
 			)
@@ -72,7 +72,7 @@ function _google_wp_sourcery_load() {
 			sprintf(
 				sprintf(
 					/* translators: %s is composer install command */
-					__( 'Plugin appears to be running from source and requires %s to complete the plugin\'s installation.', 'sourcery' ),
+					__( 'Plugin appears to be running from source and requires %s to complete the plugin\'s installation.', 'origination' ),
 					'<code>composer install</code>'
 				),
 				'4.9',
@@ -82,10 +82,10 @@ function _google_wp_sourcery_load() {
 	}
 
 	if ( ! empty( $load_errors->errors ) ) {
-		$_google_wp_sourcery_load_errors = $load_errors;
+		$_google_wp_origination_load_errors = $load_errors;
 		add_action( 'admin_notices', '_google_wp_show_dependency_errors_admin_notice' );
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			$messages = array( __( 'Sourcery plugin unable to load.', 'sourcery' ) );
+			$messages = array( __( 'Origination plugin unable to load.', 'origination' ) );
 			foreach ( array_keys( $load_errors->errors ) as $error_code ) {
 				$messages[] = $load_errors->get_error_message( $error_code );
 			}
@@ -95,7 +95,7 @@ function _google_wp_sourcery_load() {
 		}
 	} else {
 		require_once __DIR__ . '/vendor/autoload.php';
-		call_user_func( array( 'Google\\WP_Sourcery\\Plugin', 'load' ), WP_SOURCERY_PLUGIN_FILE );
+		call_user_func( array( 'Google\\WP_Origination\\Plugin', 'load' ), WP_ORIGINATION_PLUGIN_FILE );
 	}
 }
 
@@ -103,20 +103,20 @@ function _google_wp_sourcery_load() {
  * Displays an admin notice about why the plugin is unable to load.
  *
  * @since 0.1.0
- * @global \WP_Error $_google_wp_sourcery_load_errors
+ * @global \WP_Error $_google_wp_origination_load_errors
  */
 function _google_wp_show_dependency_errors_admin_notice() {
-	global $_google_wp_sourcery_load_errors;
+	global $_google_wp_origination_load_errors;
 	?>
 	<div class="notice notice-error">
 		<p>
-			<strong><?php esc_html_e( 'Sourcery plugin unable to load.', 'sourcery' ); ?></strong>
-			<?php foreach ( array_keys( $_google_wp_sourcery_load_errors->errors ) as $error_code ) : ?>
-				<?php echo wp_kses_post( $_google_wp_sourcery_load_errors->get_error_message( $error_code ) ); ?>
+			<strong><?php esc_html_e( 'Origination plugin unable to load.', 'origination' ); ?></strong>
+			<?php foreach ( array_keys( $_google_wp_origination_load_errors->errors ) as $error_code ) : ?>
+				<?php echo wp_kses_post( $_google_wp_origination_load_errors->get_error_message( $error_code ) ); ?>
 			<?php endforeach; ?>
 		</p>
 	</div>
 	<?php
 }
 
-_google_wp_sourcery_load();
+_google_wp_origination_load();

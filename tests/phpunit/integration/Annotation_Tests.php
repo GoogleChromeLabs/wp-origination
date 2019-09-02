@@ -1,23 +1,23 @@
 <?php
 /**
- * Class Google\WP_Sourcery\Tests\PHPUnit\Unit\Annotation_Tests
+ * Class Google\WP_Origination\Tests\PHPUnit\Unit\Annotation_Tests
  *
- * @package   Google\WP_Sourcery
- * @link      https://github.com/westonruter/wp-sourcery
+ * @package   Google\WP_Origination
+ * @link      https://github.com/westonruter/wp-origination
  * @license   GPL-2.0-or-later
  * @copyright 2019 Google Inc.
  */
 
-namespace Google\WP_Sourcery\Tests\PHPUnit\Unit;
+namespace Google\WP_Origination\Tests\PHPUnit\Unit;
 
-use Google\WP_Sourcery\Plugin;
-use Google\WP_Sourcery\Tests\PHPUnit\Framework\Integration_Test_Case;
-use Google\WP_Sourcery\Tests\Data\Plugins\Block_Registerer;
-use Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker;
-use Google\WP_Sourcery\Tests\Data\Plugins\Shortcode_Adder;
-use Google\WP_Sourcery\Tests\Data\Plugins\Dependency_Enqueuer;
-use Google\WP_Sourcery\Tests\Data\Plugins\Widget_Registerer;
-use Google\WP_Sourcery\Output_Annotator;
+use Google\WP_Origination\Plugin;
+use Google\WP_Origination\Tests\PHPUnit\Framework\Integration_Test_Case;
+use Google\WP_Origination\Tests\Data\Plugins\Block_Registerer;
+use Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker;
+use Google\WP_Origination\Tests\Data\Plugins\Shortcode_Adder;
+use Google\WP_Origination\Tests\Data\Plugins\Dependency_Enqueuer;
+use Google\WP_Origination\Tests\Data\Plugins\Widget_Registerer;
+use Google\WP_Origination\Output_Annotator;
 
 /**
  * Testing annotations.
@@ -77,7 +77,7 @@ class Annotation_Tests extends Integration_Test_Case {
 		search_theme_directories( true ); // Regenerate the transient.
 		switch_theme( 'child' );
 
-		self::$plugin = new Plugin( WP_SOURCERY_PLUGIN_FILE );
+		self::$plugin = new Plugin( WP_ORIGINATION_PLUGIN_FILE );
 		self::$plugin->init();
 
 		self::$plugin->invocation_watcher->annotatable_filters[] = 'paragraph_contents';
@@ -88,7 +88,7 @@ class Annotation_Tests extends Integration_Test_Case {
 		);
 		self::$plugin->block_recognizer->plugin_folder = substr(
 			dirname( __DIR__ ) . '/data/plugins/',
-			strlen( dirname( dirname( WP_SOURCERY_PLUGIN_FILE ) ) )
+			strlen( dirname( dirname( WP_ORIGINATION_PLUGIN_FILE ) ) )
 		);
 
 		require_once __DIR__ . '/../data/plugins/hook-invoker.php';
@@ -259,7 +259,7 @@ class Annotation_Tests extends Integration_Test_Case {
 	/**
 	 * Ensure that filter annotations do not get written inside of start tags.
 	 *
-	 * @covers \Google\WP_Sourcery\Output_Annotator::finish()
+	 * @covers \Google\WP_Origination\Output_Annotator::finish()
 	 */
 	public function test_annotation_omission_inside_start_tag() {
 		$this->assertEquals( 1, preg_match( '#<html.+>#', self::$output, $matches ) );
@@ -298,7 +298,7 @@ class Annotation_Tests extends Integration_Test_Case {
 			array(
 				'type'     => 'action',
 				'name'     => 'wp_print_footer_scripts',
-				'function' => 'Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\print_document_write',
+				'function' => 'Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker\print_document_write',
 				'children' => [],
 				'priority' => 10,
 				'parent'   => $stack[0]['index'],
@@ -342,12 +342,12 @@ class Annotation_Tests extends Integration_Test_Case {
 
 		$expected = array(
 			[
-				'function'         => 'Google\WP_Sourcery\Tests\Data\Plugins\Dependency_Enqueuer\enqueue_scripts_for_hook_invoker',
+				'function'         => 'Google\WP_Origination\Tests\Data\Plugins\Dependency_Enqueuer\enqueue_scripts_for_hook_invoker',
 				'enqueued_scripts' => [ 'wp-a11y' ],
 				'enqueued_styles'  => [ 'code-editor', 'dependency-enqueuer-ie' ],
 			],
 			[
-				'function'         => 'Google\WP_Sourcery\Tests\Data\Plugins\Dependency_Enqueuer\enqueue_scripts',
+				'function'         => 'Google\WP_Origination\Tests\Data\Plugins\Dependency_Enqueuer\enqueue_scripts',
 				'enqueued_scripts' => [ 'jquery-ui-widget' ],
 			],
 			[
@@ -445,7 +445,7 @@ class Annotation_Tests extends Integration_Test_Case {
 			[
 				'type'           => 'filter',
 				'name'           => 'script_loader_tag',
-				'function'       => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Hook_Invoker\\{closure}',
+				'function'       => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Hook_Invoker\\{closure}',
 				'value_modified' => true,
 				'parent'         => $annotation_stack[1]['index'],
 			],
@@ -463,7 +463,7 @@ class Annotation_Tests extends Integration_Test_Case {
 			[
 				'type'             => 'action',
 				'name'             => 'wp_enqueue_scripts',
-				'function'         => 'Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\enqueue_comment_reply_async',
+				'function'         => 'Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker\enqueue_comment_reply_async',
 				'enqueued_scripts' => [ 'comment-reply' ],
 			],
 			self::$annotations[ $annotation_stack[3]['invocations'][0] ]
@@ -497,9 +497,9 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'           => 'filter',
 				'name'           => 'the_title',
 				'priority'       => 100,
-				'function'       => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Hook_Invoker\\convert_backticks_to_code',
+				'function'       => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Hook_Invoker\\convert_backticks_to_code',
 				'source'         => [
-					'file' => dirname( WP_SOURCERY_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
+					'file' => dirname( WP_ORIGINATION_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
 					'type' => 'plugin',
 					'name' => 'hook-invoker.php',
 				],
@@ -605,9 +605,9 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'           => 'filter',
 				'name'           => 'the_content',
 				'priority'       => 100,
-				'function'       => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Hook_Invoker\\filter_paragraph_contents',
+				'function'       => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Hook_Invoker\\filter_paragraph_contents',
 				'source'         => [
-					'file' => dirname( WP_SOURCERY_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
+					'file' => dirname( WP_ORIGINATION_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
 					'type' => 'plugin',
 					'name' => 'hook-invoker.php',
 				],
@@ -628,9 +628,9 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'           => 'filter',
 				'name'           => 'paragraph_contents',
 				'priority'       => 13,
-				'function'       => 'Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\prepend_paragraph_anchor',
+				'function'       => 'Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker\prepend_paragraph_anchor',
 				'source'         => [
-					'file' => dirname( WP_SOURCERY_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
+					'file' => dirname( WP_ORIGINATION_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
 					'type' => 'plugin',
 					'name' => 'hook-invoker.php',
 				],
@@ -645,9 +645,9 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'           => 'filter',
 				'name'           => 'paragraph_contents',
 				'priority'       => 12,
-				'function'       => 'Google\WP_Sourcery\Tests\Data\Plugins\Hook_Invoker\append_paragraph_word_count',
+				'function'       => 'Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker\append_paragraph_word_count',
 				'source'         => [
-					'file' => dirname( WP_SOURCERY_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
+					'file' => dirname( WP_ORIGINATION_PLUGIN_FILE ) . '/tests/phpunit/data/plugins/hook-invoker.php',
 					'type' => 'plugin',
 					'name' => 'hook-invoker.php',
 				],
@@ -806,7 +806,7 @@ class Annotation_Tests extends Integration_Test_Case {
 					'styles'   => 'common',
 					'scripts'  => 'wp-api-fetch,colorpicker',
 				],
-				'function'         => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Shortcode_Adder\\passthru_shortcode',
+				'function'         => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Shortcode_Adder\\passthru_shortcode',
 				'source'           =>
 					[
 						'file' => dirname( __DIR__ ) . '/data/plugins/shortcode-adder.php',
@@ -873,7 +873,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'dynamic'         => true,
 				'attributes'      => [ 'transform' => 'strtoupper' ],
 				'enqueued_styles' => [ Block_Registerer\TEXT_TRANSFORM_STYLE_HANDLE ],
-				'function'        => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Block_Registerer\\render_text_transform_block',
+				'function'        => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Block_Registerer\\render_text_transform_block',
 				'source'          => [
 					'file' => dirname( __DIR__ ) . '/data/plugins/block-registerer.php',
 					'type' => 'plugin',
@@ -898,7 +898,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'name'       => Block_Registerer\CURRENT_TIME_BLOCK_NAME,
 				'dynamic'    => true,
 				'attributes' => [ 'format' => 'c' ],
-				'function'   => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Block_Registerer\\render_current_time_block',
+				'function'   => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Block_Registerer\\render_current_time_block',
 				'source'     => [
 					'file' => dirname( __DIR__ ) . '/data/plugins/block-registerer.php',
 					'type' => 'plugin',
@@ -1078,7 +1078,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'number'   => null,
 				'id'       => Widget_Registerer\SINGLE_WIDGET_ID,
 				'name'     => 'Single',
-				'function' => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Widget_Registerer\\display_single_widget',
+				'function' => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Widget_Registerer\\display_single_widget',
 				'source'   => [
 					'file' => dirname( __DIR__ ) . '/data/plugins/widget-registerer.php',
 					'type' => 'plugin',
@@ -1092,7 +1092,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'number'   => 2,
 				'id'       => Widget_Registerer\MULTI_WIDGET_ID_BASE . '-2',
 				'name'     => 'Multi',
-				'function' => 'Google\\WP_Sourcery\\Tests\\Data\\Plugins\\Widget_Registerer\\Multi_Widget::display_callback',
+				'function' => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Widget_Registerer\\Multi_Widget::display_callback',
 				'source'   => [
 					'file' => dirname( __DIR__ ) . '/data/plugins/widget-registerer.php',
 					'type' => 'plugin',
@@ -1133,7 +1133,7 @@ class Annotation_Tests extends Integration_Test_Case {
 	/**
 	 * Test that wrapped callbacks for registered widgets can be introspected with array accessors.
 	 *
-	 * @see \Google\WP_Sourcery\Tests\Data\Plugins\Widget_Registerer\add_option_name_to_before_widget()
+	 * @see \Google\WP_Origination\Tests\Data\Plugins\Widget_Registerer\add_option_name_to_before_widget()
 	 */
 	public function test_introspectable_registered_widget_wrapped_callbacks() {
 		/**
@@ -1151,7 +1151,7 @@ class Annotation_Tests extends Integration_Test_Case {
 	/**
 	 * Test proper sourcing of hooks in parent and child themes.
 	 *
-	 * @covers \Google\WP_Sourcery\File_Locator::identify()
+	 * @covers \Google\WP_Origination\File_Locator::identify()
 	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_footer_has_theme_credits() {
@@ -1164,7 +1164,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'     => 'action',
 				'name'     => 'wp_footer',
 				'priority' => 10,
-				'function' => 'Google\WP_Sourcery\Tests\Data\Themes\Parent\add_parent_theme_credits',
+				'function' => 'Google\WP_Origination\Tests\Data\Themes\Parent\add_parent_theme_credits',
 				'source'   => [
 					'file' => dirname( __DIR__ ) . '/data/themes/parent/functions.php',
 					'type' => 'theme',
@@ -1184,7 +1184,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'     => 'action',
 				'name'     => 'wp_footer',
 				'priority' => 10,
-				'function' => 'Google\WP_Sourcery\Tests\Data\Themes\Child\add_child_theme_credits',
+				'function' => 'Google\WP_Origination\Tests\Data\Themes\Child\add_child_theme_credits',
 				'source'   => [
 					'file' => dirname( __DIR__ ) . '/data/themes/child/functions.php',
 					'type' => 'theme',
@@ -1200,7 +1200,7 @@ class Annotation_Tests extends Integration_Test_Case {
 	/**
 	 * Test that styles enqueued by themes have expected annotations.
 	 *
-	 * @covers \Google\WP_Sourcery\File_Locator::identify()
+	 * @covers \Google\WP_Origination\File_Locator::identify()
 	 * @throws \Exception If comments are found to be malformed.
 	 */
 	public function test_theme_enqueued_styles() {
@@ -1241,7 +1241,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'            => 'action',
 				'name'            => 'wp_enqueue_scripts',
 				'priority'        => 10,
-				'function'        => 'Google\WP_Sourcery\Tests\Data\Themes\Child\enqueue_scripts',
+				'function'        => 'Google\WP_Origination\Tests\Data\Themes\Child\enqueue_scripts',
 				'enqueued_styles' => [ 'child-style' ],
 				'source'          => [
 					'file' => dirname( __DIR__ ) . '/data/themes/child/functions.php',
@@ -1256,7 +1256,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'            => 'action',
 				'name'            => 'wp_enqueue_scripts',
 				'priority'        => 10,
-				'function'        => 'Google\WP_Sourcery\Tests\Data\Themes\Parent\enqueue_scripts',
+				'function'        => 'Google\WP_Origination\Tests\Data\Themes\Parent\enqueue_scripts',
 				'enqueued_styles' => [ 'parent-style' ],
 				'source'          => [
 					'file' => dirname( __DIR__ ) . '/data/themes/parent/functions.php',
@@ -1328,7 +1328,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'type'             => 'action',
 				'name'             => 'wp_enqueue_scripts',
 				'priority'         => 10,
-				'function'         => 'Google\WP_Sourcery\Tests\Data\Themes\Parent\enqueue_scripts',
+				'function'         => 'Google\WP_Origination\Tests\Data\Themes\Parent\enqueue_scripts',
 				'enqueued_scripts' => [ 'parent-navigation' ],
 				'source'           => [
 					'file' => dirname( __DIR__ ) . '/data/themes/parent/functions.php',

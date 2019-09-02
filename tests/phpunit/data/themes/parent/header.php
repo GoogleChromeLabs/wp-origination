@@ -2,7 +2,7 @@
 /**
  * The header for our theme
  *
- * @package Google\WP_Sourcery
+ * @package Google\WP_Origination
  */
 
 ?>
