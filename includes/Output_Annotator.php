@@ -493,10 +493,10 @@ class Output_Annotator {
 	 * @return string Hydrated annotation.
 	 */
 	protected function hydrate_invocation_placeholder_annotation( $index, $closing ) {
-		if ( ! isset( $this->invocation_watcher->invocations[ $index ] ) ) {
+		$invocation = $this->invocation_watcher->get_invocation_by_index( $index );
+		if ( ! $invocation ) {
 			return '';
 		}
-		$invocation = $this->invocation_watcher->invocations[ $index ];
 
 		$data = compact( 'index' );
 		if ( ! $closing ) {
@@ -672,7 +672,7 @@ class Output_Annotator {
 			$type = $match[ $type_pos ][0];
 			if ( self::INVOCATION_ANNOTATION_PLACEHOLDER_TAG === $type ) {
 				$index = $match[ $index_pos ][0];
-				$this->invocation_watcher->invocations[ $index ]->annotated = true;
+				$this->invocation_watcher->get_invocation_by_index( $index )->annotated = true;
 			}
 		}
 
@@ -702,7 +702,7 @@ class Output_Annotator {
 		}
 
 		// Finally, amend the response with all remaining invocations that have not been annotated. These do not wrap any output.
-		foreach ( $this->invocation_watcher->invocations as $invocation ) {
+		foreach ( $this->invocation_watcher->get_invocations() as $invocation ) {
 			if ( ! $invocation->annotated ) {
 				$invocation->annotated = true;
 

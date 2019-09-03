@@ -80,7 +80,7 @@ class Invocation_Watcher {
 	 *
 	 * @var Invocation[]
 	 */
-	public $invocations = [];
+	protected $invocations = [];
 
 	/**
 	 * Filters that can be annotated.
@@ -160,6 +160,30 @@ class Invocation_Watcher {
 	public function push_invocation_stack( Invocation $invocation ) {
 		$this->invocations[ $invocation->index ] = $invocation;
 		return array_push( $this->invocation_stack, $invocation );
+	}
+
+	/**
+	 * Get an invocation by its index.
+	 *
+	 * @param int $index Invocation index.
+	 * @return Invocation|null Invocation with the given ID or null if not defined.
+	 */
+	public function get_invocation_by_index( $index ) {
+		if ( isset( $this->invocations[ $index ] ) ) {
+			return $this->invocations[ $index ];
+		}
+		return null;
+	}
+
+	/**
+	 * Get invocations.
+	 *
+	 * @yield Invocation
+	 */
+	public function get_invocations() {
+		foreach ( $this->invocations as $index => $invocation ) {
+			yield $index => $invocation;
+		}
 	}
 
 	/**

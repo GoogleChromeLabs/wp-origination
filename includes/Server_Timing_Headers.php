@@ -37,7 +37,7 @@ class Server_Timing_Headers {
 	public function send() {
 		$entity_timings = [];
 
-		foreach ( $this->invocation_watcher->invocations as $invocation ) {
+		foreach ( $this->invocation_watcher->get_invocations() as $invocation ) {
 			$hook_duration = $invocation->duration( true );
 
 			$file_location = $invocation->file_location();
