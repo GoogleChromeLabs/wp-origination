@@ -205,24 +205,20 @@ class Output_Annotator {
 	/**
 	 * Print annotation placeholder before an printing invoked callback.
 	 *
-	 * @todo This should be renamed to get_before_invocation_placeholder_annotation()?
-	 *
 	 * @param Invocation $invocation Invocation.
 	 * @return string Before placeholder annotation HTML comment.
 	 */
-	public function get_before_annotation( Invocation $invocation ) {
+	public function get_before_invocation_placeholder_annotation( Invocation $invocation ) {
 		return sprintf( '<!-- %s %d -->', static::INVOCATION_ANNOTATION_PLACEHOLDER_TAG, $invocation->index );
 	}
 
 	/**
 	 * Print annotation placeholder after an printing invoked callback.
 	 *
-	 * @todo This should be renamed to get_after_invocation_placeholder_annotation()?
-	 *
 	 * @param Invocation $invocation Invocation.
 	 * @return string After placeholder annotation HTML comment.
 	 */
-	public function get_after_annotation( Invocation $invocation ) {
+	public function get_after_invocation_placeholder_annotation( Invocation $invocation ) {
 		return sprintf( '<!-- /%s %d -->', static::INVOCATION_ANNOTATION_PLACEHOLDER_TAG, $invocation->index );
 	}
 
@@ -638,7 +634,7 @@ class Output_Annotator {
 				break;
 			}
 			if ( $invocation->can_output() ) {
-				$buffer .= $this->get_after_annotation( $invocation );
+				$buffer .= $this->get_after_invocation_placeholder_annotation( $invocation );
 			}
 		}
 

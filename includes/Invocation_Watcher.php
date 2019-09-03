@@ -258,7 +258,7 @@ class Invocation_Watcher {
 
 		// @todo There needs to be a callback to be given an $invocation and for us to determine whether or not to render given $args.
 		if ( $invocation->can_output() ) {
-			echo $this->output_annotator->get_before_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo $this->output_annotator->get_before_invocation_placeholder_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 	}
 
@@ -298,7 +298,7 @@ class Invocation_Watcher {
 		// @todo There needs to be a callback to be given an $invocation and for us to determine whether or not to render given $args.
 		// @todo $this->output_annotator->should_annotate( $invocation, $args )
 		if ( $invocation->can_output() ) {
-			echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo $this->output_annotator->get_after_invocation_placeholder_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 	}
 
@@ -320,7 +320,7 @@ class Invocation_Watcher {
 			assert( ! $invocation->is_action() );
 			assert( $name === $invocation->name );
 			if ( $invocation->value_modified && in_array( $name, $this->annotatable_filters, true ) ) {
-				$value = $this->output_annotator->get_before_annotation( $invocation ) . $value . $this->output_annotator->get_after_annotation( $invocation );
+				$value = $this->output_annotator->get_before_invocation_placeholder_annotation( $invocation ) . $value . $this->output_annotator->get_after_invocation_placeholder_annotation( $invocation );
 			}
 		}
 		return $value;
@@ -363,7 +363,7 @@ class Invocation_Watcher {
 				},
 				function ( Shortcode_Invocation $invocation, $func_args ) {
 					$return = call_user_func_array( $invocation->function, $func_args );
-					return $this->output_annotator->get_before_annotation( $invocation ) . $return . $this->output_annotator->get_after_annotation( $invocation );
+					return $this->output_annotator->get_before_invocation_placeholder_annotation( $invocation ) . $return . $this->output_annotator->get_after_invocation_placeholder_annotation( $invocation );
 				}
 			);
 		}
@@ -409,7 +409,7 @@ class Invocation_Watcher {
 				},
 				function ( Block_Invocation $invocation, $func_args ) {
 					$return = call_user_func_array( $invocation->function, $func_args );
-					return $this->output_annotator->get_before_annotation( $invocation ) . $return . $this->output_annotator->get_after_annotation( $invocation );
+					return $this->output_annotator->get_before_invocation_placeholder_annotation( $invocation ) . $return . $this->output_annotator->get_after_invocation_placeholder_annotation( $invocation );
 				}
 			);
 		}
@@ -460,9 +460,9 @@ class Invocation_Watcher {
 				},
 				function ( Widget_Invocation $invocation, $func_args ) use ( $function ) {
 					// @todo This could also augment the $invocation with the widget $instance data.
-					echo $this->output_annotator->get_before_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo $this->output_annotator->get_before_invocation_placeholder_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					$return = call_user_func_array( $function, $func_args );
-					echo $this->output_annotator->get_after_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo $this->output_annotator->get_after_invocation_placeholder_annotation( $invocation ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					return $return;
 				}
 			);
