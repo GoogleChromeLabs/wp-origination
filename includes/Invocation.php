@@ -344,7 +344,7 @@ class Invocation {
 	 * @param bool $own Whether to only return query indices for this invocation and not the children.
 	 * @return array Query indices.
 	 */
-	public function query_indices( $own = true ) {
+	public function get_query_indices( $own = true ) {
 		$after_query_index = $this->get_after_query_index();
 
 		if ( $this->get_before_query_index() === $after_query_index ) {
@@ -362,7 +362,7 @@ class Invocation {
 			$query_indices,
 			...array_map(
 				function ( Invocation $invocation ) {
-					return $invocation->query_indices( false );
+					return $invocation->get_query_indices( false );
 				},
 				$this->children
 			)
@@ -384,7 +384,7 @@ class Invocation {
 				function( $query_index ) {
 					return $this->database->get_query_by_index( $query_index );
 				},
-				$this->query_indices( $own )
+				$this->get_query_indices( $own )
 			)
 		);
 	}

@@ -103,7 +103,7 @@ class Calling_Reflection {
 	 * are interested in the subclass file.
 	 *
 	 * @see ReflectionMethod::getDeclaringClass()
-	 * @return string
+	 * @return string File name where called method is defined.
 	 */
 	public function get_file_name() {
 		if ( $this->class_reflection instanceof ReflectionClass ) {
