@@ -93,14 +93,11 @@ class Wrapped_Callback implements \ArrayAccess {
 			$parent->children[] = $invocation;
 		}
 
-		// @todo This should be a method, like push_invocation().
-		$this->invocation_watcher->invocation_stack[] = $invocation;
-
-		$this->invocation_watcher->invocations[ $invocation->index ] = $invocation;
+		$this->invocation_watcher->push_invocation_stack( $invocation );
 
 		$return = call_user_func( $this->invocation_invoker, $invocation, func_get_args() );
 
-		array_pop( $this->invocation_watcher->invocation_stack );
+		$this->invocation_watcher->pop_invocation_stack();
 		$invocation->finalize();
 
 		return $return;

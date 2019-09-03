@@ -58,11 +58,11 @@ class Invocation_Watcher {
 	public $dependencies;
 
 	/**
-	 * Hook stack.
+	 * Invocation stack.
 	 *
 	 * @var Invocation[]
 	 */
-	public $invocation_stack = [];
+	protected $invocation_stack = [];
 
 	/**
 	 * Stack of pending hook invocations.
@@ -152,6 +152,26 @@ class Invocation_Watcher {
 	}
 
 	/**
+	 * Push new invocation onto the stack.
+	 *
+	 * @param Invocation $invocation Pushed invocation.
+	 * @return int The number of elements in the stack.
+	 */
+	public function push_invocation_stack( Invocation $invocation ) {
+		$this->invocations[ $invocation->index ] = $invocation;
+		return array_push( $this->invocation_stack, $invocation );
+	}
+
+	/**
+	 * Pop the top invocation off the stack.
+	 *
+	 * @return Invocation Popped invocation.
+	 */
+	public function pop_invocation_stack() {
+		return array_pop( $this->invocation_stack );
+	}
+
+	/**
 	 * Get the parent invocation based on the stack.
 	 *
 	 * @return Invocation|null Parent invocation.
@@ -210,9 +230,7 @@ class Invocation_Watcher {
 			$parent->children[] = $invocation;
 		}
 
-		$this->invocation_stack[] = $invocation;
-
-		$this->invocations[ $invocation->index ] = $invocation;
+		$this->push_invocation_stack( $invocation );
 
 		// @todo There needs to be a callback to be given an $invocation and for us to determine whether or not to render given $args.
 		if ( $invocation->can_output() ) {
@@ -239,7 +257,7 @@ class Invocation_Watcher {
 	 * }
 	 */
 	public function after_each_hook_callback( $args ) {
-		$invocation = array_pop( $this->invocation_stack );
+		$invocation = $this->pop_invocation_stack();
 		if ( ! $invocation ) {
 			throw new \Exception( 'Stack was empty' );
 		}

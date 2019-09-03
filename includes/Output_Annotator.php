@@ -632,8 +632,11 @@ class Output_Annotator {
 		$this->show_queries = call_user_func( $this->can_show_queries_callback );
 
 		// Make sure that all open invocations get closed, which can happen when an exit is done in a hook callback.
-		while ( ! empty( $this->invocation_watcher->invocation_stack ) ) {
-			$invocation = array_pop( $this->invocation_watcher->invocation_stack );
+		while ( true ) {
+			$invocation = $this->invocation_watcher->pop_invocation_stack();
+			if ( ! $invocation ) {
+				break;
+			}
 			if ( $invocation->can_output() ) {
 				$buffer .= $this->get_after_annotation( $invocation );
 			}
