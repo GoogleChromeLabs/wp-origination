@@ -2,7 +2,7 @@
   "name": "google/wp-origination",
   "description": "WordPress plugin to determine the source of where things come from in WordPress whether slow code, inefficient queries, or bad markup.",
   "version": "0.1.0",
-  "license": "GPL-2.0-or-later",
+  "license": "Apache-2.0",
   "type": "wordpress-plugin",
   "keywords": [
     "wordpress",

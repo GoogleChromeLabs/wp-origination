@@ -1,8 +1,8 @@
 /**
  * For a given DOM node, obtain the stack trace of annotations to reveal the sources for where the node came from.
  *
- * @license   GPL-2.0-or-later
- * @copyright 2019 Google Inc.
+ * @license   https://www.apache.org/licenses/LICENSE-2.0 Apache License 2.0
+ * @copyright 2019 Google LLC
  *
  * @param {Node} node DOM Node.
  * @returns {Object[]} Annotations.

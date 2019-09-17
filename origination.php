@@ -5,8 +5,8 @@
  * @package   Google\WP_Origination
  * @author    Weston Ruter
  * @link      https://github.com/westonruter/wp-origination
- * @license   GPL-2.0-or-later
- * @copyright 2019 Google Inc.
+ * @license   https://www.apache.org/licenses/LICENSE-2.0 Apache License 2.0
+ * @copyright 2019 Google LLC
  *
  * @wordpress-plugin
  * Plugin Name: Origination
@@ -15,8 +15,8 @@
  * Version:     0.1.0-alpha
  * Author:      Weston Ruter
  * Author URI:  https://weston.ruter.net/
- * License:     GNU General Public License v2 (or later)
- * License URI: http://www.gnu.org/licenses/gpl-2.0.html
+ * License:     Apache License 2.0
+ * License URI: https://www.apache.org/licenses/LICENSE-2.0
  * Text Domain: origination
  */
 

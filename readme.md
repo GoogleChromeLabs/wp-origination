@@ -8,7 +8,7 @@ Determine the source of where things come from in WordPress whether slow code, i
 **Requires at least:** 4.9  
 **Tested up to:** 5.1-alpha  
 **Stable tag:** trunk (master)  
-**License:** [GNU General Public License v2 (or later)](https://www.gnu.org/licenses/gpl-2.0.html)  
+**License:** [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)  
 **Requires PHP:** 5.6  
 
 [![Built with Grunt](https://cdn.gruntjs.com/builtwith.svg)](http://gruntjs.com) 
