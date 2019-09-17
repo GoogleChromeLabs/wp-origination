@@ -1,6 +1,6 @@
 # Origination
 
-Determine the source of where things come from in WordPress whether slow code, inefficient queries, or bad markup.
+Determine the origin of where things come from in WordPress whether slow code, inefficient queries, or bad markup.
 
 **Contributors:** [westonruter](https://profiles.wordpress.org/westonruter)  
 **Tags:** [performance](https://wordpress.org/plugins/tags/performance)  
@@ -12,7 +12,7 @@ Determine the source of where things come from in WordPress whether slow code, i
 
 ## Description ##
 
-There are a lot of plugins and themes out there in the WordPress ecosystem. Many of them are not written with performance in mind, either in the database queries they make or the markup they add to the frontend. Also, because themes and plugins can hook into any part of the WordPress execution lifecycle it is difficult to identify which is responsible for a performance problem. This is what the Origination plugin assists with: it identifies the source for where things come from in WordPress whether slow code, inefficient queries, or bad markup. ("Origination" is a pun on "sorcery" and "source".)
+There are a lot of plugins and themes out there in the WordPress ecosystem. Many of them are not written with performance in mind, either in the database queries they make or the markup they add to the frontend. Also, because themes and plugins can hook into any part of the WordPress execution lifecycle it is difficult to identify which is responsible for a performance problem. This is what the Origination plugin assists with: it identifies the origin for where things come from in WordPress whether slow code, inefficient queries, or bad markup.
 
 Most of the ideas in this plugin were first prototyped in the [AMP plugin](https://github.com/ampproject/amp-wp). It includes a sanitizer to remove any markup that is not valid, but it also needs to inform the site owner of where the offending markup came from in the first place. In order to provide this information, the AMP plugin adds wrappers around actions, filters, blocks, shortcodes, widgets, and embeds to annotate the output with HTML comments both preceding and following, similar to Gutenberg block comments. With these HTML comment annotations in place, when invalid AMP markup is encountered, the source(s) responsible for it can be determined by just looking all of the annotation comments that are open.
 
