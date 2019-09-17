@@ -1,10 +1,10 @@
 {
  "name": "wp-origination",
  "title": "WP origination",
- "homepage": "https://github.com/westonruter/wp-origination",
+ "homepage": "https://github.com/GoogleChromeLabs/wp-origination",
  "repository": {
   "type": "git",
-  "url": "https://github.com/westonruter/wp-origination.git"
+  "url": "https://github.com/GoogleChromeLabs/wp-origination.git"
  },
  "license": "Apache-2.0",
  "private": true,

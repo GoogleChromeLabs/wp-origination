@@ -8,7 +8,7 @@
     "wordpress",
     "performance"
   ],
-  "homepage": "https://github.com/westonruter/wp-origination",
+  "homepage": "https://github.com/GoogleChromeLabs/wp-origination",
   "authors": [
     {
       "name": "Weston Ruter",
@@ -17,7 +17,7 @@
     }
   ],
   "support": {
-    "issues": "https://github.com/westonruter/wp-origination/issues"
+    "issues": "https://github.com/GoogleChromeLabs/wp-origination/issues"
   },
   "config": {
     "platform": {

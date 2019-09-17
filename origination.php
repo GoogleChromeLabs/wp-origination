@@ -4,13 +4,13 @@
  *
  * @package   Google\WP_Origination
  * @author    Weston Ruter
- * @link      https://github.com/westonruter/wp-origination
+ * @link      https://github.com/GoogleChromeLabs/wp-origination
  * @license   https://www.apache.org/licenses/LICENSE-2.0 Apache License 2.0
  * @copyright 2019 Google LLC
  *
  * @wordpress-plugin
  * Plugin Name: Origination
- * Plugin URI:  https://github.com/westonruter/wp-origination
+ * Plugin URI:  https://github.com/GoogleChromeLabs/wp-origination
  * Description: Determine the source of where things come from in WordPress whether slow code, inefficient queries, or bad markup.
  * Version:     0.1.0-alpha
  * Author:      Weston Ruter

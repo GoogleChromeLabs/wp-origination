@@ -45,7 +45,7 @@ Then access a site frontend with `?origination` in the URL. For example, `https:
 &lt;!-- /origination {"index":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} --&gt;
 </code></pre>
 
-With such annotation comments in place, to determine annotation stack for a given DOM node import [identify-node-sources.js](https://github.com/westonruter/wp-origination/blob/master/js/identify-node-sources.js) you then select a node in DevTools and then paste the following JS code into the console (see second screenshot):
+With such annotation comments in place, to determine annotation stack for a given DOM node import [identify-node-sources.js](https://github.com/GoogleChromeLabs/wp-origination/blob/master/js/identify-node-sources.js) you then select a node in DevTools and then paste the following JS code into the console (see second screenshot):
 
 ```js
 (( node ) => {
@@ -84,7 +84,7 @@ While this is also sent via `Server-Timing` headers, you can determine the amoun
 })();
 ```
 ### Contributing ###
-You can [contribute](https://github.com/westonruter/wp-origination/blob/master/contributing.md) to this plugin via its [GitHub project](https://github.com/westonruter/wp-origination).
+You can [contribute](https://github.com/GoogleChromeLabs/wp-origination/blob/master/contributing.md) to this plugin via its [GitHub project](https://github.com/GoogleChromeLabs/wp-origination).
 
 This is not an officially supported Google product.
 

@@ -6,7 +6,7 @@ Bug reports, patches, translations and any kind of contributions are very welcom
 
 When writing a bug report...
 
-* [open an issue](https://github.com/westonruter/wp-origination/issues/new)
+* [open an issue](https://github.com/GoogleChromeLabs/wp-origination/issues/new)
 * follow the guidelines specified in the issue template
 
 We will take a look at your issue and either assign it keywords and a milestone or get back to you if there are open questions.
@@ -22,7 +22,7 @@ When contributing code...
     * make sure you document the code properly
     * test your code with the constant `WP_DEBUG` enabled
 * when committing, in addition to a note about the fix, please reference your issue (if present)
-* push the changes to your fork and [submit a pull request](https://github.com/westonruter/wp-origination/compare) to the `master` branch
+* push the changes to your fork and [submit a pull request](https://github.com/GoogleChromeLabs/wp-origination/compare) to the `master` branch
 * follow the guidelines specified in the pull request template
 
 After that we will review the pull-request as soon as possible and either merge it, make suggestions on improvements or ask you for further details about your implementation.
