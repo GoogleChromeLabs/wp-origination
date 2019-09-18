@@ -13,6 +13,7 @@
  */
 
 // phpcs:disable Generic.Files.OneClassPerFile.MultipleFound
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
 
 namespace Google\WP_Origination\Tests\Data\Plugins\Hook_Invoker;
 

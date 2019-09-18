@@ -1110,12 +1110,11 @@ class Annotation_Tests extends Integration_Test_Case {
 				'id'       => 'search-3',
 				'name'     => 'Search',
 				'function' => 'WP_Widget_Search::display_callback',
-				'source'   =>
-					array(
-						'file' => ABSPATH . 'wp-includes/widgets/class-wp-widget-search.php',
-						'type' => 'core',
-						'name' => 'wp-includes',
-					),
+				'source'   => [
+					'file' => ABSPATH . 'wp-includes/widgets/class-wp-widget-search.php',
+					'type' => 'core',
+					'name' => 'wp-includes',
+				],
 				'parent'   => null,
 				'instance' => [
 					'title' => 'Not Google!',

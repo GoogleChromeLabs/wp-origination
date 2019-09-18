@@ -8,21 +8,41 @@
 
 	<exclude-pattern type="relative">^/vendor/*</exclude-pattern>
 
-	<arg name="colors"/>
-	<arg value="vs"/>
+	<arg value="s"/>
+	<arg name="extensions" value="php"/>
+
+	<!-- Strip the filepaths down to the relevant bit. -->
+	<arg name="basepath" value="./"/>
+
+	<!-- Check up to 20 files simultaneously. -->
+	<arg name="parallel" value="20"/>
 
 	<rule ref="WordPress">
-		<exclude name="WordPress.VIP.RestrictedFunctions"/>
 		<exclude name="WordPress.Files.FileName"/>
 	</rule>
 
 	<rule ref="WordPress.NamingConventions.ValidVariableName">
 		<properties>
-			<property name="customPropertiesWhitelist" value="childNodes,tagName,textContent,parentNode,nodeType,nodeName,nextSibling,firstChild,lastChild,nodeValue,DEFAULT_ARGS,documentElement,removeChild,ownerDocument,DEFAULT_WIDTH,DEFAULT_HEIGHT" />
+			<property name="customPropertiesWhitelist" type="array">
+				<element value="childNodes"/>
+				<element value="tagName"/>
+				<element value="textContent"/>
+				<element value="parentNode"/>
+				<element value="nodeType"/>
+				<element value="nodeName"/>
+				<element value="nextSibling"/>
+				<element value="previousSibling"/>
+				<element value="firstChild"/>
+				<element value="lastChild"/>
+				<element value="nodeValue"/>
+				<element value="documentElement"/>
+				<element value="removeChild"/>
+				<element value="ownerDocument"/>
+			</property>
 		</properties>
 	</rule>
 
-    <rule ref="PHPCompatibilityWP">
+    <rule ref="PHPCompatibility">
 		<include-pattern>*\.php$</include-pattern>
 	</rule>
 	<rule ref="Generic.Commenting.DocComment">

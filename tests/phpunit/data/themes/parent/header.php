@@ -1,6 +1,6 @@
 <?php
 /**
- * The header for our theme
+ * The header for our theme.
  *
  * @package Google\WP_Origination
  */

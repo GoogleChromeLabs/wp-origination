@@ -1,11 +1,14 @@
 <?php
 /**
- * The main template file
+ * The main template file.
  *
  * @package Google\WP_Origination
  */
 
-require __DIR__ . '/header.php'; // Can't use get_header() because TEMPLATEPATH can't be redefined.
+/**
+ * Can't use get_header() because TEMPLATEPATH can't be redefined.
+ */
+require __DIR__ . '/header.php';
 
 ?>
 <?php while ( have_posts() ) : ?>
@@ -22,5 +25,14 @@ require __DIR__ . '/header.php'; // Can't use get_header() because TEMPLATEPATH 
 <?php endwhile; ?>
 <?php wp_reset_postdata(); ?>
 
-<?php require __DIR__ . '/sidebar.php';  // Can't use get_sidebar() because TEMPLATEPATH can't be redefined. ?>
-<?php require __DIR__ . '/footer.php';  // Can't use get_footer() because TEMPLATEPATH can't be redefined. ?>
+<?php
+
+/**
+ * Can't use get_sidebar() because TEMPLATEPATH can't be redefined.
+ */
+require __DIR__ . '/sidebar.php';
+
+/**
+ * Can't use get_footer() because TEMPLATEPATH can't be redefined.
+ */
+require __DIR__ . '/footer.php';
