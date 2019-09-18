@@ -38,9 +38,9 @@ Then access a site frontend with `?origination` in the URL. For example, `https:
         "type": "core"
     }
 }
---&gt;
-&lt;link rel="canonical" href="https://example.com/2019/08/07/foo/" /&gt;
-&lt;!-- /origination {"index":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} --&gt;
+-->
+<link rel="canonical" href="https://example.com/2019/08/07/foo/" />
+<!-- /origination {"index":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} -->
 ```
 
 With such annotation comments in place, to determine annotation stack for a given DOM node import [identify-node-sources.js](https://github.com/GoogleChromeLabs/wp-origination/blob/master/js/identify-node-sources.js) you then select a node in DevTools and then paste the following JS code into the console (see second screenshot):
