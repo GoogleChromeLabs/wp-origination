@@ -2,6 +2,8 @@
 
 _Determine the origin of where things come from in WordPress whether slow code, inefficient queries, or bad markup._
 
+[![Build Status](https://api.travis-ci.org/GoogleChromeLabs/wp-origination.svg?branch=master)](https://travis-ci.org/GoogleChromeLabs/wp-origination)
+
 <!-- WP_README_DESCRIPTION -->
 
 There are a lot of plugins and themes in the WordPress ecosystem. Many of them are not written with performance in mind, either in the database queries they make or the markup they add to the frontend. Also, because themes and plugins can hook into any part of the WordPress execution lifecycle it is difficult to identify which is responsible for a performance problem. This is what the Origination plugin assists with: it identifies the origin for where things come from in WordPress whether slow code, inefficient queries, or bad markup.
