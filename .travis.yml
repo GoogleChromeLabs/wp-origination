@@ -1,0 +1,59 @@
+sudo: false
+
+language: php
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+    - $HOME/.jest-cache
+    - $HOME/.npm
+    - $HOME/.nvm/.cache
+
+matrix:
+  include:
+    - php: 7.3
+      env: UNIT=1 PHPLINT=1 PHPCS=1
+    - php: 7.0
+      env: UNIT=1 PHPLINT=1
+    - php: 5.6
+      env: UNIT=1 PHPLINT=1
+    - php: nightly
+      env: UNIT=1
+  allow_failures:
+    - php: nightly
+      env: UNIT=1
+
+before_install:
+  - |
+    case "$TRAVIS_PHP_VERSION" in
+      5.6)
+        composer global require "phpunit/phpunit:^4"
+        composer install
+        PHPUNIT_BIN="phpunit"
+        ;;
+      *)
+        composer install
+        PHPUNIT_BIN="vendor/bin/phpunit"
+        ;;
+    esac
+  - npm install
+
+before_script:
+  - phpenv rehash
+
+script:
+  - |
+    if [[ "$PHPLINT" == "1" ]]; then
+      composer run-script phplint
+    fi
+  - |
+    if [[ "$PHPCS" == "1" ]]; then
+      composer run-script phpcs
+    fi
+  - |
+    if [[ "$UNIT" == "1" ]]; then
+      $PHPUNIT_BIN
+    fi
+
+notifications:
+  email: false

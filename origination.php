@@ -66,6 +66,7 @@ function _google_wp_origination_load() {
 		);
 	}
 
+	// DIST_REMOVED.
 	if ( ! file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 		$load_errors->add(
 			'composer_install',

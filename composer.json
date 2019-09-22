@@ -51,9 +51,10 @@
       "@php-l",
       "phpcs"
     ],
-    "php-l": "git ls-files -z -- '*.php' | xargs -0 -n 1 -P 4 php -l",
+    "phplint": "git ls-files -z -- '*.php' | xargs -0 -n 1 -P 4 php -l",
     "phpcs": "phpcs",
     "phpcbf": "phpcbf",
-    "test": "phpunit --config=phpunit.xml.dist"
+    "test": "phpunit --config=phpunit.xml.dist",
+    "package" : "php bin/create-wordpress-plugin-zip.php"
   }
 }

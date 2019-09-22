@@ -1,22 +1,16 @@
 # Origination
 
-Determine the origin of where things come from in WordPress whether slow code, inefficient queries, or bad markup.
+_Determine the origin of where things come from in WordPress whether slow code, inefficient queries, or bad markup._
 
-**Contributors:** [westonruter](https://profiles.wordpress.org/westonruter)  
-**Tags:** [performance](https://wordpress.org/plugins/tags/performance)  
-**Requires at least:** 4.9  
-**Tested up to:** 5.3-alpha  
-**Stable tag:** trunk (master)  
-**License:** [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)  
-**Requires PHP:** 5.6  
+<!-- WP_README_DESCRIPTION -->
 
-## Description ##
-
-There are a lot of plugins and themes out there in the WordPress ecosystem. Many of them are not written with performance in mind, either in the database queries they make or the markup they add to the frontend. Also, because themes and plugins can hook into any part of the WordPress execution lifecycle it is difficult to identify which is responsible for a performance problem. This is what the Origination plugin assists with: it identifies the origin for where things come from in WordPress whether slow code, inefficient queries, or bad markup.
+There are a lot of plugins and themes in the WordPress ecosystem. Many of them are not written with performance in mind, either in the database queries they make or the markup they add to the frontend. Also, because themes and plugins can hook into any part of the WordPress execution lifecycle it is difficult to identify which is responsible for a performance problem. This is what the Origination plugin assists with: it identifies the origin for where things come from in WordPress whether slow code, inefficient queries, or bad markup.
 
 Most of the ideas in this plugin were first prototyped in the [AMP plugin](https://github.com/ampproject/amp-wp). It includes a sanitizer to remove any markup that is not valid, but it also needs to inform the site owner of where the offending markup came from in the first place. In order to provide this information, the AMP plugin adds wrappers around actions, filters, blocks, shortcodes, widgets, and embeds to annotate the output with HTML comments both preceding and following, similar to Gutenberg block comments. With these HTML comment annotations in place, when invalid AMP markup is encountered, the source(s) responsible for it can be determined by just looking all of the annotation comments that are open.
 
 This plugin takes the ideas from the AMP plugin and generalizes them for use by other plugins, including the AMP plugin itself. One key use for these HTML source annotations is for Lighthouse to be able to indicate the theme/plugin that is responsible for problems identified by audits, whether they be for performance, accessibility, best practices, or SEO.
+
+<!-- /WP_README_DESCRIPTION -->
 
 Bonus: This plugin also outputs `Server-Timing` headers to tally how much time was spent on core, themes, and plugins.
 
@@ -101,10 +95,3 @@ This is not an officially supported Google product.
 ### Identifying everything that depends on jQuery.
 
 ![Identifying everything that depends on jQuery.](wp-assets/screenshot-3.png)
-
-## Changelog ##
-
-### 0.1 (Unreleased) ###
-...
-
-
