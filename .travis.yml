@@ -1,6 +1,19 @@
-sudo: false
-
+# Tell Travis CI we're using PHP
 language: php
+
+# Using trusty instead of precise because we don't need PHP 5.2 or 5.3 anymore.
+dist: trusty
+
+addons:
+  apt:
+    packages:
+      # Needed for `xmllint`.
+      - libxml2-utils
+
+notifications:
+  email:
+    on_success: never
+    on_failure: change
 
 cache:
   directories:
@@ -8,52 +21,68 @@ cache:
     - $HOME/.jest-cache
     - $HOME/.npm
     - $HOME/.nvm/.cache
+    - $HOME/phpunit-bin
+    - $HOME/deployment-targets
 
-matrix:
-  include:
-    - php: 7.3
-      env: UNIT=1 PHPLINT=1 PHPCS=1
-    - php: 7.0
-      env: UNIT=1 PHPLINT=1
-    - php: 5.6
-      env: UNIT=1 PHPLINT=1
-    - php: nightly
-      env: UNIT=1
-  allow_failures:
-    - php: nightly
-      env: UNIT=1
+branches:
+  only:
+    - master
+    - develop
+    - /^\d+\.\d+$/
 
-before_install:
-  - |
-    case "$TRAVIS_PHP_VERSION" in
-      5.6)
-        composer global require "phpunit/phpunit:^4"
-        composer install
-        PHPUNIT_BIN="phpunit"
-        ;;
-      *)
-        composer install
-        PHPUNIT_BIN="vendor/bin/phpunit"
-        ;;
-    esac
-  - npm install
+install:
+  - nvm install
+  - composer install
+  - export DEV_LIB_PATH=vendor/xwp/wp-dev-lib/scripts
+  - export DIFF_HEAD=HEAD
+  - source "$DEV_LIB_PATH/travis.install.sh"
 
 before_script:
-  - phpenv rehash
+  - phpenv config-rm xdebug.ini || echo "xdebug.ini does not exist."
 
 script:
-  - |
-    if [[ "$PHPLINT" == "1" ]]; then
-      composer run-script phplint
-    fi
-  - |
-    if [[ "$PHPCS" == "1" ]]; then
-      composer run-script phpcs
-    fi
-  - |
-    if [[ "$UNIT" == "1" ]]; then
-      $PHPUNIT_BIN
-    fi
+  - source "$DEV_LIB_PATH/travis.script.sh"
 
-notifications:
-  email: false
+after_script:
+  - source "$DEV_LIB_PATH/travis.after_script.sh"
+
+jobs:
+  fast_finish: true
+  include:
+    - stage: lint
+      name: Lint (PHP, JavaScript, and configuration files)
+      php: "7.3"
+      env: WP_VERSION=latest DEV_LIB_ONLY=phpsyntax,phpcs
+      before_script:
+        - phpenv config-rm xdebug.ini || echo "xdebug.ini does not exist."
+#        - composer require --dev localheinz/composer-normalize --ignore-platform-reqs
+      script:
+        - composer run-script phplint
+        - composer run-script phpcs
+#        - source "$DEV_LIB_PATH/travis.script.sh"
+#        - composer validate --no-check-all
+#        - composer normalize --dry-run
+
+    - name: PHP unit tests (7.2, WordPress latest)
+      php: "7.2"
+      env: WP_VERSION=latest DEV_LIB_ONLY=phpunit,phpsyntax
+
+    - name: PHP unit tests (7.1, WordPress latest)
+      php: "7.1"
+      env: WP_VERSION=latest DEV_LIB_ONLY=phpunit,phpsyntax
+
+    - name: PHP unit tests (7.0, WordPress latest)
+      php: "7.0"
+      env: WP_VERSION=latest DEV_LIB_ONLY=phpunit,phpsyntax
+
+    - name: PHP unit tests (5.6, WordPress latest)
+      php: "5.6"
+      env: WP_VERSION=latest DEV_LIB_ONLY=phpunit,phpsyntax
+
+    - name: PHP unit tests (5.6, WordPress 5.1)
+      php: "5.6"
+      env: WP_VERSION=5.1    DEV_LIB_ONLY=phpunit
+
+    - name: PHP unit tests (7.3, WordPress trunk)
+      php: "7.3"
+      env: WP_VERSION=trunk  DEV_LIB_ONLY=phpunit

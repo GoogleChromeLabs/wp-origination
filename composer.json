@@ -1,14 +1,13 @@
 {
   "name": "google/wp-origination",
-  "description": "WordPress plugin to determine the origin of where things come from in WordPress whether slow code, inefficient queries, or bad markup.",
-  "version": "0.1.0",
-  "license": "Apache-2.0",
   "type": "wordpress-plugin",
+  "description": "WordPress plugin to determine the origin of where things come from in WordPress whether slow code, inefficient queries, or bad markup.",
   "keywords": [
     "wordpress",
     "performance"
   ],
   "homepage": "https://github.com/GoogleChromeLabs/wp-origination",
+  "license": "Apache-2.0",
   "authors": [
     {
       "name": "Weston Ruter",
@@ -16,8 +15,16 @@
       "homepage": "https://weston.ruter.net/"
     }
   ],
-  "support": {
-    "issues": "https://github.com/GoogleChromeLabs/wp-origination/issues"
+  "require": {
+    "php": ">=5.6",
+    "composer/installers": "^1"
+  },
+  "require-dev": {
+    "dealerdirect/phpcodesniffer-composer-installer": "0.5.0",
+    "phpcompatibility/php-compatibility": "9.3.1",
+    "phpunit/phpunit": "^5.0 || ^6.0 || ^7.0",
+    "wp-coding-standards/wpcs": "2.1.1",
+    "xwp/wp-dev-lib": "1.2.2"
   },
   "config": {
     "platform": {
@@ -34,27 +41,19 @@
       "Google\\WP_Origination\\Tests\\PHPUnit\\Framework\\": "tests/phpunit/framework"
     }
   },
-  "require": {
-    "php": ">=5.6",
-    "composer/installers": "^1"
-  },
-  "require-dev": {
-    "dealerdirect/phpcodesniffer-composer-installer": "0.5.0",
-    "wp-coding-standards/wpcs": "2.1.1",
-    "phpcompatibility/php-compatibility": "9.3.1",
-    "phpunit/phpunit": "^5.0 || ^6.0 || ^7.0",
-    "xwp/wp-dev-lib": "1.2.2"
-  },
-  "prefer-stable" : true,
+  "prefer-stable": true,
   "scripts": {
     "lint": [
       "@php-l",
       "phpcs"
     ],
-    "phplint": "git ls-files -z -- '*.php' | xargs -0 -n 1 -P 4 php -l",
-    "phpcs": "phpcs",
+    "package": "php bin/create-wordpress-plugin-zip.php",
     "phpcbf": "phpcbf",
-    "test": "phpunit --config=phpunit.xml.dist",
-    "package" : "php bin/create-wordpress-plugin-zip.php"
+    "phpcs": "phpcs",
+    "phplint": "git ls-files -z -- '*.php' | xargs -0 -n 1 -P 4 php -l",
+    "test": "phpunit --config=phpunit.xml.dist"
+  },
+  "support": {
+    "issues": "https://github.com/GoogleChromeLabs/wp-origination/issues"
   }
 }
