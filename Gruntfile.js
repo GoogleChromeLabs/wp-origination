@@ -27,22 +27,22 @@ module.exports = function( grunt ) {
 		// Clean up the build.
 		clean: {
 			build: {
-				src: [ 'build' ]
-			}
+				src: [ 'build' ],
+			},
 		},
 
 		// Shell actions.
 		shell: {
 			options: {
 				stdout: true,
-				stderr: true
+				stderr: true,
 			},
 			readme: {
-				command: 'php ./vendor/xwp/wp-dev-lib/generate-markdown-readme' // Generate the readme.md.
+				command: 'echo php ./vendor/xwp/wp-dev-lib/generate-markdown-readme', // Generate the readme.md.
 			},
 			create_build_zip: {
-				command: 'if [ ! -e build ]; then echo "Run grunt build first."; exit 1; fi; if [ -e origination.zip ]; then rm origination.zip; fi; cd build; zip -r ../origination.zip .; cd ..; echo; echo "ZIP of build: $(pwd)/origination.zip"'
-			}
+				command: 'if [ ! -e build ]; then echo "Run grunt build first."; exit 1; fi; if [ -e origination.zip ]; then rm origination.zip; fi; cd build; zip -r ../origination.zip .; cd ..; echo; echo "ZIP of build: $(pwd)/origination.zip"',
+			},
 		},
 
 		// Deploys a git Repo to the WordPress SVN repo.
@@ -51,10 +51,10 @@ module.exports = function( grunt ) {
 				options: {
 					plugin_slug: 'origination',
 					build_dir: 'build',
-					assets_dir: 'wp-assets'
-				}
-			}
-		}
+					assets_dir: 'wp-assets',
+				},
+			},
+		},
 
 	} );
 
@@ -65,37 +65,35 @@ module.exports = function( grunt ) {
 
 	// Register tasks.
 	grunt.registerTask( 'default', [
-		'build'
+		'build',
 	] );
 
 	grunt.registerTask( 'generate-readme-md', [
-		'shell:readme'
+		'shell:readme',
 	] );
 
 	grunt.registerTask( 'build', function() {
-		var done, spawnQueue, stdout;
-		done = this.async();
-		spawnQueue = [];
-		stdout = [];
+		const done = this.async();
+		const spawnQueue = [];
+		const stdout = [];
 
 		spawnQueue.push(
 			{
 				cmd: 'git',
-				args: [ '--no-pager', 'log', '-1', '--format=%h', '--date=short' ]
+				args: [ '--no-pager', 'log', '-1', '--format=%h', '--date=short' ],
 			},
 			{
 				cmd: 'git',
-				args: [ 'ls-files' ]
+				args: [ 'ls-files' ],
 			}
 		);
 
 		function finalize() {
-			var commitHash, lsOutput, versionAppend, paths;
-			commitHash = stdout.shift();
-			lsOutput = stdout.shift();
-			versionAppend = new Date().toISOString().replace( /\.\d+/, '' ).replace( /-|:/g, '' ) + '-' + commitHash;
+			const commitHash = stdout.shift();
+			const lsOutput = stdout.shift();
+			const versionAppend = new Date().toISOString().replace( /\.\d+/, '' ).replace( /-|:/g, '' ) + '-' + commitHash;
 
-			paths = lsOutput.trim().split( /\n/ ).filter( function( file ) {
+			const paths = lsOutput.trim().split( /\n/ ).filter( function( file ) {
 				return ! /^(\.|bin|([^/]+)+\.(md|json|xml)|Gruntfile\.js|tests|wp-assets|dev-lib|readme\.md|composer\..*)/.test( file );
 			} );
 			paths.push( 'vendor/autoload.php' );
@@ -109,8 +107,8 @@ module.exports = function( grunt ) {
 					expand: true,
 					options: {
 						noProcess: [ '*/**' ], // That is, only process origination.php and readme.txt.
-						process: function( content, srcpath ) {
-							var matches, version, versionRegex;
+						process( content, srcpath ) {
+							let matches, version, versionRegex;
 							if ( /origination\.php$/.test( srcpath ) ) {
 								versionRegex = /(\*\s+Version:\s+)(\d+(\.\d+)+-\w+)/;
 
@@ -123,9 +121,9 @@ module.exports = function( grunt ) {
 								}
 							}
 							return content;
-						}
-					}
-				}
+						},
+					},
+				},
 			} );
 
 			grunt.task.run( 'generate-readme-md' );
@@ -135,7 +133,7 @@ module.exports = function( grunt ) {
 		}
 
 		function doNext() {
-			var nextSpawnArgs = spawnQueue.shift();
+			const nextSpawnArgs = spawnQueue.shift();
 			if ( ! nextSpawnArgs ) {
 				finalize();
 			} else {
@@ -156,6 +154,6 @@ module.exports = function( grunt ) {
 	} );
 
 	grunt.registerTask( 'create-build-zip', [
-		'shell:create_build_zip'
+		'shell:create_build_zip',
 	] );
 };
