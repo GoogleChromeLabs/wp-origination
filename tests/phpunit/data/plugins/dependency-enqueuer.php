@@ -33,7 +33,7 @@ function enqueue_scripts() {
  * Enqueue scripts for hook invoker.
  */
 function enqueue_scripts_for_hook_invoker() {
-	wp_enqueue_script( 'wp-a11y' );
+	wp_enqueue_script( 'code-editor' );
 	wp_enqueue_style( 'code-editor' );
 
 	wp_enqueue_style( 'dependency-enqueuer-ie', 'https://example.com/ie.css', array(), '1' );

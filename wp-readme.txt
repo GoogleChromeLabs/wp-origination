@@ -1,6 +1,6 @@
 === Origination ===
 Contributors:      westonruter
-Requires at least: 4.9
+Requires at least: 5.2
 Tested up to:      5.3-alpha
 Requires PHP:      5.6
 Stable tag:        trunk

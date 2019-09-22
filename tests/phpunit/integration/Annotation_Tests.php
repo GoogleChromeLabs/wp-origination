@@ -343,7 +343,7 @@ class Annotation_Tests extends Integration_Test_Case {
 		$expected = array(
 			[
 				'function'         => 'Google\WP_Origination\Tests\Data\Plugins\Dependency_Enqueuer\enqueue_scripts_for_hook_invoker',
-				'enqueued_scripts' => [ 'wp-a11y' ],
+				'enqueued_scripts' => [ 'code-editor' ],
 				'enqueued_styles'  => [ 'code-editor', 'dependency-enqueuer-ie' ],
 			],
 			[
@@ -1069,7 +1069,7 @@ class Annotation_Tests extends Integration_Test_Case {
 		 * @var \DOMNodeList|\DOMElement[] $widget_elements
 		 */
 		$widget_elements = $sidebar_element->getElementsByTagName( 'li' );
-		$this->assertEquals( 3, $widget_elements->count() );
+		$this->assertEquals( 3, $widget_elements->length );
 
 		$expected_annotations = [
 			[

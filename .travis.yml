@@ -22,7 +22,6 @@ cache:
     - $HOME/.npm
     - $HOME/.nvm/.cache
     - $HOME/phpunit-bin
-    - $HOME/deployment-targets
 
 branches:
   only:
@@ -33,6 +32,7 @@ branches:
 install:
   - nvm install
   - composer install
+  - composer remove --dev phpunit/phpunit # Let wp-dev-lib install.
   - export DEV_LIB_PATH=vendor/xwp/wp-dev-lib/scripts
   - export DIFF_HEAD=HEAD
   - source "$DEV_LIB_PATH/travis.install.sh"
@@ -52,18 +52,14 @@ jobs:
     - stage: lint
       name: Lint (PHP, JavaScript, and configuration files)
       php: "7.3"
-      env: WP_VERSION=latest DEV_LIB_ONLY=phpsyntax,phpcs
+      env: WP_VERSION=latest DEV_LIB_ONLY=phpsyntax
       before_script:
         - phpenv config-rm xdebug.ini || echo "xdebug.ini does not exist."
-#        - composer require --dev localheinz/composer-normalize --ignore-platform-reqs
       script:
-        - composer run-script phplint
-        - composer run-script phpcs
-#        - source "$DEV_LIB_PATH/travis.script.sh"
-#        - composer validate --no-check-all
-#        - composer normalize --dry-run
+        - source "$DEV_LIB_PATH/travis.script.sh"
 
-    - name: PHP unit tests (7.2, WordPress latest)
+    - stage: test
+      name: PHP unit tests (7.2, WordPress latest)
       php: "7.2"
       env: WP_VERSION=latest DEV_LIB_ONLY=phpunit,phpsyntax
 
@@ -79,9 +75,9 @@ jobs:
       php: "5.6"
       env: WP_VERSION=latest DEV_LIB_ONLY=phpunit,phpsyntax
 
-    - name: PHP unit tests (5.6, WordPress 5.1)
+    - name: PHP unit tests (5.6, WordPress 5.2)
       php: "5.6"
-      env: WP_VERSION=5.1    DEV_LIB_ONLY=phpunit
+      env: WP_VERSION=5.2    DEV_LIB_ONLY=phpunit
 
     - name: PHP unit tests (7.3, WordPress trunk)
       php: "7.3"

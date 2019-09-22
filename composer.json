@@ -44,8 +44,8 @@
   "prefer-stable": true,
   "scripts": {
     "lint": [
-      "@php-l",
-      "phpcs"
+      "@phplint",
+      "@phpcs"
     ],
     "package": "php bin/create-wordpress-plugin-zip.php",
     "phpcbf": "phpcbf",
