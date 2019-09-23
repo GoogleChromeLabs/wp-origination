@@ -2,7 +2,6 @@
 /**
  * Parent theme functions.
  *
- * @todo Enqueue scripts and styles.
  * @package Google\WP_Origination
  */
 

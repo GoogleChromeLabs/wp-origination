@@ -24,24 +24,17 @@ module.exports = function( grunt ) {
 
 		pkg: grunt.file.readJSON( 'package.json' ),
 
-		// Clean up the build.
-		clean: {
-			build: {
-				src: [ 'build' ],
-			},
-		},
-
 		// Shell actions.
 		shell: {
 			options: {
 				stdout: true,
 				stderr: true,
 			},
-			readme: {
-				command: 'echo php ./vendor/xwp/wp-dev-lib/generate-markdown-readme', // Generate the readme.md.
+			verify_matching_versions: {
+				command: 'composer run-script verify-version-consistency',
 			},
-			create_build_zip: {
-				command: 'if [ ! -e build ]; then echo "Run grunt build first."; exit 1; fi; if [ -e origination.zip ]; then rm origination.zip; fi; cd build; zip -r ../origination.zip .; cd ..; echo; echo "ZIP of build: $(pwd)/origination.zip"',
+			dist: {
+				command: 'composer run-script dist',
 			},
 		},
 
@@ -50,7 +43,7 @@ module.exports = function( grunt ) {
 			deploy: {
 				options: {
 					plugin_slug: 'origination',
-					build_dir: 'build',
+					build_dir: 'dist',
 					assets_dir: 'wp-assets',
 				},
 			},
@@ -59,101 +52,16 @@ module.exports = function( grunt ) {
 	} );
 
 	// Load tasks.
-	grunt.loadNpmTasks( 'grunt-contrib-clean' );
-	grunt.loadNpmTasks( 'grunt-contrib-copy' );
 	grunt.loadNpmTasks( 'grunt-shell' );
 
 	// Register tasks.
 	grunt.registerTask( 'default', [
-		'build',
+		'shell:dist',
 	] );
 
-	grunt.registerTask( 'generate-readme-md', [
-		'shell:readme',
-	] );
-
-	grunt.registerTask( 'build', function() {
-		const done = this.async();
-		const spawnQueue = [];
-		const stdout = [];
-
-		spawnQueue.push(
-			{
-				cmd: 'git',
-				args: [ '--no-pager', 'log', '-1', '--format=%h', '--date=short' ],
-			},
-			{
-				cmd: 'git',
-				args: [ 'ls-files' ],
-			}
-		);
-
-		function finalize() {
-			const commitHash = stdout.shift();
-			const lsOutput = stdout.shift();
-			const versionAppend = new Date().toISOString().replace( /\.\d+/, '' ).replace( /-|:/g, '' ) + '-' + commitHash;
-
-			const paths = lsOutput.trim().split( /\n/ ).filter( function( file ) {
-				return ! /^(\.|bin|([^/]+)+\.(md|json|xml)|Gruntfile\.js|tests|wp-assets|dev-lib|readme\.md|composer\..*)/.test( file );
-			} );
-			paths.push( 'vendor/autoload.php' );
-			paths.push( 'vendor/composer/*.*' );
-
-			grunt.task.run( 'clean' );
-			grunt.config.set( 'copy', {
-				build: {
-					src: paths,
-					dest: 'build',
-					expand: true,
-					options: {
-						noProcess: [ '*/**' ], // That is, only process origination.php and readme.txt.
-						process( content, srcpath ) {
-							let matches, version, versionRegex;
-							if ( /origination\.php$/.test( srcpath ) ) {
-								versionRegex = /(\*\s+Version:\s+)(\d+(\.\d+)+-\w+)/;
-
-								// If not a stable build (e.g. 0.7.0-beta), amend the version with the git commit and current timestamp.
-								matches = content.match( versionRegex );
-								if ( matches ) {
-									version = matches[ 2 ] + '-' + versionAppend;
-									console.log( 'Updating version in origination.php to ' + version );
-									content = content.replace( versionRegex, '$1' + version );
-								}
-							}
-							return content;
-						},
-					},
-				},
-			} );
-
-			grunt.task.run( 'generate-readme-md' );
-			grunt.task.run( 'copy' );
-
-			done();
-		}
-
-		function doNext() {
-			const nextSpawnArgs = spawnQueue.shift();
-			if ( ! nextSpawnArgs ) {
-				finalize();
-			} else {
-				grunt.util.spawn(
-					nextSpawnArgs,
-					function( err, res ) {
-						if ( err ) {
-							throw new Error( err.message );
-						}
-						stdout.push( res.stdout );
-						doNext();
-					}
-				);
-			}
-		}
-
-		doNext();
-	} );
-
-	grunt.registerTask( 'create-build-zip', [
-		'shell:create_build_zip',
+	grunt.registerTask( 'deploy', [
+		'shell:dist',
+		// @todo Verify versions are matching.
+		'wp_deploy',
 	] );
 };

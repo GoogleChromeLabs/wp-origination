@@ -14,6 +14,12 @@
 // phpcs:disable Generic.PHP.BacktickOperator.Found
 // phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.system_calls_system
 // phpcs:disable WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_read_fwrite
+
+if ( 'cli' !== php_sapi_name() ) {
+	fwrite( STDERR, "Must run from CLI.\n" );
+	exit( 1 );
+}
 
 chdir( __DIR__ . '/..' );
 
@@ -58,5 +64,7 @@ if ( ! preg_match( '#<!--\s*WP_README_DESCRIPTION\s*-->(.+?)<!--\s*/WP_README_DE
 }
 $wp_readme = str_replace( '{{WP_README_DESCRIPTION}}', trim( $matches[1] ), $wp_readme );
 file_put_contents( 'readme.txt', $wp_readme );
+
+system( 'zip -r ../origination.zip .' );
 
 echo "Done!\n";

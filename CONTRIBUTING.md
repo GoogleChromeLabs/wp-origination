@@ -17,7 +17,7 @@ When contributing code...
 
 * Fork the `master` branch of the repository on GitHub.
 * Make changes to the forked repository.
-    * Write code that is backward-compatible with WordPress 4.9 and PHP 5.6.
+    * Write code that is backward-compatible with WordPress 5.2 and PHP 7.0.
     * Make sure you stick to the [WordPress](https://make.wordpress.org/core/handbook/best-practices/coding-standards/) coding standards.
     * Make sure you document the code properly.
     * Test your code with the constant `WP_DEBUG` enabled.

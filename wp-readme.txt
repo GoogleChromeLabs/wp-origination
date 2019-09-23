@@ -2,7 +2,7 @@
 Contributors:      westonruter
 Requires at least: 5.2
 Tested up to:      5.3-alpha
-Requires PHP:      5.6
+Requires PHP:      7.0
 Stable tag:        trunk
 License:           Apache License 2.0
 License URI:       https://www.apache.org/licenses/LICENSE-2.0

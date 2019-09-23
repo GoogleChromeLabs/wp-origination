@@ -12,11 +12,9 @@
   "eslint": "6.4.0",
   "@wordpress/eslint-plugin": "^2.0.0",
   "grunt": "1.0.4",
-  "grunt-contrib-clean": "2.0.0",
-  "grunt-contrib-copy": "1.0.0",
   "grunt-shell": "3.0.1"
  },
  "scripts": {
-  "build": "grunt build && grunt create-build-zip"
+  "build": "composer run-script dist"
  }
 }

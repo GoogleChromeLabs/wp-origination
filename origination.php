@@ -42,13 +42,13 @@ function _google_wp_origination_load() {
 	global $_google_wp_origination_load_errors;
 	$load_errors = new WP_Error();
 
-	if ( version_compare( phpversion(), '5.6', '<' ) ) {
+	if ( version_compare( phpversion(), '7.0', '<' ) ) {
 		$load_errors->add(
 			'php_version',
 			sprintf(
 				/* translators: 1: required PHP version, 2: currently used PHP version */
 				__( 'Plugin requires at least PHP version %1$s; your site is currently running on PHP %2$s.', 'origination' ),
-				'5.6',
+				'7.0',
 				phpversion()
 			)
 		);
