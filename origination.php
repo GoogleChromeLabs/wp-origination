@@ -54,13 +54,13 @@ function _google_wp_origination_load() {
 		);
 	}
 
-	if ( version_compare( get_bloginfo( 'version' ), '4.9', '<' ) ) {
+	if ( version_compare( get_bloginfo( 'version' ), '5.2', '<' ) ) {
 		$load_errors->add(
 			'wp_version',
 			sprintf(
 				/* translators: 1: required WordPress version, 2: currently used WordPress version */
 				__( 'Plugin requires at least WordPress version %1$s; your site is currently running on WordPress %2$s.', 'origination' ),
-				'4.9',
+				'5.2',
 				get_bloginfo( 'version' )
 			)
 		);
@@ -71,13 +71,9 @@ function _google_wp_origination_load() {
 		$load_errors->add(
 			'composer_install',
 			sprintf(
-				sprintf(
-					/* translators: %s is composer install command */
-					__( 'Plugin appears to be running from source and requires %s to complete the plugin\'s installation.', 'origination' ),
-					'<code>composer install</code>'
-				),
-				'4.9',
-				get_bloginfo( 'version' )
+				/* translators: %s is composer install command */
+				__( 'Plugin appears to be running from source and requires %s to complete the plugin\'s installation.', 'origination' ),
+				'<code>composer install</code>'
 			)
 		);
 	}
