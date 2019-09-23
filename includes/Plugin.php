@@ -242,8 +242,20 @@ class Plugin {
 	 * Run.
 	 */
 	public function start() {
-		if ( ! $this->should_run() ) {
+		$wp_debug = defined( 'WP_DEBUG' ) && WP_DEBUG;
+
+		if ( ! isset( $_GET['origination'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.NoNonceVerification
 			return;
+		}
+
+		if ( ! $wp_debug ) {
+			wp_die(
+				esc_html__( 'WP_DEBUG must currently be enabled to generate Origination data.', 'origination' ),
+				esc_html__( 'WP_DEBUG Required', 'origination' ),
+				array(
+					'response' => 400,
+				)
+			);
 		}
 
 		$this->init();
