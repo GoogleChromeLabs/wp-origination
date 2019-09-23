@@ -2,7 +2,7 @@
 
 _Determine the origin of where things come from in WordPress whether slow code, inefficient queries, or bad markup._
 
-[![Build Status](https://api.travis-ci.com/GoogleChromeLabs/wp-origination.svg?branch=master)](https://travis-ci.com/GoogleChromeLabs/wp-origination)
+[![Build Status](https://api.travis-ci.org/GoogleChromeLabs/wp-origination.svg?branch=master)](https://travis-ci.org/GoogleChromeLabs/wp-origination)
 
 <!-- WP_README_DESCRIPTION -->
 
