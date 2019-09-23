@@ -80,7 +80,7 @@ While this is also sent via `Server-Timing` headers, you can determine the amoun
 
 ### Contributing ###
 
-You can [contribute](https://github.com/GoogleChromeLabs/wp-origination/blob/master/contributing.md) to this plugin via its [GitHub project](https://github.com/GoogleChromeLabs/wp-origination).
+You can [contribute](https://github.com/GoogleChromeLabs/wp-origination/blob/master/CONTRIBUTING.md) to this plugin via its [GitHub project](https://github.com/GoogleChromeLabs/wp-origination).
 
 This is not an officially supported Google product.
 
