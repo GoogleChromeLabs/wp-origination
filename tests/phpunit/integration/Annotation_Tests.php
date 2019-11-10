@@ -1092,7 +1092,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'number'   => 2,
 				'id'       => Widget_Registerer\MULTI_WIDGET_ID_BASE . '-2',
 				'name'     => 'Multi',
-				'function' => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Widget_Registerer\\Multi_Widget::display_callback',
+				'function' => 'Google\\WP_Origination\\Tests\\Data\\Plugins\\Widget_Registerer\\Multi_Widget::widget',
 				'source'   => [
 					'file' => dirname( __DIR__ ) . '/data/plugins/widget-registerer.php',
 					'type' => 'plugin',
@@ -1109,7 +1109,7 @@ class Annotation_Tests extends Integration_Test_Case {
 				'number'   => 3,
 				'id'       => 'search-3',
 				'name'     => 'Search',
-				'function' => 'WP_Widget_Search::display_callback',
+				'function' => 'WP_Widget_Search::widget',
 				'source'   => [
 					'file' => ABSPATH . 'wp-includes/widgets/class-wp-widget-search.php',
 					'type' => 'core',

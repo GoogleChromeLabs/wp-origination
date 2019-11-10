@@ -31,14 +31,6 @@ class Calling_Reflection {
 	protected $callback_reflection;
 
 	/**
-	 * Reflection object for a method's calling class (not declared class).
-	 *
-	 * @see ReflectionMethod::getDeclaringClass()
-	 * @var ReflectionClass
-	 */
-	protected $class_reflection;
-
-	/**
 	 * Construct.
 	 *
 	 * @throws Exception When unable to obtain the reflection for the provided callback.
@@ -49,18 +41,23 @@ class Calling_Reflection {
 			// The $callback is a function or static method.
 			$exploded_callback = explode( '::', $callback, 2 );
 			if ( 2 === count( $exploded_callback ) ) {
-				$this->class_reflection    = new ReflectionClass( $exploded_callback[0] );
 				$this->callback_reflection = new ReflectionMethod( $exploded_callback[0], $exploded_callback[1] );
 			} else {
 				$this->callback_reflection = new ReflectionFunction( $callback );
 			}
 		} elseif ( is_array( $callback ) && isset( $callback[0], $callback[1] ) && method_exists( $callback[0], $callback[1] ) ) {
-			$this->class_reflection    = new ReflectionClass( $callback[0] );
-			$this->callback_reflection = new ReflectionMethod( $callback[0], $callback[1] );
+			$reflection = new ReflectionMethod( $callback[0], $callback[1] );
+
+			// Handle the special case of the class being a widget, in which case the display_callback method should
+			// actually map to the underling widget method. It is the display_callback in the end that is wrapped.
+			if ( 'WP_Widget' === $reflection->getDeclaringClass()->getName() && 'display_callback' === $reflection->getName() ) {
+				$reflection = new ReflectionMethod( $callback[0], 'widget' );
+			}
+
+			$this->callback_reflection = $reflection;
 		} elseif ( is_object( $callback ) && ( 'Closure' === get_class( $callback ) ) ) {
 			$this->callback_reflection = new ReflectionFunction( $callback );
 		} elseif ( is_object( $callback ) && method_exists( $callback, '__invoke' ) ) {
-			$this->class_reflection    = new ReflectionClass( $callback );
 			$this->callback_reflection = new ReflectionMethod( $callback, '__invoke' );
 		} else {
 			throw new Exception( 'Unrecognized callable.' );
@@ -79,38 +76,23 @@ class Calling_Reflection {
 	/**
 	 * Get normalized name.
 	 *
-	 * Get the name reference for the function/method, with a method's class normalized to the subclass being called.
-	 *
 	 * @return string Normalized name.
 	 */
 	public function get_name() {
-		if ( $this->class_reflection ) {
-			return $this->class_reflection->getName() . '::' . $this->callback_reflection->getName();
-		} else {
-			return $this->callback_reflection->getName();
+		$name = $this->callback_reflection->getName();
+		if ( $this->callback_reflection instanceof ReflectionMethod ) {
+			$name = $this->callback_reflection->getDeclaringClass()->getName() . '::' . $name;
 		}
+		return $name;
 	}
 
 	/**
 	 * Get file name.
 	 *
-	 * The `ReflectionMethod::getFilename()` method is not suitable because for subclasses it returns the file name where
-	 * the subclass is defined, not the original class where the non-overridden method is defined. Additionally, the
-	 * subclass provided when instantiating a `ReflectionMethod` is not thereafter available.
-	 *
-	 * The best example
-	 * of this is `WP_Widget` subclasses, where a `display_callback` is defined in the base class but we actually
-	 * are interested in the subclass file.
-	 *
-	 * @see ReflectionMethod::getDeclaringClass()
 	 * @return string File name where called method is defined.
 	 */
 	public function get_file_name() {
-		if ( $this->class_reflection instanceof ReflectionClass ) {
-			return $this->class_reflection->getFileName();
-		} else {
-			return $this->callback_reflection->getFileName();
-		}
+		return $this->callback_reflection->getFileName();
 	}
 
 	/**
@@ -119,8 +101,8 @@ class Calling_Reflection {
 	 * @return string Namespace.
 	 */
 	public function get_namespace_name() {
-		if ( $this->class_reflection ) {
-			return $this->class_reflection->getNamespaceName();
+		if ( $this->callback_reflection instanceof ReflectionMethod ) {
+			return $this->callback_reflection->getDeclaringClass()->getNamespaceName();
 		} else {
 			return $this->callback_reflection->getNamespaceName();
 		}
