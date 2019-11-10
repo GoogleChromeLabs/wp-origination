@@ -34,6 +34,9 @@ export default function identifyNodeSources( node ) {
 		]`;
 	const xPathResult = document.evaluate( expression, node, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null );
 	const annotationStack = [];
+	const rawAnnotationData = [];
+
+	// Capture the data for the annotations.
 	for ( let i = 0; i < xPathResult.snapshotLength; i++ ) {
 		let commentText = xPathResult.snapshotItem( i ).nodeValue;
 
@@ -46,12 +49,25 @@ export default function identifyNodeSources( node ) {
 		}
 
 		const data = JSON.parse( commentText );
+		if ( typeof data !== 'object' || ! data.index ) {
+			throw new Error( `Missing index: ${commentText}` );
+		}
 		if ( isOpen ) {
-			if ( data.index ) {
-				invocations[ data.index ] = data;
-			}
+			invocations[ data.index ] = data;
+		}
+		rawAnnotationData.push( { commentText, isOpen, isSelfClosing, data } );
+	}
+
+	// Construct the final call stack.
+	for ( const annotation of rawAnnotationData ) {
+		const { isOpen, data, commentText, isSelfClosing } = annotation;
+
+		if ( isOpen ) {
 			if ( data.invocations ) {
 				for ( const index of data.invocations ) {
+					if ( ! invocations[ index ] ) {
+						throw new Error( `No existing invocation index for: ${index}.` );
+					}
 					annotationStack.push( invocations[ index ] );
 				}
 			} else {
@@ -63,17 +79,22 @@ export default function identifyNodeSources( node ) {
 				annotationStack.pop();
 			}
 		} else {
+			if ( ! invocations[ data.index ] ) {
+				throw new Error( `Unable to find invocation data for index: ${data.index}` );
+			}
+			Object.assign( data, invocations[ data.index ] );
+
 			if ( data.invocations ) {
 				for ( const index of [...data.invocations].reverse() ) {
 					const popped = annotationStack.pop();
 					if ( index !== popped.index ) {
-						throw new Error( 'Unexpected closing annotation comment for ref: ' + commentText );
+						throw new Error( `Unexpected closing annotation comment for ref: ${commentText}. Expected index: ${index}.` );
 					}
 				}
 			} else {
 				const popped = annotationStack.pop();
 				if ( data.index !== popped.index ) {
-					throw new Error( 'Unexpected closing annotation comment: ' + commentText );
+					throw new Error( `Unexpected closing annotation comment: ${commentText}. Expected index: ${popped.index}.` );
 				}
 			}
 		}
