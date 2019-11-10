@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a4f94358e105b259278b49f4d3022a72",
+    "content-hash": "d38f98137a051982033e3842d25af646",
     "packages": [],
     "packages-dev": [
         {
@@ -1743,16 +1743,16 @@
         },
         {
             "name": "xwp/wp-dev-lib",
-            "version": "1.2.2",
+            "version": "1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/xwp/wp-dev-lib.git",
-                "reference": "a40a29223deb8f44e6d61db7e6c39bd12eb37919"
+                "reference": "e0205d733c2cabccfd05ec281ae43872fc42c221"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/xwp/wp-dev-lib/zipball/a40a29223deb8f44e6d61db7e6c39bd12eb37919",
-                "reference": "a40a29223deb8f44e6d61db7e6c39bd12eb37919",
+                "url": "https://api.github.com/repos/xwp/wp-dev-lib/zipball/e0205d733c2cabccfd05ec281ae43872fc42c221",
+                "reference": "e0205d733c2cabccfd05ec281ae43872fc42c221",
                 "shasum": ""
             },
             "type": "library",
@@ -1777,7 +1777,7 @@
             "keywords": [
                 "wordpress"
             ],
-            "time": "2019-07-04T15:04:40+00:00"
+            "time": "2019-10-22T09:03:59+00:00"
         }
     ],
     "aliases": [],
