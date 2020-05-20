@@ -80,7 +80,7 @@ class Database {
 	 */
 	public function get_query_by_index( $index ) {
 		if ( ! isset( $this->wpdb->queries[ $index ] ) ) {
-			null;
+			return null;
 		}
 
 		$query = $this->wpdb->queries[ $index ];
