@@ -15,14 +15,14 @@ We will take a look at your issue and either assign it keywords and a milestone 
 
 When contributing code...
 
-* Fork the `master` branch of the repository on GitHub.
+* Fork the `develop` branch of the repository on GitHub.
 * Make changes to the forked repository.
     * Write code that is backward-compatible with WordPress 5.2 and PHP 7.0.
     * Make sure you stick to the [WordPress](https://make.wordpress.org/core/handbook/best-practices/coding-standards/) coding standards.
     * Make sure you document the code properly.
     * Test your code with the constant `WP_DEBUG` enabled.
 * When committing, in addition to a note about the fix, please reference your issue (if present).
-* Push the changes to your fork and [submit a pull request](https://github.com/GoogleChromeLabs/wp-origination/compare) to the `master` branch.
+* Push the changes to your fork and [submit a pull request](https://github.com/GoogleChromeLabs/wp-origination/compare) to the `develop` branch.
 * Follow the guidelines specified in the pull request template.
 
 After that we will review the pull-request as soon as possible and either merge it, make suggestions on improvements or ask you for further details about your implementation.

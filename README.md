@@ -2,7 +2,7 @@
 
 _Determine the origin of where things come from in WordPress whether slow code, inefficient queries, or bad markup._
 
-[![Build Status](https://api.travis-ci.org/GoogleChromeLabs/wp-origination.svg?branch=master)](https://travis-ci.org/GoogleChromeLabs/wp-origination)
+[![Build Status](https://api.travis-ci.org/GoogleChromeLabs/wp-origination.svg?branch=develop)](https://travis-ci.org/GoogleChromeLabs/wp-origination)
 
 <!-- WP_README_DESCRIPTION -->
 
@@ -39,7 +39,7 @@ Then access a site frontend with `?origination` in the URL. For example, `https:
 <!-- /origination {"index":242,"name":"wp_head","priority":10,"callback":"rel_canonical"} -->
 ```
 
-With such annotation comments in place, to determine annotation stack for a given DOM node import [identify-node-sources.js](https://github.com/GoogleChromeLabs/wp-origination/blob/master/js/identify-node-sources.js) you then select a node in DevTools and then paste the following JS code into the console (see second screenshot):
+With such annotation comments in place, to determine annotation stack for a given DOM node import [identify-node-sources.js](https://github.com/GoogleChromeLabs/wp-origination/blob/develop/js/identify-node-sources.js) you then select a node in DevTools and then paste the following JS code into the console (see second screenshot):
 
 ```js
 (( node ) => {
@@ -80,7 +80,7 @@ While this is also sent via `Server-Timing` headers, you can determine the amoun
 
 ### Contributing ###
 
-You can [contribute](https://github.com/GoogleChromeLabs/wp-origination/blob/master/CONTRIBUTING.md) to this plugin via its [GitHub project](https://github.com/GoogleChromeLabs/wp-origination).
+You can [contribute](https://github.com/GoogleChromeLabs/wp-origination/blob/develop/CONTRIBUTING.md) to this plugin via its [GitHub project](https://github.com/GoogleChromeLabs/wp-origination).
 
 This is not an officially supported Google product.
 
