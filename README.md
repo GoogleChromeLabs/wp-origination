@@ -1,3 +1,5 @@
+_Note: This repo is now archived since it hasn't been touched in awhile. It may get resurrected, but it is archived now in order to not give false promises of maintenance._
+
 # Origination
 
 _Determine the origin of where things come from in WordPress whether slow code, inefficient queries, or bad markup._
